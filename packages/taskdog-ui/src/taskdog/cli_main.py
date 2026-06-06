@@ -26,6 +26,10 @@ LAZY_SUBCOMMANDS: dict[str, tuple[str, str]] = {
         "taskdog.cli.commands.audit_logs.audit_logs_command",
         "Display operation history (audit logs).",
     ),
+    "backup": (
+        "taskdog.cli.commands.backup.backup_command",
+        "Back up the database to a physical .db snapshot.",
+    ),
     "cancel": (
         "taskdog.cli.commands.cancel.cancel_command",
         "Mark task(s) as canceled.",
@@ -63,6 +67,10 @@ LAZY_SUBCOMMANDS: dict[str, tuple[str, str]] = {
     "restore": (
         "taskdog.cli.commands.restore.restore_command",
         "Restore archived task(s).",
+    ),
+    "restore-db": (
+        "taskdog.cli.commands.restore_db.restore_db_command",
+        "Restore the database from a physical .db snapshot (applied on restart).",
     ),
     "rm": (
         "taskdog.cli.commands.rm.rm_command",

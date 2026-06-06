@@ -8,6 +8,7 @@ from fastapi import BackgroundTasks, Depends, HTTPException, Request, WebSocket
 from fastapi.security import APIKeyHeader
 
 from taskdog_core.controllers.audit_log_controller import AuditLogController
+from taskdog_core.controllers.backup_controller import BackupController
 from taskdog_core.controllers.bulk_task_controller import BulkTaskController
 from taskdog_core.controllers.notes_controller import NotesController
 from taskdog_core.controllers.query_controller import QueryController
@@ -26,6 +27,9 @@ from taskdog_core.infrastructure.persistence.database.engine_factory import (
 from taskdog_core.infrastructure.persistence.database.sqlite_audit_log_repository import (
     SqliteAuditLogRepository,
 )
+from taskdog_core.infrastructure.persistence.database.sqlite_backup_store import (
+    SqliteBackupStore,
+)
 from taskdog_core.infrastructure.persistence.database.sqlite_notes_repository import (
     SqliteNotesRepository,
 )
@@ -40,6 +44,21 @@ from taskdog_server.websocket.connection_manager import ConnectionManager
 
 # API Key header definition
 api_key_header = APIKeyHeader(name="X-Api-Key", auto_error=False)
+
+
+def resolve_database_url(config: Config) -> str:
+    """Resolve the SQLite database URL from config, falling back to the XDG path.
+
+    Args:
+        config: Loaded application configuration.
+
+    Returns:
+        SQLAlchemy database URL.
+    """
+    if config.storage.database_url:
+        return config.storage.database_url
+    db_file = XDGDirectories.get_data_home() / "tasks.db"
+    return f"sqlite:///{db_file}"
 
 
 def initialize_api_context(
@@ -66,12 +85,7 @@ def initialize_api_context(
         time_provider = SystemTimeProvider()
 
     # Resolve database URL
-    if config.storage.database_url:
-        db_url = config.storage.database_url
-    else:
-        data_dir = XDGDirectories.get_data_home()
-        db_file = data_dir / "tasks.db"
-        db_url = f"sqlite:///{db_file}"
+    db_url = resolve_database_url(config)
 
     # Create a single shared engine for all repositories
     engine = create_sqlite_engine(db_url)
@@ -104,6 +118,9 @@ def initialize_api_context(
         lifecycle_controller, crud_controller, query_controller
     )
 
+    # Backup/restore controller over a storage-neutral port
+    backup_controller = BackupController(SqliteBackupStore(db_url))
+
     return ApiContext(
         repository=repository,
         config=config,
@@ -118,6 +135,7 @@ def initialize_api_context(
         audit_log_controller=audit_log_controller,
         notes_controller=notes_controller,
         bulk_controller=bulk_controller,
+        backup_controller=backup_controller,
         engine=engine,
     )
 
@@ -199,6 +217,11 @@ def get_bulk_controller(context: ApiContextDep) -> BulkTaskController:
     return context.bulk_controller
 
 
+def get_backup_controller(context: ApiContextDep) -> BackupController:
+    """Get backup controller from context."""
+    return context.backup_controller
+
+
 def get_connection_manager(request: Request) -> ConnectionManager:
     """Get the ConnectionManager instance from app.state for HTTP endpoints.
 
@@ -260,6 +283,7 @@ TimeProviderDep = Annotated[ITimeProvider, Depends(get_time_provider)]
 AuditLogControllerDep = Annotated[AuditLogController, Depends(get_audit_log_controller)]
 NotesControllerDep = Annotated[NotesController, Depends(get_notes_controller)]
 BulkTaskControllerDep = Annotated[BulkTaskController, Depends(get_bulk_controller)]
+BackupControllerDep = Annotated[BackupController, Depends(get_backup_controller)]
 ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manager)]
 ConnectionManagerWsDep = Annotated[
     ConnectionManager, Depends(get_connection_manager_ws)

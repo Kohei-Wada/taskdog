@@ -8,6 +8,7 @@ try/except blocks.
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
+from taskdog_core.domain.exceptions.backup_exceptions import BackupValidationError
 from taskdog_core.domain.exceptions.tag_exceptions import TagNotFoundException
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
@@ -45,3 +46,4 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(TaskNotFoundException, _not_found_handler)
     app.add_exception_handler(TagNotFoundException, _not_found_handler)
     app.add_exception_handler(TaskValidationError, _bad_request_handler)
+    app.add_exception_handler(BackupValidationError, _bad_request_handler)

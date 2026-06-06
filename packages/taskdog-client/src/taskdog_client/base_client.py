@@ -49,6 +49,19 @@ class BaseApiClient:
         self.client_id: str | None = None  # Set by WebSocket connection
         self.api_key = api_key
 
+    def auth_headers(self) -> dict[str, str]:
+        """Build the client/auth headers used on every request.
+
+        Returns:
+            Headers including X-Client-ID and X-Api-Key when set.
+        """
+        headers: dict[str, str] = {}
+        if self.client_id:
+            headers["X-Client-ID"] = self.client_id
+        if self.api_key:
+            headers["X-Api-Key"] = self.api_key
+        return headers
+
     def close(self) -> None:
         """Close the HTTP client."""
         self.client.close()
@@ -186,16 +199,7 @@ class BaseApiClient:
             Exception: For other errors
         """
         try:
-            headers = kwargs.get("headers", {})
-
-            # Add X-Client-ID header if client_id is set
-            if self.client_id:
-                headers["X-Client-ID"] = self.client_id
-
-            # Add X-Api-Key header if api_key is set
-            if self.api_key:
-                headers["X-Api-Key"] = self.api_key
-
+            headers = {**self.auth_headers(), **kwargs.get("headers", {})}
             if headers:
                 kwargs["headers"] = headers
 

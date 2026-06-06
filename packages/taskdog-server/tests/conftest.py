@@ -36,6 +36,9 @@ from fixtures.repositories import InMemoryTaskRepository  # noqa: E402
 from taskdog_core.controllers.audit_log_controller import (  # noqa: E402
     AuditLogController,
 )
+from taskdog_core.controllers.backup_controller import (  # noqa: E402
+    BackupController,
+)
 from taskdog_core.controllers.bulk_task_controller import (  # noqa: E402
     BulkTaskController,
 )
@@ -55,6 +58,9 @@ from taskdog_core.controllers.task_relationship_controller import (  # noqa: E40
 )
 from taskdog_core.infrastructure.persistence.database.sqlite_audit_log_repository import (  # noqa: E402
     SqliteAuditLogRepository,
+)
+from taskdog_core.infrastructure.persistence.database.sqlite_backup_store import (  # noqa: E402
+    SqliteBackupStore,
 )
 from taskdog_core.infrastructure.time_provider import SystemTimeProvider  # noqa: E402
 
@@ -221,6 +227,7 @@ def app(
     bulk_controller = BulkTaskController(
         lifecycle_controller, crud_controller, query_controller
     )
+    backup_controller = BackupController(SqliteBackupStore("sqlite:///:memory:"))
 
     # Create API context once
     api_context = ApiContext(
@@ -237,6 +244,7 @@ def app(
         audit_log_controller=audit_log_controller,
         notes_controller=notes_controller,
         bulk_controller=bulk_controller,
+        backup_controller=backup_controller,
     )
 
     # Create FastAPI app once with all routers

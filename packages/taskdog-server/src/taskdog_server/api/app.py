@@ -5,14 +5,21 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from taskdog_core.infrastructure.persistence.database.sqlite_backup_store import (
+    SqliteBackupStore,
+)
 from taskdog_core.shared.config_manager import ConfigManager
 from taskdog_server import __version__
-from taskdog_server.api.dependencies import initialize_api_context
+from taskdog_server.api.dependencies import (
+    initialize_api_context,
+    resolve_database_url,
+)
 from taskdog_server.api.error_handlers import register_exception_handlers
 from taskdog_server.api.middleware import LoggingMiddleware
 from taskdog_server.api.routers import (
     analytics_router,
     audit_router,
+    backup_router,
     bulk_router,
     lifecycle_router,
     notes_router,
@@ -45,6 +52,10 @@ def create_app() -> FastAPI:
         """
         # Startup: Configure logging first
         configure_logging()
+
+        # Apply a pending restore (if any) BEFORE the engine is created, so the
+        # restored DB is what Alembic then migrates forward.
+        SqliteBackupStore(resolve_database_url(config)).apply_pending_restore()
 
         # Initialize API context and store in app.state
         api_context = initialize_api_context(config)
@@ -85,6 +96,7 @@ def create_app() -> FastAPI:
     app.include_router(analytics_router, prefix="/api/v1", tags=["analytics"])
     app.include_router(tags_router, prefix="/api/v1/tags", tags=["tags"])
     app.include_router(audit_router, prefix="/api/v1/audit-logs", tags=["audit"])
+    app.include_router(backup_router, prefix="/api/v1", tags=["backup"])
     app.include_router(websocket_router, tags=["websocket"])
 
     @app.get("/")
