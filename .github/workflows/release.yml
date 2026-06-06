@@ -147,3 +147,27 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  publish-aur:
+    name: Publish to AUR
+    runs-on: ubuntu-latest
+    needs: [release]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Sync pkgver to release tag
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          sed -i "s/^pkgver=.*/pkgver=${version}/" contrib/aur/PKGBUILD
+
+      - name: Publish taskdog to the AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v4.1.3
+        with:
+          pkgname: taskdog
+          pkgbuild: contrib/aur/PKGBUILD
+          updpkgsums: true
+          commit_username: ${{ github.actor }}
+          commit_email: program3152019@gmail.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Update to ${{ github.ref_name }}"
