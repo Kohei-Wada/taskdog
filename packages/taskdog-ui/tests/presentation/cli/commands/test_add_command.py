@@ -223,7 +223,7 @@ class TestAddCommand:
         result = self.runner.invoke(add_command, ["Test Task"], obj=self.cli_context)
 
         # Verify
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -236,7 +236,7 @@ class TestAddCommand:
         result = self.runner.invoke(add_command, ["Test Task"], obj=self.cli_context)
 
         # Verify
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.error.assert_called_once_with("adding task", error)
 
     def test_missing_name(self):

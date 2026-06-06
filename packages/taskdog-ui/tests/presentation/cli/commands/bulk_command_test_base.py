@@ -125,7 +125,7 @@ class BaseBulkCommandTest:
 
         result = self.runner.invoke(self.command_func, ["999"], obj=self.cli_context)
 
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.validation_error.assert_called_once_with(
             "Task with ID 999 not found"
         )
@@ -143,7 +143,7 @@ class BaseBulkCommandTest:
             self.command_func, ["1", "999"], obj=self.cli_context
         )
 
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.task_success.assert_called_once()
         self.console_writer.validation_error.assert_called_once()
         assert self.console_writer.empty_line.call_count == 2

@@ -114,7 +114,7 @@ class TestStatsCommand:
         result = self.runner.invoke(stats_command, [], obj=self.cli_context)
 
         # Verify
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.error.assert_called_once_with(
             "calculating statistics", error
         )

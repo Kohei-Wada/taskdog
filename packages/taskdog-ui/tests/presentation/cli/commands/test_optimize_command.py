@@ -229,7 +229,7 @@ class TestOptimizeCommand:
         )
 
         # Verify
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.error.assert_called_once_with("optimizing schedules", error)
 
     def test_missing_algorithm_fails(self):

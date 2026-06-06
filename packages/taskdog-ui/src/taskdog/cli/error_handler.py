@@ -48,10 +48,15 @@ def handle_task_errors[F: Callable[..., Any]](action_name: str) -> Callable[[F],
                 return func(*args, **kwargs)
             except TaskNotFoundException as e:
                 console_writer.validation_error(str(e))
+                raise click.exceptions.Exit(1) from e
             except (ServerConnectionError, AuthenticationError, ServerError) as e:
                 console_writer.validation_error(str(e))
+                raise click.exceptions.Exit(1) from e
+            except (click.exceptions.Exit, click.exceptions.Abort):
+                raise
             except Exception as e:
                 console_writer.error(action_name, e)
+                raise click.exceptions.Exit(1) from e
 
         return cast("F", wrapper)
 
@@ -88,8 +93,12 @@ def handle_command_errors[F: Callable[..., Any]](action_name: str) -> Callable[[
                 return func(*args, **kwargs)
             except (ServerConnectionError, AuthenticationError, ServerError) as e:
                 console_writer.validation_error(str(e))
+                raise click.exceptions.Exit(1) from e
+            except (click.exceptions.Exit, click.exceptions.Abort):
+                raise
             except Exception as e:
                 console_writer.error(action_name, e)
+                raise click.exceptions.Exit(1) from e
 
         return cast("F", wrapper)
 

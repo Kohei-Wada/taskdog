@@ -47,7 +47,7 @@ class TestRemoveDependencyCommand:
         result = self.runner.invoke(remove_command, ["999", "3"], obj=self.cli_context)
 
         # Verify
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -60,7 +60,7 @@ class TestRemoveDependencyCommand:
         result = self.runner.invoke(remove_command, ["5", "3"], obj=self.cli_context)
 
         # Verify
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.error.assert_called_once_with("removing dependency", error)
 
     def test_missing_task_id(self):

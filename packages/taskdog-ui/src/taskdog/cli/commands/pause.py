@@ -34,3 +34,6 @@ def pause_command(ctx: click.Context, task_ids: tuple[int, ...]) -> None:
             console_writer.validation_error(result.error)
         if len(task_ids) > 1:
             console_writer.empty_line()
+
+    if results.has_failures:
+        raise click.exceptions.Exit(1)
