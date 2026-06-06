@@ -3,7 +3,10 @@
 import random
 from datetime import date
 
-from taskdog_core.application.constants.optimization import MONTE_CARLO_NUM_SIMULATIONS
+from taskdog_core.application.constants.optimization import (
+    DEFAULT_OPTIMIZATION_SEED,
+    MONTE_CARLO_NUM_SIMULATIONS,
+)
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_result import OptimizeResult
 from taskdog_core.application.services.optimization.greedy_optimization_strategy import (
@@ -44,6 +47,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             tuple[int | None, ...], float
         ] = {}  # Cache for evaluation results
         self._existing_allocations: dict[date, float] = {}
+        self._rng = random.Random()
 
     def optimize_tasks(
         self,
@@ -63,6 +67,11 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         """
         if not tasks:
             return OptimizeResult()
+
+        # Seed a local RNG per run so identical input + seed is reproducible
+        self._rng.seed(
+            params.seed if params.seed is not None else DEFAULT_OPTIMIZATION_SEED
+        )
 
         # Store existing allocations for use in evaluation
         self._existing_allocations = existing_allocations
@@ -118,7 +127,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
         for _ in range(self.NUM_SIMULATIONS):
             # Generate random ordering
-            random_order = random.sample(schedulable_tasks, len(schedulable_tasks))
+            random_order = self._rng.sample(schedulable_tasks, len(schedulable_tasks))
 
             # Skip duplicate orderings
             ordering_key = tuple(
