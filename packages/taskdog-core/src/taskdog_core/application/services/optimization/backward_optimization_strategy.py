@@ -91,7 +91,9 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
                 current_date -= timedelta(days=1)
                 continue
 
-            if current_date < params.start_date:
+            # Compare at day granularity: allocation is per-day, while start_date
+            # (defaults to now()) and deadline carry times of day (#964)
+            if current_date.date() < params.start_date.date():
                 return None
 
             date_obj = current_date.date()

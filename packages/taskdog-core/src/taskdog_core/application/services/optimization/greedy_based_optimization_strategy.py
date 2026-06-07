@@ -123,7 +123,9 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
                 current_date += timedelta(days=1)
                 continue
 
-            if effective_deadline and current_date > effective_deadline:
+            # Compare at day granularity: allocation is per-day, while start_date
+            # (defaults to now()) and deadline carry times of day (#964)
+            if effective_deadline and current_date.date() > effective_deadline.date():
                 for date_obj, hours in task_daily_allocations.items():
                     daily_allocations[date_obj] -= hours
                 return None

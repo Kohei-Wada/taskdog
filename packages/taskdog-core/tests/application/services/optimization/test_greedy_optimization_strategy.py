@@ -174,3 +174,26 @@ class TestGreedyOptimizationStrategy(BaseOptimizationStrategyTest):
             assert hours <= 6.0, (
                 f"Total hours on {date_str} ({hours}h) exceeds max_hours_per_day (6.0h)"
             )
+
+    def test_greedy_schedules_task_due_today_after_deadline_time(self):
+        """Test that a task due today is scheduled regardless of wall-clock time.
+
+        Allocation is day-granular, so a task with a deadline of today 18:00
+        must still be schedulable when the optimizer runs later the same day
+        (e.g. start_date defaulting to now() at 19:00). Regression test for #964.
+        """
+        task = self.create_task(
+            "Due Today",
+            estimated_duration=2.0,
+            deadline=datetime(2025, 10, 20, 18, 0, 0),
+        )
+
+        # Optimizer runs at 19:00 on the deadline day
+        result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 19, 0, 0))
+
+        assert len(result.successful_tasks) == 1
+        assert len(result.failed_tasks) == 0
+
+        updated_task = self.repository.get_by_id(task.id)
+        assert updated_task is not None
+        assert date(2025, 10, 20) in updated_task.daily_allocations
