@@ -22,12 +22,11 @@ from taskdog.constants.audit_log import (
     HEADER_AUDIT_CHANGES,
     HEADER_AUDIT_CLIENT,
     HEADER_AUDIT_OPERATION,
-    HEADER_AUDIT_RESOURCE,
     HEADER_AUDIT_STATUS,
     HEADER_AUDIT_TIMESTAMP,
     JUSTIFY_AUDIT_CHANGES,
 )
-from taskdog.constants.common import HEADER_ID, TABLE_HEADER_STYLE
+from taskdog.constants.common import HEADER_ID, HEADER_NAME, TABLE_HEADER_STYLE
 from taskdog.constants.formatting import format_table_title
 from taskdog.formatters.audit_log_formatter import compact_changes, truncate_error
 from taskdog.presenters.audit_log_presenter import AuditLogPresenter
@@ -185,9 +184,9 @@ def list_command(
         show_header=True,
         header_style=TABLE_HEADER_STYLE,
     )
-    table.add_column(HEADER_ID, style=COLUMN_AUDIT_ID_STYLE, width=AUDIT_ID_WIDTH)
     table.add_column(HEADER_AUDIT_TIMESTAMP, width=AUDIT_TIMESTAMP_WIDTH)
-    table.add_column(HEADER_AUDIT_RESOURCE)
+    table.add_column(HEADER_ID, style=COLUMN_AUDIT_ID_STYLE, width=AUDIT_ID_WIDTH)
+    table.add_column(HEADER_NAME)
     table.add_column(HEADER_AUDIT_OPERATION, width=AUDIT_OPERATION_WIDTH)
     table.add_column(
         HEADER_AUDIT_CHANGES,
@@ -205,8 +204,8 @@ def list_command(
         )
         status_label = "OK" if row.success else "FAILED"
         table.add_row(
-            str(row.id),
             row.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            str(row.id),
             _format_resource(row),
             row.operation,
             _format_changes(row),

@@ -6,10 +6,8 @@ from taskdog.constants.common import JustifyValue
 HEADER_AUDIT_TIMESTAMP = "Timestamp"
 HEADER_AUDIT_CLIENT = "Client"
 HEADER_AUDIT_OPERATION = "Operation"
-HEADER_AUDIT_RESOURCE = "Resource"
 HEADER_AUDIT_STATUS = "Status"
 HEADER_AUDIT_CHANGES = "Changes"
-HEADER_AUDIT_STATUS_SHORT = "St"
 
 # Audit Log Table Dimensions (CLI)
 AUDIT_ID_WIDTH = 6

@@ -14,7 +14,7 @@ from taskdog.constants.audit_log import (
     HEADER_AUDIT_CHANGES,
     HEADER_AUDIT_CLIENT,
     HEADER_AUDIT_OPERATION,
-    HEADER_AUDIT_STATUS_SHORT,
+    HEADER_AUDIT_STATUS,
     HEADER_AUDIT_TIMESTAMP,
     JUSTIFY_AUDIT_CHANGES,
     JUSTIFY_AUDIT_CLIENT,
@@ -97,7 +97,7 @@ def create_audit_log_table(
         Text(HEADER_AUDIT_CLIENT, justify=JUSTIFY_AUDIT_CLIENT), key="client"
     )
     table.add_column(
-        Text(HEADER_AUDIT_STATUS_SHORT, justify=JUSTIFY_AUDIT_STATUS), key="status"
+        Text(HEADER_AUDIT_STATUS, justify=JUSTIFY_AUDIT_STATUS), key="status"
     )
 
     for row in rows:
