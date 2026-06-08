@@ -28,7 +28,7 @@ class ExportCommandProvider(SimpleSingleCommandProvider):
     """Command provider for the main 'Export' command."""
 
     COMMAND_NAME = "Export"
-    COMMAND_HELP = "Export all tasks to file"
+    COMMAND_HELP = "Export tasks to file (respects show-archived toggle)"
     COMMAND_CALLBACK_NAME = "search_export"
 
 
