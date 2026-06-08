@@ -18,7 +18,7 @@ from taskdog.constants.audit_log import (
     HEADER_AUDIT_CHANGES,
     HEADER_AUDIT_CLIENT,
     HEADER_AUDIT_OPERATION,
-    HEADER_AUDIT_STATUS_SHORT,
+    HEADER_AUDIT_STATUS,
     HEADER_AUDIT_TIMESTAMP,
     JUSTIFY_AUDIT_CHANGES,
     JUSTIFY_AUDIT_CLIENT,
@@ -112,7 +112,7 @@ class AuditLogTable(DataTable, ViNavigationMixin):  # type: ignore[type-arg]
             Text(HEADER_AUDIT_CLIENT, justify=JUSTIFY_AUDIT_CLIENT), key="client"
         )
         self.add_column(
-            Text(HEADER_AUDIT_STATUS_SHORT, justify=JUSTIFY_AUDIT_STATUS),
+            Text(HEADER_AUDIT_STATUS, justify=JUSTIFY_AUDIT_STATUS),
             key="status",
             width=AUDIT_TUI_STATUS_WIDTH,
         )
