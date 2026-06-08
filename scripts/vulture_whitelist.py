@@ -22,3 +22,5 @@ VI_SCROLL_BINDINGS  # unused variable (packages/taskdog-ui/src/taskdog/tui/widge
 VI_SCROLL_ALL_BINDINGS  # unused variable (packages/taskdog-ui/src/taskdog/tui/widgets/vi_navigation_mixin.py:116)
 _.handle_bindings_clash  # Textual override called by the framework (packages/taskdog-ui/src/taskdog/tui/app.py)
 node  # Textual override signature param (packages/taskdog-ui/src/taskdog/tui/app.py)
+activity  # StatisticsPayload / StatisticsResponse field (used by API serialization)
+_.margin  # Textual widget styles attribute (PlotextPlot styling)
