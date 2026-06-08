@@ -204,3 +204,27 @@ class TestExportCommandExecute:
 
         command.notify_success.assert_called_once()
         assert "3 tasks" in command.notify_success.call_args[0][0]
+
+    @patch("taskdog.tui.commands.export.Path")
+    def test_respects_show_archived_state(self, mock_path: MagicMock) -> None:
+        """Test that export passes state.show_archived to list_tasks."""
+        mock_home = MagicMock()
+        mock_downloads = MagicMock()
+        mock_path.home.return_value = mock_home
+        mock_home.__truediv__.return_value = mock_downloads
+        mock_downloads.__truediv__.return_value = mock_downloads
+
+        mock_result = MagicMock()
+        mock_result.tasks = []
+        self.mock_context.api_client.list_tasks.return_value = mock_result
+        self.mock_context.state.show_archived = True
+
+        command = ExportCommand(self.mock_app, self.mock_context, format_key="json")
+        command.notify_success = MagicMock()
+
+        with patch("builtins.open", MagicMock()):
+            command.execute()
+
+        self.mock_context.api_client.list_tasks.assert_called_once_with(
+            include_archived=True,
+        )
