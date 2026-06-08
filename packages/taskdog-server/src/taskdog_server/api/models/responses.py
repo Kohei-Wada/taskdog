@@ -89,6 +89,8 @@ class TaskReadResponseBase(TaskFieldsBase):
 class TaskResponse(TaskReadResponseBase):
     """Response model for task row data (list views)."""
 
+    daily_allocations: dict[str, float] = Field(default_factory=dict)
+
 
 class TaskDetailResponse(TaskReadResponseBase):
     """Response model for detailed task view."""
