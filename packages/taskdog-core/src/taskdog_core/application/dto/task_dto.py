@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from taskdog_core.domain.entities.task import TaskStatus
 
@@ -76,6 +76,7 @@ class TaskRowDto(BaseModel):
     is_fixed: bool
     depends_on: list[int]
     tags: list[str]
+    daily_allocations: dict[date, float] = Field(default_factory=dict)
     is_archived: bool
     is_finished: bool
     created_at: datetime
@@ -113,6 +114,7 @@ class TaskRowDto(BaseModel):
             is_fixed=task.is_fixed,
             depends_on=task.depends_on,
             tags=task.tags,
+            daily_allocations=task.daily_allocations,
             is_archived=task.is_archived,
             is_finished=task.is_finished,
             created_at=task.created_at,
@@ -144,6 +146,9 @@ class TaskRowDto(BaseModel):
             "is_fixed": self.is_fixed,
             "depends_on": self.depends_on,
             "tags": self.tags,
+            "daily_allocations": {
+                k.isoformat(): v for k, v in self.daily_allocations.items()
+            },
             "is_archived": self.is_archived,
             "is_finished": self.is_finished,
             "created_at": self.created_at.isoformat(),

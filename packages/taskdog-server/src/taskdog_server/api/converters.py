@@ -87,6 +87,7 @@ def convert_to_task_list_response(dto: TaskListOutput) -> TaskListResponse:
             depends_on=task.depends_on,
             tags=task.tags,
             is_fixed=task.is_fixed,
+            daily_allocations=format_date_dict(task.daily_allocations),
             is_archived=task.is_archived,
             is_finished=task.is_finished,
             has_notes=task.id in task_ids_with_notes,
