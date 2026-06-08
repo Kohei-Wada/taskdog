@@ -18,11 +18,11 @@ from taskdog_core.application.dto.task_dto import TaskSummaryDto
 # -- TypedDicts mirroring the server's JSON response shape ----------------
 
 
-class TaskSummaryPayload(TypedDict, total=False):
+class TaskSummaryPayload(TypedDict):
     id: int
     name: str
-    estimated_duration: float | None
-    actual_duration_hours: float | None
+    estimated_duration: NotRequired[float | None]
+    actual_duration_hours: NotRequired[float | None]
 
 
 class CompletionPayload(TypedDict):
@@ -34,39 +34,39 @@ class CompletionPayload(TypedDict):
     completion_rate: float
 
 
-class TimePayload(TypedDict, total=False):
+class TimePayload(TypedDict):
     total_work_hours: float
-    average_work_hours: float | None
-    median_work_hours: float
-    longest_task: TaskSummaryPayload | None
-    shortest_task: TaskSummaryPayload | None
-    tasks_with_time_tracking: int
+    average_work_hours: NotRequired[float | None]
+    median_work_hours: NotRequired[float]
+    longest_task: NotRequired[TaskSummaryPayload | None]
+    shortest_task: NotRequired[TaskSummaryPayload | None]
+    tasks_with_time_tracking: NotRequired[int]
 
 
-class EstimationPayload(TypedDict, total=False):
+class EstimationPayload(TypedDict):
     total_tasks_with_estimation: int
-    accuracy_rate: float
-    over_estimated_count: int
-    under_estimated_count: int
-    exact_count: int
-    best_estimated_tasks: list[TaskSummaryPayload]
-    worst_estimated_tasks: list[TaskSummaryPayload]
+    accuracy_rate: NotRequired[float]
+    over_estimated_count: NotRequired[int]
+    under_estimated_count: NotRequired[int]
+    exact_count: NotRequired[int]
+    best_estimated_tasks: NotRequired[list[TaskSummaryPayload]]
+    worst_estimated_tasks: NotRequired[list[TaskSummaryPayload]]
 
 
-class DeadlinePayload(TypedDict, total=False):
+class DeadlinePayload(TypedDict):
     total_tasks_with_deadline: int
     met_deadline_count: int
     missed_deadline_count: int
     compliance_rate: float
-    average_delay_days: float
+    average_delay_days: NotRequired[float]
 
 
-class PriorityPayload(TypedDict, total=False):
+class PriorityPayload(TypedDict):
     distribution: dict[str, int]
-    high_priority_count: int
-    medium_priority_count: int
-    low_priority_count: int
-    high_priority_completion_rate: float
+    high_priority_count: NotRequired[int]
+    medium_priority_count: NotRequired[int]
+    low_priority_count: NotRequired[int]
+    high_priority_completion_rate: NotRequired[float]
 
 
 class TrendPayload(TypedDict, total=False):
