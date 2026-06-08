@@ -123,7 +123,7 @@ class TestJsonTaskExporter:
             is_archived=False,
             is_finished=False,
         )
-        exporter = JsonTaskExporter()
+        exporter = JsonTaskExporter(field_list=["name", "tags"])
 
         result = exporter.export([task_with_unicode])
 
@@ -147,7 +147,9 @@ class TestJsonTaskExporter:
 
     def test_export_handles_numeric_fields(self) -> None:
         """Test export preserves numeric fields correctly."""
-        exporter = JsonTaskExporter()
+        exporter = JsonTaskExporter(
+            field_list=["priority", "estimated_duration", "actual_duration_hours"]
+        )
 
         result = exporter.export([self.task2])
 
@@ -159,7 +161,7 @@ class TestJsonTaskExporter:
 
     def test_export_handles_list_fields(self) -> None:
         """Test export preserves list fields like tags and depends_on."""
-        exporter = JsonTaskExporter()
+        exporter = JsonTaskExporter(field_list=["tags", "depends_on"])
 
         result = exporter.export([self.task2])
 
@@ -222,7 +224,9 @@ class TestJsonTaskExporter:
 
     def test_export_preserves_boolean_fields(self) -> None:
         """Test export preserves boolean fields correctly."""
-        exporter = JsonTaskExporter()
+        exporter = JsonTaskExporter(
+            field_list=["is_fixed", "is_finished", "is_archived"]
+        )
 
         result = exporter.export([self.task2])
 
@@ -234,7 +238,9 @@ class TestJsonTaskExporter:
 
     def test_export_preserves_float_fields(self) -> None:
         """Test export preserves float fields with correct precision."""
-        exporter = JsonTaskExporter()
+        exporter = JsonTaskExporter(
+            field_list=["estimated_duration", "actual_duration_hours"]
+        )
 
         result = exporter.export([self.task2])
 
@@ -267,8 +273,8 @@ class TestJsonTaskExporter:
         ],
     )
     def test_export_with_all_fields(self, field) -> None:
-        """Test export with all available fields."""
-        exporter = JsonTaskExporter()
+        """Test export emits each TaskRowDto field when requested explicitly."""
+        exporter = JsonTaskExporter(field_list=[field])
 
         result = exporter.export([self.task2])
 
@@ -279,7 +285,7 @@ class TestJsonTaskExporter:
 
     def test_export_empty_collections(self) -> None:
         """Test export handles empty collections correctly."""
-        exporter = JsonTaskExporter()
+        exporter = JsonTaskExporter(field_list=["depends_on", "tags"])
 
         result = exporter.export([self.task1])
 

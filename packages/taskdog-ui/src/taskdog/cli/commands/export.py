@@ -21,19 +21,28 @@ from taskdog.exporters import (
 )
 from taskdog.shared.click_types.field_list import FieldList
 
-# Valid fields for export
+# Valid fields for export. Mirrors the keys produced by
+# TaskRowDto.to_dict() so every format exposes the same field surface.
 VALID_FIELDS = {
     "id",
     "name",
     "priority",
     "status",
     "created_at",
+    "updated_at",
     "planned_start",
     "planned_end",
     "deadline",
     "actual_start",
     "actual_end",
     "estimated_duration",
+    "actual_duration_hours",
+    "is_fixed",
+    "is_archived",
+    "is_finished",
+    "has_notes",
+    "depends_on",
+    "tags",
     "daily_allocations",
 }
 
@@ -60,8 +69,10 @@ VALID_FIELDS = {
     "-f",
     type=FieldList(valid_fields=VALID_FIELDS),
     help="Comma-separated list of fields to export (e.g., 'id,name,priority,status'). "
-    "Available: id, name, priority, status, created_at, planned_start, planned_end, "
-    "deadline, actual_start, actual_end, estimated_duration, daily_allocations",
+    "Available: id, name, priority, status, created_at, updated_at, planned_start, "
+    "planned_end, deadline, actual_start, actual_end, estimated_duration, "
+    "actual_duration_hours, is_fixed, is_archived, is_finished, has_notes, "
+    "depends_on, tags, daily_allocations",
 )
 @click.option(
     "--tag",
