@@ -320,17 +320,20 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
 
     def action_vi_end(self) -> None:
         """Move cursor to bottom (G key)."""
-        self._safe_move_cursor(row=self.row_count - 1)
+        if self.row_count > 0:
+            self._safe_move_cursor(row=self.row_count - 1)
 
     def action_vi_page_down(self) -> None:
         """Move cursor down by half page (Ctrl+d)."""
-        new_row = min(self.cursor_row + PAGE_SCROLL_SIZE, self.row_count - 1)
-        self._safe_move_cursor(row=new_row)
+        if self.row_count > 0:
+            new_row = min(self.cursor_row + PAGE_SCROLL_SIZE, self.row_count - 1)
+            self._safe_move_cursor(row=new_row)
 
     def action_vi_page_up(self) -> None:
         """Move cursor up by half page (Ctrl+u)."""
-        new_row = max(self.cursor_row - PAGE_SCROLL_SIZE, 0)
-        self._safe_move_cursor(row=new_row)
+        if self.row_count > 0:
+            new_row = max(self.cursor_row - PAGE_SCROLL_SIZE, 0)
+            self._safe_move_cursor(row=new_row)
 
     def action_vi_scroll_left(self) -> None:
         """Scroll table left (h key)."""

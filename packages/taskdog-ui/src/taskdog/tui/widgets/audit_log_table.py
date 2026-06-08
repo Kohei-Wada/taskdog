@@ -70,15 +70,18 @@ class AuditLogTable(DataTable, ViNavigationMixin):  # type: ignore[type-arg]
         self._safe_move_cursor(row=0)
 
     def action_vi_end(self) -> None:
-        self._safe_move_cursor(row=self.row_count - 1)
+        if self.row_count > 0:
+            self._safe_move_cursor(row=self.row_count - 1)
 
     def action_vi_page_down(self) -> None:
-        new_row = min(self.cursor_row + PAGE_SCROLL_SIZE, self.row_count - 1)
-        self._safe_move_cursor(row=new_row)
+        if self.row_count > 0:
+            new_row = min(self.cursor_row + PAGE_SCROLL_SIZE, self.row_count - 1)
+            self._safe_move_cursor(row=new_row)
 
     def action_vi_page_up(self) -> None:
-        new_row = max(self.cursor_row - PAGE_SCROLL_SIZE, 0)
-        self._safe_move_cursor(row=new_row)
+        if self.row_count > 0:
+            new_row = max(self.cursor_row - PAGE_SCROLL_SIZE, 0)
+            self._safe_move_cursor(row=new_row)
 
     def on_mount(self) -> None:
         """Set up table columns."""
