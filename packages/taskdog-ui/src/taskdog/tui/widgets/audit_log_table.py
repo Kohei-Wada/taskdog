@@ -29,62 +29,56 @@ from taskdog.constants.audit_log import (
     JUSTIFY_AUDIT_TIMESTAMP,
 )
 from taskdog.constants.common import HEADER_ID, HEADER_NAME
+from taskdog.constants.task_table import PAGE_SCROLL_SIZE
 from taskdog.tui.widgets.audit_log_entry_builder import (
     build_changes_text,
     build_status_text,
 )
-from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 from taskdog.view_models.audit_log_view_model import AuditLogRowViewModel
 
 
-class AuditLogTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-arg]
+class AuditLogTable(DataTable, ViNavigationMixin):  # type: ignore[type-arg]
     """A DataTable widget for displaying audit log entries.
 
     Features:
     - Full-width columns: Timestamp, ID, Name, Operation, Changes, Client, Status
-    - Vi-style keyboard navigation (j/k/g/G/Ctrl+d/Ctrl+u)
+    - Vi-style keyboard navigation aligned with TaskTable (j/k/g/G/Ctrl+d/Ctrl+u)
+    - Row cursor for navigation
     - Error rows highlighted in red
     """
 
     BINDINGS: ClassVar = [
-        Binding("j", "scroll_down", "Down", show=False),
-        Binding("k", "scroll_up", "Up", show=False),
-        Binding("g", "goto_top", "Top", show=False),
-        Binding("G", "goto_bottom", "Bottom", show=False),
-        Binding("ctrl+d", "page_down", "Page Down", show=False),
-        Binding("ctrl+u", "page_up", "Page Up", show=False),
+        Binding("j", "cursor_down", "Down", show=False),
+        Binding("k", "cursor_up", "Up", show=False),
+        Binding("g", "vi_home", "Top", show=False),
+        Binding("G", "vi_end", "Bottom", show=False),
+        *ViNavigationMixin.VI_PAGE_BINDINGS,
     ]
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the audit log table."""
         super().__init__(**kwargs)
-        self.cursor_type = "none"
+        self.cursor_type = "row"
         self.zebra_stripes = True
 
-    def action_scroll_down(self) -> None:
-        """Scroll down one line."""
-        self.scroll_down(animate=False)
+    def _safe_move_cursor(self, row: int) -> None:
+        if self.row_count > 0:
+            self.move_cursor(row=row)
 
-    def action_scroll_up(self) -> None:
-        """Scroll up one line."""
-        self.scroll_up(animate=False)
+    def action_vi_home(self) -> None:
+        self._safe_move_cursor(row=0)
 
-    def action_goto_top(self) -> None:
-        """Scroll to the top of the table."""
-        self.scroll_home(animate=False)
+    def action_vi_end(self) -> None:
+        self._safe_move_cursor(row=self.row_count - 1)
 
-    def action_goto_bottom(self) -> None:
-        """Scroll to the bottom of the table."""
-        self.scroll_end(animate=False)
+    def action_vi_page_down(self) -> None:
+        new_row = min(self.cursor_row + PAGE_SCROLL_SIZE, self.row_count - 1)
+        self._safe_move_cursor(row=new_row)
 
-    def action_page_down(self) -> None:
-        """Scroll down by half a page without animation."""
-        self.scroll_page_down(animate=False)
-
-    def action_page_up(self) -> None:
-        """Scroll up by half a page without animation."""
-        self.scroll_page_up(animate=False)
+    def action_vi_page_up(self) -> None:
+        new_row = max(self.cursor_row - PAGE_SCROLL_SIZE, 0)
+        self._safe_move_cursor(row=new_row)
 
     def on_mount(self) -> None:
         """Set up table columns."""
@@ -137,10 +131,9 @@ class AuditLogTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[ty
                     str(row.resource_id) if row.resource_id else "", style=style
                 )
 
-                # Resource name (truncated)
                 if row.resource_name:
                     name = (
-                        row.resource_name[:AUDIT_TUI_NAME_WIDTH] + "\u2026"
+                        row.resource_name[:AUDIT_TUI_NAME_WIDTH] + "…"
                         if len(row.resource_name) > AUDIT_TUI_NAME_WIDTH
                         else row.resource_name
                     )
