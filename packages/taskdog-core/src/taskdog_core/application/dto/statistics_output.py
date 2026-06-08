@@ -67,6 +67,7 @@ class EstimationAccuracyStatistics(BaseModel):
     exact_count: int
     best_estimated_tasks: list[TaskSummaryDto]
     worst_estimated_tasks: list[TaskSummaryDto]
+    estimation_pairs: list[tuple[float, float]] = []
 
 
 class DeadlineComplianceStatistics(BaseModel):
@@ -121,6 +122,22 @@ class TrendStatistics(BaseModel):
     monthly_completion_trend: dict[str, int]
 
 
+class ActivityPatternStatistics(BaseModel):
+    """Activity pattern statistics based on task completion times.
+
+    Attributes:
+        hourly_completions: Completion count per hour (0-23)
+        daily_completions: Completion count per day of week (0=Mon, 6=Sun)
+        heatmap: 7x24 matrix of completion counts (day_of_week x hour)
+        total_completed_with_time: Number of tasks with completion time data
+    """
+
+    hourly_completions: dict[int, int]
+    daily_completions: dict[int, int]
+    heatmap: dict[int, dict[int, int]]
+    total_completed_with_time: int
+
+
 class StatisticsOutput(BaseModel):
     """Complete statistics result.
 
@@ -131,6 +148,7 @@ class StatisticsOutput(BaseModel):
         deadline_stats: Deadline compliance statistics (None if no deadline data)
         priority_stats: Priority distribution statistics
         trend_stats: Trend statistics (None if period is not 'all')
+        activity_stats: Activity pattern statistics (None if no completion time data)
     """
 
     task_stats: TaskStatistics
@@ -139,6 +157,7 @@ class StatisticsOutput(BaseModel):
     deadline_stats: DeadlineComplianceStatistics | None
     priority_stats: PriorityDistributionStatistics
     trend_stats: TrendStatistics | None
+    activity_stats: ActivityPatternStatistics | None = None
 
 
 @dataclass

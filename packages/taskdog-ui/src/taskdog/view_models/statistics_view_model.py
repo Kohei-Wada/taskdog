@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from taskdog.view_models.base import BaseViewModel
 from taskdog_core.application.dto.statistics_output import (
+    ActivityPatternStatistics,
     DeadlineComplianceStatistics,
     PriorityDistributionStatistics,
     TaskStatistics,
@@ -78,6 +79,7 @@ class EstimationAccuracyStatisticsViewModel(BaseViewModel):
     exact_count: int
     best_estimated_tasks: list[TaskSummaryViewModel]
     worst_estimated_tasks: list[TaskSummaryViewModel]
+    estimation_pairs: list[tuple[float, float]]
 
 
 @dataclass(frozen=True)
@@ -106,3 +108,4 @@ class StatisticsViewModel(BaseViewModel):
     deadline_stats: DeadlineComplianceStatistics | None
     priority_stats: PriorityDistributionStatistics
     trend_stats: TrendStatistics | None
+    activity_stats: ActivityPatternStatistics | None

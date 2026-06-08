@@ -4,6 +4,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 from taskdog_core.application.dto.statistics_output import (
+    ActivityPatternStatistics,
     DeadlineComplianceStatistics,
     EstimationAccuracyStatistics,
     PriorityDistributionStatistics,
@@ -56,6 +57,8 @@ class TaskStatisticsCalculator:
             self._calculate_trends(filtered_tasks) if period == "all" else None
         )
 
+        activity_stats = self._calculate_activity_patterns(filtered_tasks)
+
         return StatisticsOutput(
             task_stats=task_stats,
             time_stats=time_stats,
@@ -63,6 +66,7 @@ class TaskStatisticsCalculator:
             deadline_stats=deadline_stats,
             priority_stats=priority_stats,
             trend_stats=trend_stats,
+            activity_stats=activity_stats,
         )
 
     def _filter_by_period(self, tasks: list[Task], period: str) -> list[Task]:
@@ -245,6 +249,12 @@ class TaskStatisticsCalculator:
         best_tasks_dto = [self._to_summary_dto(t) for t in best_tasks]
         worst_tasks_dto = [self._to_summary_dto(t) for t in worst_tasks]
 
+        pairs = [
+            (t.estimated_duration, t.actual_duration_hours)
+            for t in estimated_tasks
+            if t.estimated_duration is not None and t.actual_duration_hours is not None
+        ]
+
         return EstimationAccuracyStatistics(
             total_tasks_with_estimation=len(estimated_tasks),
             accuracy_rate=round(avg_accuracy, 2),
@@ -253,6 +263,7 @@ class TaskStatisticsCalculator:
             exact_count=exact,
             best_estimated_tasks=best_tasks_dto,
             worst_estimated_tasks=worst_tasks_dto,
+            estimation_pairs=pairs,
         )
 
     def _calculate_deadline_compliance(
@@ -362,6 +373,33 @@ class TaskStatisticsCalculator:
         if task.id is None:
             raise ValueError("Task must have an ID")
         return TaskSummaryDto(id=task.id, name=task.name)
+
+    def _calculate_activity_patterns(
+        self, tasks: list[Task]
+    ) -> ActivityPatternStatistics | None:
+        tasks_with_end = [t for t in tasks if t.actual_end and t.is_finished]
+
+        if not tasks_with_end:
+            return None
+
+        hourly: dict[int, int] = defaultdict(int)
+        daily: dict[int, int] = defaultdict(int)
+        heatmap: dict[int, dict[int, int]] = {d: defaultdict(int) for d in range(7)}
+
+        for task in tasks_with_end:
+            assert task.actual_end is not None
+            hour = task.actual_end.hour
+            day = task.actual_end.weekday()
+            hourly[hour] += 1
+            daily[day] += 1
+            heatmap[day][hour] += 1
+
+        return ActivityPatternStatistics(
+            hourly_completions=dict(hourly),
+            daily_completions=dict(daily),
+            heatmap={d: dict(h) for d, h in heatmap.items()},
+            total_completed_with_time=len(tasks_with_end),
+        )
 
     def _calculate_trends(self, tasks: list[Task]) -> TrendStatistics:
         """Calculate trend statistics over time.

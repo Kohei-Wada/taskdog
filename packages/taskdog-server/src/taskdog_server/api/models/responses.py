@@ -216,6 +216,7 @@ class EstimationStatistics(BaseModel):
     exact_count: int = 0
     best_estimated_tasks: list[TaskSummaryResponse] = Field(default_factory=list)
     worst_estimated_tasks: list[TaskSummaryResponse] = Field(default_factory=list)
+    estimation_pairs: list[tuple[float, float]] = Field(default_factory=list)
 
 
 class DeadlineStatistics(BaseModel):
@@ -247,6 +248,15 @@ class TrendData(BaseModel):
     monthly_completion_trend: dict[str, int] = Field(default_factory=dict)
 
 
+class ActivityPattern(BaseModel):
+    """Activity pattern statistics based on task completion times."""
+
+    hourly_completions: dict[int, int]
+    daily_completions: dict[int, int]
+    heatmap: dict[int, dict[int, int]]
+    total_completed_with_time: int
+
+
 class StatisticsResponse(BaseModel):
     """Response model for task statistics."""
 
@@ -256,6 +266,7 @@ class StatisticsResponse(BaseModel):
     deadline: DeadlineStatistics | None = None
     priority: PriorityDistribution
     trends: TrendData | None = None
+    activity: ActivityPattern | None = None
 
 
 class TagStatisticsItem(BaseModel):

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import NotRequired, TypedDict
 
 from taskdog_core.application.dto.statistics_output import (
+    ActivityPatternStatistics,
     DeadlineComplianceStatistics,
     EstimationAccuracyStatistics,
     PriorityDistributionStatistics,
@@ -51,6 +52,7 @@ class EstimationPayload(TypedDict):
     exact_count: NotRequired[int]
     best_estimated_tasks: NotRequired[list[TaskSummaryPayload]]
     worst_estimated_tasks: NotRequired[list[TaskSummaryPayload]]
+    estimation_pairs: NotRequired[list[list[float]]]
 
 
 class DeadlinePayload(TypedDict):
@@ -76,6 +78,13 @@ class TrendPayload(TypedDict, total=False):
     monthly_completion_trend: dict[str, int]
 
 
+class ActivityPayload(TypedDict):
+    hourly_completions: dict[str, int]
+    daily_completions: dict[str, int]
+    heatmap: dict[str, dict[str, int]]
+    total_completed_with_time: int
+
+
 class StatisticsPayload(TypedDict):
     completion: CompletionPayload
     time: NotRequired[TimePayload | None]
@@ -83,6 +92,7 @@ class StatisticsPayload(TypedDict):
     deadline: NotRequired[DeadlinePayload | None]
     priority: PriorityPayload
     trends: NotRequired[TrendPayload | None]
+    activity: NotRequired[ActivityPayload | None]
 
 
 # -- Converters -----------------------------------------------------------
@@ -150,6 +160,7 @@ def _parse_estimation_statistics(
         worst_estimated_tasks=_parse_task_summary_list(
             data.get("worst_estimated_tasks")
         ),
+        estimation_pairs=[(p[0], p[1]) for p in data.get("estimation_pairs", [])],
     )
 
 
@@ -185,6 +196,18 @@ def _parse_trend_statistics(data: TrendPayload) -> TrendStatistics:
     )
 
 
+def _parse_activity_statistics(data: ActivityPayload) -> ActivityPatternStatistics:
+    return ActivityPatternStatistics(
+        hourly_completions={int(k): v for k, v in data["hourly_completions"].items()},
+        daily_completions={int(k): v for k, v in data["daily_completions"].items()},
+        heatmap={
+            int(d): {int(h): c for h, c in hours.items()}
+            for d, hours in data["heatmap"].items()
+        },
+        total_completed_with_time=data["total_completed_with_time"],
+    )
+
+
 def convert_to_statistics_output(data: StatisticsPayload) -> StatisticsOutput:
     """Convert API response to StatisticsOutput."""
     task_stats = _parse_task_statistics(data["completion"])
@@ -194,6 +217,7 @@ def convert_to_statistics_output(data: StatisticsPayload) -> StatisticsOutput:
     raw_estimation = data.get("estimation")
     raw_deadline = data.get("deadline")
     raw_trends = data.get("trends")
+    raw_activity = data.get("activity")
 
     return StatisticsOutput(
         task_stats=task_stats,
@@ -206,4 +230,7 @@ def convert_to_statistics_output(data: StatisticsPayload) -> StatisticsOutput:
         ),
         priority_stats=priority_stats,
         trend_stats=_parse_trend_statistics(raw_trends) if raw_trends else None,
+        activity_stats=(
+            _parse_activity_statistics(raw_activity) if raw_activity else None
+        ),
     )

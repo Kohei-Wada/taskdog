@@ -58,6 +58,7 @@ class StatisticsPresenter:
             deadline_stats=statistics_result.deadline_stats,
             priority_stats=statistics_result.priority_stats,
             trend_stats=statistics_result.trend_stats,
+            activity_stats=statistics_result.activity_stats,
         )
 
     def _map_time_statistics(
@@ -118,6 +119,7 @@ class StatisticsPresenter:
             exact_count=estimation_stats.exact_count,
             best_estimated_tasks=best_estimated_tasks_vm,
             worst_estimated_tasks=worst_estimated_tasks_vm,
+            estimation_pairs=estimation_stats.estimation_pairs,
         )
 
     def _map_task_to_summary(self, task: TaskSummaryDto) -> TaskSummaryViewModel:

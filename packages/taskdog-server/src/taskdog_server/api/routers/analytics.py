@@ -26,6 +26,7 @@ from taskdog_server.api.dependencies import (
 )
 from taskdog_server.api.models.requests import OptimizeScheduleRequest
 from taskdog_server.api.models.responses import (
+    ActivityPattern,
     CompletionStatistics,
     DeadlineStatistics,
     EstimationStatistics,
@@ -138,6 +139,7 @@ async def get_statistics(
                     worst_estimated_tasks=to_task_summary_list(
                         result.estimation_stats.worst_estimated_tasks
                     ),
+                    estimation_pairs=result.estimation_stats.estimation_pairs,
                 )
                 if result.estimation_stats
                 else None
@@ -168,6 +170,16 @@ async def get_statistics(
                     monthly_completion_trend=result.trend_stats.monthly_completion_trend,
                 )
                 if result.trend_stats
+                else None
+            ),
+            activity=(
+                ActivityPattern(
+                    hourly_completions=result.activity_stats.hourly_completions,
+                    daily_completions=result.activity_stats.daily_completions,
+                    heatmap=result.activity_stats.heatmap,
+                    total_completed_with_time=result.activity_stats.total_completed_with_time,
+                )
+                if result.activity_stats
                 else None
             ),
         )
