@@ -7,35 +7,13 @@ from taskdog.exporters.task_exporter import TaskExporter
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog_core.application.dto.task_dto import TaskRowDto
 
-# Default fields for Markdown table export when no specific fields are requested
-DEFAULT_MARKDOWN_FIELDS = [
-    "id",
-    "name",
-    "priority",
-    "status",
-    "deadline",
-    "planned_start",
-    "planned_end",
-    "estimated_duration",
-]
-
 
 class MarkdownTableExporter(TaskExporter):
     """Exports tasks to Markdown table format."""
 
     def export(self, tasks: list[TaskRowDto]) -> str:
-        """Export tasks to Markdown table string.
-
-        Args:
-            tasks: List of task DTOs to export
-
-        Returns:
-            Markdown table string representation of tasks
-        """
-        # Determine fields to export
-        fields = self.field_list or DEFAULT_MARKDOWN_FIELDS
-
-        # Create markdown table
+        """Export tasks to a Markdown table string."""
+        fields = self.field_list
         lines = []
 
         # Header row

@@ -85,15 +85,15 @@ class TestCsvTaskExporter:
         assert "status" in fieldnames
 
     def test_export_uses_default_fields_when_not_specified(self) -> None:
-        """Test export uses DEFAULT_CSV_FIELDS when no fields specified."""
-        from taskdog.exporters.csv_task_exporter import DEFAULT_CSV_FIELDS
+        """Test export uses shared DEFAULT_EXPORT_FIELDS when no fields specified."""
+        from taskdog.exporters.task_exporter import DEFAULT_EXPORT_FIELDS
 
         exporter = CsvTaskExporter()
 
         result = exporter.export([self.task1])
 
         reader = csv.DictReader(io.StringIO(result))
-        assert list(reader.fieldnames) == list(DEFAULT_CSV_FIELDS)
+        assert list(reader.fieldnames) == list(DEFAULT_EXPORT_FIELDS)
 
     def test_export_uses_specified_fields(self) -> None:
         """Test export uses custom field list when provided."""
