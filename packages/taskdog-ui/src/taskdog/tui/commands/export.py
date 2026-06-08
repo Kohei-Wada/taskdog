@@ -50,8 +50,9 @@ class ExportCommand(TUICommandBase):
     def execute(self) -> None:
         """Execute the export command."""
         try:
-            # Get all tasks (no filtering)
-            result = self.context.api_client.list_tasks()
+            result = self.context.api_client.list_tasks(
+                include_archived=self.context.state.show_archived,
+            )
             tasks = result.tasks
 
             # Lookup format configuration
