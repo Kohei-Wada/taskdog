@@ -180,7 +180,7 @@ else ifeq ($(PLATFORM),macos)
 	-rm -f ~/Library/LaunchAgents/com.github.kohei-wada.taskdog-server.plist
 endif
 	@echo "Uninstalling taskdog commands..."
-	-uv tool uninstall taskdog 2>/dev/null || true
+	-uv tool uninstall taskdog-ui 2>/dev/null || true
 	-uv tool uninstall taskdog-server 2>/dev/null || true
 	-uv tool uninstall taskdog-mcp 2>/dev/null || true
 	@echo "✓ Uninstalled successfully!"
