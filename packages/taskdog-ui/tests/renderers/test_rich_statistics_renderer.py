@@ -50,6 +50,7 @@ class TestRichStatisticsRenderer:
             estimation_stats=None,
             deadline_stats=None,
             trend_stats=None,
+            activity_stats=None,
         )
 
     def test_render_all_sections(self):
@@ -126,6 +127,7 @@ class TestRichStatisticsRenderer:
             estimation_stats=None,
             deadline_stats=None,
             trend_stats=None,
+            activity_stats=None,
         )
 
         # Execute
@@ -164,6 +166,7 @@ class TestRichStatisticsRenderer:
             estimation_stats=None,
             deadline_stats=None,
             trend_stats=None,
+            activity_stats=None,
         )
 
         # Execute
@@ -214,9 +217,11 @@ class TestRichStatisticsRenderer:
                         actual_duration_hours=10.0,
                     )
                 ],
+                estimation_pairs=[(5.0, 5.0), (2.0, 10.0)],
             ),
             deadline_stats=None,
             trend_stats=None,
+            activity_stats=None,
         )
 
         # Execute
@@ -254,6 +259,7 @@ class TestRichStatisticsRenderer:
                 average_delay_days=2.0,
             ),
             trend_stats=None,
+            activity_stats=None,
         )
 
         # Execute
@@ -290,6 +296,7 @@ class TestRichStatisticsRenderer:
                 weekly_completion_trend={},
                 monthly_completion_trend={"2025-01": 5, "2025-02": 7},
             ),
+            activity_stats=None,
         )
 
         # Execute

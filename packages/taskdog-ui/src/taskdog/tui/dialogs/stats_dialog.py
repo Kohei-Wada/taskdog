@@ -9,6 +9,7 @@ from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.css.query import NoMatches
 from textual.widgets import Label, Static, TabbedContent, TabPane, Tabs
+from textual_plotext import PlotextPlot
 
 from taskdog.presenters.statistics_presenter import StatisticsPresenter
 from taskdog.tui.dialogs.base_dialog import BaseModalDialog
@@ -17,11 +18,14 @@ from taskdog.view_models.statistics_view_model import (
     StatisticsViewModel,
 )
 
+_DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
 # Mapping from tab pane ID to its VerticalScroll child ID
 _TAB_SCROLL_MAP: dict[str, str] = {
     "tab-all": "stats-all-scroll",
     "tab-7d": "stats-7d-scroll",
     "tab-30d": "stats-30d-scroll",
+    "tab-activity": "stats-activity-scroll",
 }
 
 # Mapping from tab pane ID to API period parameter
@@ -116,6 +120,17 @@ class StatsDialog(BaseModalDialog[None], ViNavigationMixin):
                         id="stats-30d-placeholder",
                     )
 
+                with (
+                    TabPane("Activity", id="tab-activity"),
+                    VerticalScroll(
+                        id="stats-activity-scroll", classes="stats-tab-scroll"
+                    ),
+                ):
+                    yield Static(
+                        "[dim]Select this tab to load activity graphs...[/dim]",
+                        id="stats-activity-placeholder",
+                    )
+
     def on_mount(self) -> None:
         """Load the initial tab (All) on mount."""
         self._load_period("tab-all")
@@ -125,7 +140,9 @@ class StatsDialog(BaseModalDialog[None], ViNavigationMixin):
     ) -> None:
         """Handle tab activation to lazy-load statistics."""
         pane = event.tabbed_content.active
-        if pane in _TAB_PERIOD_MAP and not self._loaded_periods.get(pane):
+        if pane == "tab-activity" and not self._loaded_periods.get(pane):
+            self._load_activity()
+        elif pane in _TAB_PERIOD_MAP and not self._loaded_periods.get(pane):
             self._load_period(pane)
 
     def _load_period(self, tab_id: str) -> None:
@@ -423,6 +440,156 @@ class StatsDialog(BaseModalDialog[None], ViNavigationMixin):
             Label("Completion Trends", classes="stats-section-title"),
             Vertical(*rows, classes="stats-section"),
         ]
+
+    # ── Activity tab ────────────────────────────────────────────────────
+
+    def _load_activity(self) -> None:
+        if self._loaded_periods.get("tab-activity"):
+            return
+        self._loaded_periods["tab-activity"] = True
+        self.app.run_worker(self._fetch_activity(), exclusive=False)
+
+    async def _fetch_activity(self) -> None:
+        try:
+            result = await asyncio.to_thread(
+                self._api_client.calculate_statistics,
+                period="all",
+            )
+            view_model = StatisticsPresenter().present(result)
+        except Exception as e:
+            self._loaded_periods["tab-activity"] = False
+            self.notify(f"Failed to load activity data: {e}", severity="error")
+            return
+
+        try:
+            placeholder = self.query_one("#stats-activity-placeholder", Static)
+            placeholder.remove()
+        except NoMatches:
+            pass
+
+        try:
+            scroll = self.query_one("#stats-activity-scroll", VerticalScroll)
+        except NoMatches:
+            return
+
+        if not view_model.activity_stats:
+            scroll.mount(
+                Static("[dim]No completed tasks with time data available.[/dim]")
+            )
+            return
+
+        widgets = self._build_activity_widgets(view_model)
+        scroll.mount(*widgets)
+
+    def _build_activity_widgets(
+        self,
+        view_model: StatisticsViewModel,
+    ) -> list[Static | Label | PlotextPlot]:
+        stats = view_model.activity_stats
+        trend_stats = view_model.trend_stats
+        assert stats is not None
+        widgets: list[Static | Label | PlotextPlot] = []
+
+        widgets.append(
+            Label(
+                f"Activity Patterns ({stats.total_completed_with_time} tasks)",
+                classes="stats-section-title",
+            )
+        )
+
+        # Hourly completions line chart
+        hourly_plot = PlotextPlot()
+        hourly_plot.styles.height = 20
+        hourly_plot.styles.margin = (0, 1, 1, 1)
+
+        def setup_hourly(plot: PlotextPlot) -> None:
+            plt = plot.plt
+            plt.clear_figure()
+            hours = list(range(24))
+            counts = [stats.hourly_completions.get(h, 0) for h in hours]
+            plt.plot(hours, counts, marker="braille")
+            plt.title("Completions by Hour")
+            plt.xlabel("Hour")
+            plt.ylabel("Tasks")
+            plt.xticks([float(h) for h in hours], [str(h) for h in hours])
+
+        hourly_plot.call_after_refresh(lambda: setup_hourly(hourly_plot))
+        widgets.append(hourly_plot)
+
+        # Daily completions line chart
+        daily_plot = PlotextPlot()
+        daily_plot.styles.height = 17
+        daily_plot.styles.margin = (0, 1, 1, 1)
+
+        def setup_daily(plot: PlotextPlot) -> None:
+            plt = plot.plt
+            plt.clear_figure()
+            days = list(range(7))
+            counts = [stats.daily_completions.get(d, 0) for d in days]
+            plt.plot(days, counts, marker="braille")
+            plt.title("Completions by Day of Week")
+            plt.xticks([float(d) for d in days], _DAY_LABELS)
+            plt.ylabel("Tasks")
+
+        daily_plot.call_after_refresh(lambda: setup_daily(daily_plot))
+        widgets.append(daily_plot)
+
+        # Estimation accuracy ratio chart
+        if view_model.estimation_stats and view_model.estimation_stats.estimation_pairs:
+            est_plot = PlotextPlot()
+            est_plot.styles.height = 20
+            est_plot.styles.margin = (0, 1, 1, 1)
+            pairs = view_model.estimation_stats.estimation_pairs
+
+            def setup_estimation(
+                plot: PlotextPlot, data: list[tuple[float, float]]
+            ) -> None:
+                plt = plot.plt
+                plt.clear_figure()
+                estimated = [e for e, _ in data if e > 0]
+                actual = [a for e, a in data if e > 0]
+                if not estimated:
+                    return
+                # Clip to 95th percentile to prevent outlier compression
+                all_vals = estimated + actual
+                all_vals.sort()
+                p95 = all_vals[int(len(all_vals) * 0.95)]
+                clip = max(p95 * 1.1, 0.1)
+                est_c = [min(e, clip) for e in estimated]
+                act_c = [min(a, clip) for a in actual]
+                plt.scatter(est_c, act_c, marker="braille")
+                plt.plot([0, clip], [0, clip], marker="braille")
+                plt.title("Estimation Accuracy (diagonal = perfect)")
+                plt.xlabel("Estimated (h)")
+                plt.ylabel("Actual (h)")
+
+            est_plot.call_after_refresh(lambda: setup_estimation(est_plot, pairs))
+            widgets.append(est_plot)
+
+        # Monthly completion trend line chart
+        if trend_stats and trend_stats.monthly_completion_trend:
+            trend_plot = PlotextPlot()
+            trend_plot.styles.height = 20
+            trend_plot.styles.margin = (0, 1, 1, 1)
+            monthly = trend_stats.monthly_completion_trend
+
+            def setup_trend(plot: PlotextPlot, data: dict[str, int]) -> None:
+                plt = plot.plt
+                plt.clear_figure()
+                sorted_months = sorted(data.items())
+                labels = [m for m, _ in sorted_months]
+                values = [c for _, c in sorted_months]
+                x = list(range(len(labels)))
+                plt.plot(x, values, marker="braille")
+                plt.title("Monthly Completion Trend")
+                plt.xlabel("Month")
+                plt.ylabel("Tasks")
+                plt.xticks([float(i) for i in x], labels)
+
+            trend_plot.call_after_refresh(lambda: setup_trend(trend_plot, monthly))
+            widgets.append(trend_plot)
+
+        return widgets
 
     def _create_stat_row(
         self, label: str, value: str, value_class: str = ""

@@ -23,6 +23,7 @@ dependencies = [
     "click>=8.3.0",
     "rich>=14.2.0",
     "textual>=8.0.0",
+    "textual-plotext>=1.0.0",
     "python-dateutil>=2.8.0",
     "websockets>=14.0",
 ]
@@ -68,6 +69,10 @@ warn_unused_ignores = false
 # Ignore missing imports for taskdog_client (installed separately)
 [[tool.mypy.overrides]]
 module = "taskdog_client"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "textual_plotext"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
