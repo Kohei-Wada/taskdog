@@ -5,7 +5,7 @@ from typing import Any, ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Vertical
+from textual.containers import Container, VerticalScroll
 from textual.validation import Number
 from textual.widgets import Checkbox, Input, Label, Select, Static
 
@@ -79,7 +79,7 @@ class AlgorithmSelectionDialog(
             # Error message area
             yield Static("", id="error-message")
 
-            with Vertical(id="form-container"):
+            with VerticalScroll(id="form-container", can_focus=False):
                 yield Label("Algorithm:", classes="field-label")
                 options = [
                     (f"{name}: {desc}", algo_id)

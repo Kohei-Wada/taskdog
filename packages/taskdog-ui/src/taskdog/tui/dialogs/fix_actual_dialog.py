@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from textual.app import ComposeResult
-from textual.containers import Container, Vertical
+from textual.containers import Container, VerticalScroll
 from textual.validation import Number
 from textual.widgets import Input, Label, Static
 
@@ -111,7 +111,7 @@ class FixActualDialog(FormDialogBase[FixActualFormData | None]):
             # Error message area
             yield Static("", id="error-message")
 
-            with Vertical(id="form-container"):
+            with VerticalScroll(id="form-container", can_focus=False):
                 # Actual Start field
                 yield Label("Actual Start:", classes="field-label")
                 yield Input(
