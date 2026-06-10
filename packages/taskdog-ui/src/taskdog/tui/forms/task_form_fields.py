@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from textual.app import ComposeResult
-from textual.containers import Vertical
+from textual.containers import VerticalScroll
 from textual.suggester import Suggester
 from textual.validation import Length, Number, Regex
 from textual.widgets import Checkbox, Input, Label, Static
@@ -117,7 +117,7 @@ class TaskFormFields:
         # Error message area (hidden by default)
         yield Static("", id="error-message")
 
-        with Vertical(id="form-container"):
+        with VerticalScroll(id="form-container", can_focus=False):
             # Task name field (required)
             yield Label("Task Name [red]*[/red]:", classes="field-label", markup=True)
             yield Input(
