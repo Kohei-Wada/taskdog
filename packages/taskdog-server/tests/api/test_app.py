@@ -123,7 +123,7 @@ class TestApp:
     def test_routers_registered(self):
         """Test that all routers are registered with correct prefixes."""
         # Check that routes exist for each router
-        routes = [route.path for route in self.app.routes]
+        routes = list(self.app.openapi()["paths"].keys())
 
         # Assert - Check for key endpoints from each router
         assert any("/api/v1/tasks" in route for route in routes), (
