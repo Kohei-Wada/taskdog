@@ -6,7 +6,6 @@
 
 /* All dialog screens use center alignment */
 AlgorithmSelectionDialog,
-SortSelectionScreen,
 ConfirmationDialog,
 TaskFormDialog,
 TaskDetailDialog,
@@ -101,11 +100,6 @@ StatsDialog {
 /* Algorithm Selection Dialog */
 #algorithm-dialog {
     max-height: 60%;
-}
-
-/* Sort Selection Dialog */
-#sort-dialog {
-    max-height: 50%;  /* Smaller than algorithm dialog (no input fields) */
 }
 
 /* Confirmation Dialog */
