@@ -12,12 +12,14 @@ from taskdog.tui.palette.providers.audit_provider import AuditCommandProvider
 from taskdog.tui.palette.providers.backup_provider import BackupCommandProvider
 from taskdog.tui.palette.providers.base import SimpleSingleCommandProvider
 from taskdog.tui.palette.providers.help_provider import HelpCommandProvider
+from taskdog.tui.palette.providers.stats_provider import StatsCommandProvider
 
 PROVIDERS = [
     ArchiveCommandProvider,
     AuditCommandProvider,
     BackupCommandProvider,
     HelpCommandProvider,
+    StatsCommandProvider,
 ]
 
 
