@@ -45,6 +45,7 @@ from taskdog.tui.palette.providers import (
     OptimizeCommandProvider,
     SortCommandProvider,
     SortOptionsProvider,
+    StatsCommandProvider,
 )
 from taskdog.tui.screens.main_screen import MainScreen
 from taskdog.tui.selection import AppSelectionProvider
@@ -265,6 +266,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         BackupCommandProvider,
         GanttFilterCommandProvider,
         HelpCommandProvider,
+        StatsCommandProvider,
     }
 
     # CSS paths are resolved relative to this module's directory by Textual.
@@ -522,6 +524,10 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
     def search_help(self) -> None:
         """Show the help screen with keybindings and usage instructions."""
         self.command_factory.execute("show_help")
+
+    def search_stats(self) -> None:
+        """Show the statistics dashboard."""
+        self.command_factory.execute("stats")
 
     def _refresh_mode_badges(self) -> None:
         """Refresh the footer mode badges to reflect current toggle/sort state."""

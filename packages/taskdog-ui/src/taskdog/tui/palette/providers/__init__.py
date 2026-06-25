@@ -18,6 +18,7 @@ from taskdog.tui.palette.providers.sort_providers import (
     SortCommandProvider,
     SortOptionsProvider,
 )
+from taskdog.tui.palette.providers.stats_provider import StatsCommandProvider
 
 __all__ = [
     "EXPORT_FORMATS",
@@ -32,4 +33,5 @@ __all__ = [
     "OptimizeCommandProvider",
     "SortCommandProvider",
     "SortOptionsProvider",
+    "StatsCommandProvider",
 ]
