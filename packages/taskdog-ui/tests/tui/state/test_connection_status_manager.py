@@ -1,7 +1,5 @@
 """Tests for ConnectionStatusManager."""
 
-from datetime import datetime
-
 import pytest
 
 from taskdog.tui.state.connection_status import ConnectionStatus
@@ -16,7 +14,6 @@ class TestConnectionStatus:
         status = ConnectionStatus(
             is_api_connected=True,
             is_websocket_connected=False,
-            last_update=datetime.now(),
         )
         with pytest.raises(AttributeError):
             status.is_api_connected = False  # type: ignore[misc]
@@ -34,7 +31,6 @@ class TestConnectionStatusManager:
         """Test default status values are correctly initialized."""
         assert self.manager.is_api_connected is False
         assert self.manager.is_websocket_connected is False
-        assert self.manager.status.last_update is not None
 
     def test_status_property(self):
         """Test status property returns current ConnectionStatus."""
@@ -58,16 +54,6 @@ class TestConnectionStatusManager:
 
         assert self.manager.is_api_connected == api_connected
         assert self.manager.is_websocket_connected == ws_connected
-
-    def test_update_updates_last_update(self):
-        """Test update changes the last_update timestamp."""
-        initial_time = self.manager.status.last_update
-
-        # Small delay to ensure timestamp difference
-        self.manager.update(api_connected=True, ws_connected=True)
-
-        # last_update should be >= initial_time
-        assert self.manager.status.last_update >= initial_time
 
     def test_subscribe_receives_updates(self):
         """Test subscribers receive updates when status changes."""
