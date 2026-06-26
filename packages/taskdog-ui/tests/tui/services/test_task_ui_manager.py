@@ -165,7 +165,6 @@ class TestTaskUIManager:
         self.task_data_loader.load_tasks.assert_called_once()
 
         # Verify state cache was updated
-        assert len(self.state.tasks_cache) == 1
         assert len(self.state.viewmodels_cache) == 1
 
         # Verify UI widgets were refreshed
@@ -331,8 +330,6 @@ class TestTaskUIManager:
         self.manager._update_cache(task_data)
 
         # Verify state was updated
-        assert len(self.state.tasks_cache) == 1
-        assert self.state.tasks_cache[0].id == 1
         assert len(self.state.viewmodels_cache) == 1
         assert self.state.viewmodels_cache[0].id == 1
         assert self.state.gantt_cache == gantt

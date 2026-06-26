@@ -147,30 +147,18 @@ class TestTaskSearchFilter:
         filtered = self.filter.filter(self.tasks, "Fix")
         assert len(filtered) == 2  # Both have "Fix"
 
-    def test_matches_method(self):
-        """Test the matches method directly."""
+    def test_matches_single_task(self):
+        """Test matching a single task via filter()."""
         task = self.tasks[0]  # "Fix authentication bug"
 
         # Should match
-        assert self.filter.matches(task, "auth") is True
-        assert self.filter.matches(task, "Fix") is True
-        assert self.filter.matches(task, "1") is True  # Priority
+        assert self.filter.filter([task], "auth") == [task]
+        assert self.filter.filter([task], "Fix") == [task]
+        assert self.filter.filter([task], "1") == [task]  # Priority
 
         # Should not match
-        assert self.filter.matches(task, "urgent") is False
-        assert self.filter.matches(task, "registration") is False
-
-    def test_matches_with_explicit_case_sensitivity(self):
-        """Test matches method with explicit case sensitivity parameter."""
-        task = self.tasks[4]  # "URGENT: Fix production bug"
-
-        # Case-insensitive
-        assert self.filter.matches(task, "urgent", case_sensitive=False) is True
-        assert self.filter.matches(task, "URGENT", case_sensitive=False) is True
-
-        # Case-sensitive
-        assert self.filter.matches(task, "URGENT", case_sensitive=True) is True
-        assert self.filter.matches(task, "urgent", case_sensitive=True) is False
+        assert self.filter.filter([task], "urgent") == []
+        assert self.filter.filter([task], "registration") == []
 
     @pytest.mark.parametrize(
         "query,expected_case_sensitive",
@@ -334,17 +322,17 @@ class TestTaskSearchFilterExclusion:
         # Not auth tag: removes 1
         assert len(filtered) == 0
 
-    def test_matches_method_with_exclude(self):
-        """Test matches method with exclusion syntax."""
+    def test_single_task_with_exclude(self):
+        """Test exclusion syntax against a single task via filter()."""
         task = self.tasks[0]  # "Fix authentication bug", PENDING, tags: ["bug", "auth"]
 
         # Should match (not excluded)
-        assert self.filter.matches(task, "!completed") is True
-        assert self.filter.matches(task, "!tag:urgent") is True
+        assert self.filter.filter([task], "!completed") == [task]
+        assert self.filter.filter([task], "!tag:urgent") == [task]
 
         # Should not match (excluded)
-        assert self.filter.matches(task, "!bug") is False
-        assert self.filter.matches(task, "!tag:auth") is False
+        assert self.filter.filter([task], "!bug") == []
+        assert self.filter.filter([task], "!tag:auth") == []
 
     def test_backward_compatibility(self):
         """Test that existing queries without ! work as before."""

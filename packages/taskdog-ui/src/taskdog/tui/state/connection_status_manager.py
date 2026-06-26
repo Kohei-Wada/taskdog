@@ -2,7 +2,6 @@
 
 import logging
 from collections.abc import Callable
-from datetime import datetime
 
 from .connection_status import ConnectionStatus
 
@@ -21,7 +20,6 @@ class ConnectionStatusManager:
         self._status = ConnectionStatus(
             is_api_connected=False,
             is_websocket_connected=False,
-            last_update=datetime.now(),
         )
         self._observers: list[Callable[[ConnectionStatus], None]] = []
 
@@ -67,7 +65,6 @@ class ConnectionStatusManager:
         self._status = ConnectionStatus(
             is_api_connected=api_connected,
             is_websocket_connected=ws_connected,
-            last_update=datetime.now(),
         )
         self._notify_observers()
 

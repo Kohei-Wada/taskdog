@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 
     from taskdog.tui.widgets.task_search_filter import TaskSearchFilter
     from taskdog.view_models.task_view_model import TaskRowViewModel
-    from taskdog_core.application.dto.task_dto import TaskRowDto
 
 
 @dataclass
@@ -29,7 +28,7 @@ class TUIState:
     State Categories:
     - Sort Settings: sort_by, sort_reverse
     - Filter Settings: current_query, filter_chain, gantt_filter_enabled
-    - Data Caches: tasks_cache, viewmodels_cache, gantt_cache
+    - Data Caches: viewmodels_cache, gantt_cache
 
     This class serves as the Single Source of Truth (SSoT) for all
     application state, replacing scattered state fields across
@@ -57,11 +56,8 @@ class TUIState:
     """Whether to include archived tasks in the task list."""
 
     # === Data Caches ===
-    tasks_cache: list[TaskRowDto] = field(default_factory=list)
-    """Cache of all tasks (DTO format) from last API fetch."""
-
     viewmodels_cache: list[TaskRowViewModel] = field(default_factory=list)
-    """Cache of table ViewModels (converted from tasks_cache)."""
+    """Cache of table ViewModels from last API fetch."""
 
     gantt_cache: GanttViewModel | None = None
     """Cache of Gantt ViewModel for current date range."""
@@ -231,29 +227,18 @@ class TUIState:
 
     def update_caches(
         self,
-        tasks: list[TaskRowDto],
         viewmodels: list[TaskRowViewModel],
         gantt: GanttViewModel | None = None,
     ) -> None:
         """Update all caches atomically.
 
         This method ensures that all caches are updated together
-        to prevent inconsistencies between task data and viewmodels.
+        to prevent inconsistencies between viewmodels and the Gantt cache.
 
         Args:
-            tasks: New task data from API (DTO format)
             viewmodels: New ViewModels for table display
             gantt: New Gantt ViewModel (optional, only updated if provided)
-
-        Raises:
-            ValueError: If tasks and viewmodels have different lengths
         """
-        if len(tasks) != len(viewmodels):
-            raise ValueError(
-                f"tasks and viewmodels must have same length: {len(tasks)} != {len(viewmodels)}"
-            )
-
-        self.tasks_cache = tasks
         self.viewmodels_cache = viewmodels
         if gantt is not None:
             self.gantt_cache = gantt

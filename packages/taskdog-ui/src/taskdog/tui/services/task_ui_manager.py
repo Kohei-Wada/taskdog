@@ -221,7 +221,6 @@ class TaskUIManager:
             task_data: TaskData object to cache
         """
         self.state.update_caches(
-            tasks=task_data.all_tasks,
             viewmodels=task_data.table_view_models,
             gantt=task_data.gantt_view_model,
         )

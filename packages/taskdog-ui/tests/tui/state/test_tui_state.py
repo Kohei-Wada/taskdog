@@ -7,32 +7,7 @@ import pytest
 from taskdog.tui.state.tui_state import TUIState
 from taskdog.view_models.gantt_view_model import GanttViewModel
 from taskdog.view_models.task_view_model import TaskRowViewModel
-from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.domain.entities.task import TaskStatus
-
-
-def create_task_dto(task_id: int, name: str, status: TaskStatus) -> TaskRowDto:
-    """Helper to create TaskRowDto with minimal fields."""
-    return TaskRowDto(
-        id=task_id,
-        name=name,
-        status=status,
-        priority=1,
-        planned_start=None,
-        planned_end=None,
-        deadline=None,
-        actual_start=None,
-        actual_end=None,
-        estimated_duration=None,
-        actual_duration_hours=None,
-        is_fixed=False,
-        depends_on=[],
-        tags=[],
-        is_archived=False,
-        is_finished=status in (TaskStatus.COMPLETED, TaskStatus.CANCELED),
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-    )
 
 
 def create_task_viewmodel(
@@ -73,7 +48,6 @@ class TestTUIState:
         """Test default state values are correctly initialized."""
         assert self.state.sort_by == "deadline"
         assert self.state.sort_reverse is False
-        assert self.state.tasks_cache == []
         assert self.state.viewmodels_cache == []
         assert self.state.gantt_cache is None
 
@@ -93,7 +67,6 @@ class TestTUIState:
     def test_update_caches_atomically(self):
         """Test update_caches updates all fields atomically."""
         # Create test data
-        tasks = [create_task_dto(1, "Task 1", TaskStatus.PENDING)]
         vms = [create_task_viewmodel(1, "Task 1", TaskStatus.PENDING, False)]
         gantt = GanttViewModel(
             start_date=date.today(),
@@ -105,16 +78,14 @@ class TestTUIState:
         )
 
         # Update all caches
-        self.state.update_caches(tasks, vms, gantt)
+        self.state.update_caches(vms, gantt)
 
         # Verify all fields are updated
-        assert self.state.tasks_cache == tasks
         assert self.state.viewmodels_cache == vms
         assert self.state.gantt_cache == gantt
 
     def test_update_caches_without_gantt(self):
         """Test update_caches can update without gantt (optional parameter)."""
-        tasks = [create_task_dto(1, "Task 1", TaskStatus.PENDING)]
         vms = [create_task_viewmodel(1, "Task 1", TaskStatus.PENDING, False)]
 
         # Set initial gantt cache
@@ -129,22 +100,7 @@ class TestTUIState:
         self.state.gantt_cache = initial_gantt
 
         # Update without gantt parameter
-        self.state.update_caches(tasks, vms)
+        self.state.update_caches(vms)
 
         # Verify gantt cache is unchanged
         assert self.state.gantt_cache == initial_gantt
-
-    def test_update_caches_validation_error(self):
-        """Test update_caches raises error when lengths mismatch."""
-        tasks = [
-            create_task_dto(1, "Task 1", TaskStatus.PENDING),
-            create_task_dto(2, "Task 2", TaskStatus.PENDING),
-        ]
-        vms = [create_task_viewmodel(1, "Task 1", TaskStatus.PENDING, False)]
-
-        # Should raise ValueError
-        with pytest.raises(ValueError) as exc_info:
-            self.state.update_caches(tasks, vms)
-
-        assert "must have same length" in str(exc_info.value)
-        assert "2 != 1" in str(exc_info.value)

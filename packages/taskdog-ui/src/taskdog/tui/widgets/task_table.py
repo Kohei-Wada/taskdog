@@ -142,8 +142,6 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
         self._viewmodel_map: dict[
             int, TaskRowViewModel
         ] = {}  # Maps row index to ViewModel
-        # NOTE: Filter state moved to TUIState (Single Source of Truth)
-        # - _current_query, _filter_chain, _search_filter removed
         self._selected_task_ids: set[int] = (
             set()
         )  # Selected task IDs for batch operations

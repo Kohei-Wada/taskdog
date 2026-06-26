@@ -64,37 +64,6 @@ class TaskSearchFilter:
             if self._matches_all_tokens(vm, tokens, case_sensitive)
         ]
 
-    def matches(
-        self, task_vm: TaskRowViewModel, query: str, case_sensitive: bool | None = None
-    ) -> bool:
-        """Check if a task ViewModel matches the search query.
-
-        Searches across all visible fields: ID, name, status, priority,
-        dependencies, duration, deadline, tags, and fixed status.
-
-        Args:
-            task_vm: TaskRowViewModel to check
-            query: Search query string
-            case_sensitive: Whether to use case-sensitive matching.
-                          If None, uses smart case detection.
-
-        Returns:
-            True if task matches query, False otherwise
-        """
-        if not query:
-            return True
-
-        # Parse query into tokens
-        tokens = self._query_parser.parse(query)
-        if not tokens:
-            return True
-
-        # Determine case sensitivity if not explicitly provided
-        if case_sensitive is None:
-            case_sensitive = self._is_case_sensitive(query)
-
-        return self._matches_all_tokens(task_vm, tokens, case_sensitive)
-
     def _matches_all_tokens(
         self,
         task_vm: TaskRowViewModel,
