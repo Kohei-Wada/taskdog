@@ -20,7 +20,7 @@ classifiers = [
 dependencies = [
     "taskdog-client==0.23.0",
     "taskdog-core==0.23.0",
-    "mcp>=1.2.0",
+    "mcp>=1.28.1",
 ]
 
 [project.optional-dependencies]
