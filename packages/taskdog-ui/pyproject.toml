@@ -49,7 +49,7 @@ Repository = "https://github.com/Kohei-Wada/taskdog"
 "Bug Tracker" = "https://github.com/Kohei-Wada/taskdog/issues"
 
 [build-system]
-requires = ["setuptools>=68.0.0", "wheel"]
+requires = ["setuptools>=83.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]

@@ -204,7 +204,7 @@ ignore_names = [
 
 # Build system - workspace root doesn't build directly
 [build-system]
-requires = ["setuptools>=82.0.1"]
+requires = ["setuptools>=83.0.0"]
 build-backend = "setuptools.build_meta"
 
 # Workspace root has no packages (prevent auto-discovery of contrib/, packages/, etc.)
