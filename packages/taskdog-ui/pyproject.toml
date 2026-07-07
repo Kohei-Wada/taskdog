@@ -22,7 +22,7 @@ dependencies = [
     "taskdog-client==0.23.0",
     "click>=8.4.2",
     "rich>=14.2.0",
-    "textual>=8.0.0",
+    "textual>=8.2.8",
     "textual-plotext>=1.0.0",
     "python-dateutil>=2.8.0",
     "websockets>=14.0",
