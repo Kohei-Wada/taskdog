@@ -170,7 +170,7 @@ StatsScreen {
 }
 
 #stats-left {
-    width: 56;
+    width: 1fr;
     padding: 0 1;
 }
 
