@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import click
 
 from taskdog.cli.error_handler import handle_task_errors
-from taskdog.utils.note_editor import edit_task_note
+from taskdog.utils.note_editor import EditorInterruptedError, edit_task_note
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 if TYPE_CHECKING:
@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 
     from taskdog.cli.context import CliContext
     from taskdog.console.console_writer import ConsoleWriter
-    from taskdog.infrastructure.cli_config_manager import CliConfig
 
 
 def _read_content_from_source(
@@ -93,42 +92,6 @@ def _save_content_directly(
         console_writer.error("saving notes", e)
 
 
-def _edit_with_editor_via_shared(
-    task_id: int,
-    task: object,
-    api_client: TaskdogApiClient,
-    console_writer: ConsoleWriter,
-    config: CliConfig | None = None,
-) -> None:
-    """Edit note using $EDITOR via shared note_editor utility.
-
-    Args:
-        task_id: Task ID
-        task: Task detail DTO
-        api_client: API client
-        console_writer: Console writer
-        config: CLI configuration for custom template (optional)
-    """
-
-    def on_success(name: str, tid: int) -> None:
-        console_writer.success(f"Notes saved for task #{tid}")
-
-    def on_error(action: str, e: Exception) -> None:
-        if isinstance(e, RuntimeError) and "interrupted" in str(e).lower():
-            print("\n")
-            console_writer.warning("Editor interrupted")
-        else:
-            console_writer.error(action, e)
-
-    edit_task_note(
-        task=task,  # type: ignore[arg-type]
-        notes_provider=api_client,
-        on_success=on_success,
-        on_error=on_error,
-        config=config,
-    )
-
-
 @click.command(
     name="note",
     help="Edit task notes in markdown. Supports stdin, --content, --file, or $EDITOR.",
@@ -194,8 +157,23 @@ def note_command(
     if new_content is not None:
         # Save content directly without editor
         _save_content_directly(task_id, new_content, append, api_client, console_writer)
-    else:
-        # No input source, use editor mode
-        _edit_with_editor_via_shared(
-            task_id, task, api_client, console_writer, ctx_obj.config
-        )
+        return
+
+    # No input source, use editor mode
+    def on_success(name: str, tid: int) -> None:
+        console_writer.success(f"Notes saved for task #{tid}")
+
+    def on_error(action: str, e: Exception) -> None:
+        if isinstance(e, EditorInterruptedError):
+            console_writer.empty_line()
+            console_writer.warning("Editor interrupted")
+        else:
+            console_writer.error(action, e)
+
+    edit_task_note(
+        task=task,
+        notes_provider=api_client,
+        on_success=on_success,
+        on_error=on_error,
+        config=ctx_obj.config,
+    )

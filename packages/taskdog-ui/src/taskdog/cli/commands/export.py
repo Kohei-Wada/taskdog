@@ -159,7 +159,7 @@ def export_command(
                 f.write(tasks_data)
             console_writer.success(f"Exported {len(tasks)} tasks to {output}")
         else:
-            print(tasks_data)
+            click.echo(tasks_data)
 
     except Exception as e:
         console_writer.error("exporting tasks", e)
