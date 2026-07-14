@@ -111,18 +111,10 @@ class TaskdogGroup(LazyGroup):
     """Root group: lazy loading (via LazyGroup) plus ASCII art in --help."""
 
     def format_help(self, ctx: click.Context, formatter: Any) -> None:
-        """Override format_help to add ASCII art before help text."""
-        from taskdog.constants.ascii_art import (
-            TASKDOG_ASCII_ART,
-            TASKDOG_DESCRIPTION,
-            TASKDOG_TAGLINE,
-        )
+        """Override format_help to add the branded banner before help text."""
+        from taskdog.constants.ascii_art import print_banner
 
-        console = Console()
-        console.print(TASKDOG_ASCII_ART, style="cyan")
-        console.print(f"  {TASKDOG_TAGLINE}", style="bold yellow")
-        console.print(f"  {TASKDOG_DESCRIPTION}", style="dim")
-        console.print()
+        print_banner(Console())
 
         # Call the original format_help
         super().format_help(ctx, formatter)

@@ -152,6 +152,17 @@ HelpDialog {
     overflow-y: auto;
 }
 
+.help-wordmark {
+    color: $primary;
+    text-style: bold;
+    padding: 0 1;
+}
+
+.help-tagline {
+    color: $text-muted;
+    padding: 0 1;
+}
+
 .help-section {
     padding: 0 1;
 }
