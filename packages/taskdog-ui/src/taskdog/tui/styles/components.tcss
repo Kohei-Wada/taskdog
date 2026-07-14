@@ -156,3 +156,40 @@ AuditLogScreen {
 #audit-log-table:focus {
     border: round $accent;
 }
+
+/* =============================================================================
+   Statistics Screen (full-page btop-style dashboard)
+   ============================================================================= */
+
+StatsScreen {
+    background: $surface;
+}
+
+#stats-columns {
+    height: 1fr;
+}
+
+#stats-left {
+    width: 1fr;
+    padding: 0 1;
+}
+
+#stats-right {
+    width: 1fr;
+    padding: 0 1;
+}
+
+.stats-panel {
+    border: round $primary;
+    border-title-color: $primary;
+    padding: 0 1;
+    width: 100%;
+    height: auto;
+    margin-bottom: 1;
+}
+
+.stats-chart {
+    border: round $primary;
+    border-title-color: $primary;
+    height: 1fr;
+}
