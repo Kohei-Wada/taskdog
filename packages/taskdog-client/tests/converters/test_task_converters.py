@@ -6,7 +6,6 @@ import pytest
 from taskdog_client.converters.exceptions import ConversionError
 from taskdog_client.converters.task_converters import (
     _build_task_detail_dto,
-    convert_to_get_task_by_id_output,
     convert_to_get_task_detail_output,
     convert_to_task_list_output,
     convert_to_task_operation_output,
@@ -438,42 +437,6 @@ class TestBuildTaskDetailDto:
             _build_task_detail_dto(data)
 
         assert exc_info.value.field == "created_at"
-
-
-class TestConvertToGetTaskByIdOutput:
-    """Test cases for convert_to_get_task_by_id_output."""
-
-    def test_basic_conversion(self):
-        """Test basic conversion."""
-        data = {
-            "id": 1,
-            "name": "Task",
-            "priority": 50,
-            "status": "PENDING",
-            "planned_start": None,
-            "planned_end": None,
-            "deadline": None,
-            "actual_start": None,
-            "actual_end": None,
-            "estimated_duration": None,
-            "daily_allocations": {},
-            "is_fixed": False,
-            "depends_on": [],
-            "tags": [],
-            "is_archived": False,
-            "created_at": "2025-01-01T00:00:00",
-            "updated_at": "2025-01-01T00:00:00",
-            "actual_duration_hours": None,
-            "is_active": False,
-            "is_finished": False,
-            "can_be_modified": True,
-            "is_schedulable": True,
-        }
-
-        result = convert_to_get_task_by_id_output(data)
-
-        assert result.task.id == 1
-        assert result.task.name == "Task"
 
 
 class TestConvertToGetTaskDetailOutput:

@@ -346,9 +346,12 @@ class TestNoteCommand:
 
     def test_task_not_found(self):
         """Test error when task doesn't exist."""
+        from taskdog_core.domain.exceptions.task_exceptions import (
+            TaskNotFoundException,
+        )
 
         # Setup - task not found
-        self.api_client.get_task_by_id.return_value = Mock(task=None)
+        self.api_client.get_task_by_id.side_effect = TaskNotFoundException(999)
 
         # Execute
         result = self.runner.invoke(

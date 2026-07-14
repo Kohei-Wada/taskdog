@@ -81,7 +81,7 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         Returns:
             Task details including notes
         """
-        result = client.get_task_detail(task_id)
+        result = client.get_task_by_id(task_id)
         task = result.task
         return {
             "id": task.id,

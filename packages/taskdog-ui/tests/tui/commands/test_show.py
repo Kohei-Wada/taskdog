@@ -73,18 +73,18 @@ class TestShowCommand:
         """Test that task detail is fetched from API in background thread."""
         task = create_mock_task_dto(task_id=42)
         detail = TaskDetailOutput(task=task, notes_content="", has_notes=False)
-        self.mock_context.api_client.get_task_detail.return_value = detail
+        self.mock_context.api_client.get_task_by_id.return_value = detail
 
         await self.command._fetch_and_show_detail(42)
 
-        self.mock_context.api_client.get_task_detail.assert_called_once_with(42)
+        self.mock_context.api_client.get_task_by_id.assert_called_once_with(42)
 
     @pytest.mark.asyncio
     async def test_fetch_and_show_detail_pushes_detail_dialog(self) -> None:
         """Test that detail dialog is pushed after fetch."""
         task = create_mock_task_dto(task_id=42)
         detail = TaskDetailOutput(task=task, notes_content="", has_notes=False)
-        self.mock_context.api_client.get_task_detail.return_value = detail
+        self.mock_context.api_client.get_task_by_id.return_value = detail
 
         await self.command._fetch_and_show_detail(42)
 
@@ -93,7 +93,7 @@ class TestShowCommand:
     @pytest.mark.asyncio
     async def test_fetch_and_show_detail_notifies_error_on_failure(self) -> None:
         """Test that API errors are caught and shown as notifications."""
-        self.mock_context.api_client.get_task_detail.side_effect = ConnectionError(
+        self.mock_context.api_client.get_task_by_id.side_effect = ConnectionError(
             "Connection refused"
         )
         self.command.notify_error = MagicMock()

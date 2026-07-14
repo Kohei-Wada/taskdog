@@ -5,12 +5,10 @@ from typing import Any
 
 from taskdog_client.base_client import BaseApiClient
 from taskdog_client.converters import (
-    convert_to_get_task_by_id_output,
     convert_to_get_task_detail_output,
     convert_to_tag_statistics_output,
     convert_to_task_list_output,
 )
-from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.tag_statistics_output import TagStatisticsOutput
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_list_output import TaskListOutput
@@ -120,23 +118,8 @@ class QueryClient:
         data = self._base._request_json("get", "/api/v1/tasks", params=params)
         return convert_to_task_list_output(data)
 
-    def get_task_by_id(self, task_id: int) -> TaskByIdOutput:
-        """Get task by ID.
-
-        Args:
-            task_id: Task ID
-
-        Returns:
-            TaskByIdOutput with task data
-
-        Raises:
-            TaskNotFoundException: If task not found
-        """
-        data = self._base._request_json("get", f"/api/v1/tasks/{task_id}")
-        return convert_to_get_task_by_id_output(data)
-
-    def get_task_detail(self, task_id: int) -> TaskDetailOutput:
-        """Get task details with notes.
+    def get_task_by_id(self, task_id: int) -> TaskDetailOutput:
+        """Get task by ID, including notes.
 
         Args:
             task_id: Task ID

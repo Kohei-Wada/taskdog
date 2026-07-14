@@ -130,7 +130,7 @@ def create_mock_client() -> MagicMock:
     # TaskdogApiClient has flat methods (no nested clients)
     # CRUD methods
     client.list_tasks = MagicMock()
-    client.get_task_detail = MagicMock()
+    client.get_task_by_id = MagicMock()
     client.create_task = MagicMock()
     client.update_task = MagicMock()
     client.archive_task = MagicMock()
@@ -400,7 +400,7 @@ class TestTaskCrudTools:
         from taskdog_mcp.tools import task_crud
 
         client = create_mock_client()
-        client.get_task_detail.return_value = create_mock_task_detail_output(
+        client.get_task_by_id.return_value = create_mock_task_detail_output(
             task_id=1,
             name="Test Task",
             notes_content="# Notes\nSome notes here",
@@ -412,7 +412,7 @@ class TestTaskCrudTools:
         get_task_fn = mcp._tool_manager._tools["get_task"].fn
         result = get_task_fn(task_id=1)
 
-        client.get_task_detail.assert_called_once_with(1)
+        client.get_task_by_id.assert_called_once_with(1)
         assert result["id"] == 1
         assert result["name"] == "Test Task"
         assert result["notes"] == "# Notes\nSome notes here"
@@ -1038,7 +1038,7 @@ class TestTaskDecompositionTools:
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
-        client.get_task_detail.return_value = create_mock_task_detail_output(
+        client.get_task_by_id.return_value = create_mock_task_detail_output(
             task_id=1, name="Original Task"
         )
         created_subtask = create_mock_task_operation_output(task_id=2, name="Subtask 1")
@@ -1067,7 +1067,7 @@ class TestTaskDecompositionTools:
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
-        client.get_task_detail.return_value = create_mock_task_detail_output(
+        client.get_task_by_id.return_value = create_mock_task_detail_output(
             task_id=1, name="Original Task"
         )
         client.create_task.side_effect = [
@@ -1101,7 +1101,7 @@ class TestTaskDecompositionTools:
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
-        client.get_task_detail.return_value = create_mock_task_detail_output(
+        client.get_task_by_id.return_value = create_mock_task_detail_output(
             task_id=1, name="Original Task"
         )
         client.create_task.return_value = create_mock_task_operation_output(
@@ -1130,7 +1130,7 @@ class TestTaskDecompositionTools:
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
-        client.get_task_detail.return_value = create_mock_task_detail_output(
+        client.get_task_by_id.return_value = create_mock_task_detail_output(
             task_id=1, name="Original Task"
         )
         client.create_task.return_value = create_mock_task_operation_output(
@@ -1278,7 +1278,7 @@ class TestTaskDecompositionTools:
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
-        client.get_task_detail.return_value = create_mock_task_detail_output(
+        client.get_task_by_id.return_value = create_mock_task_detail_output(
             task_id=1, name="Original Task"
         )
         # First subtask succeeds, second fails
@@ -1312,7 +1312,7 @@ class TestTaskDecompositionTools:
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
-        client.get_task_detail.return_value = create_mock_task_detail_output(
+        client.get_task_by_id.return_value = create_mock_task_detail_output(
             task_id=1, name="Original Task"
         )
         client.create_task.side_effect = [
@@ -1346,7 +1346,7 @@ class TestTaskDecompositionTools:
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
-        client.get_task_detail.return_value = create_mock_task_detail_output(
+        client.get_task_by_id.return_value = create_mock_task_detail_output(
             task_id=1, name="Original Task"
         )
         client.create_task.return_value = create_mock_task_operation_output(
@@ -1377,7 +1377,7 @@ class TestTaskDecompositionTools:
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
-        client.get_task_detail.return_value = create_mock_task_detail_output(
+        client.get_task_by_id.return_value = create_mock_task_detail_output(
             task_id=1, name="Original Task"
         )
         client.create_task.return_value = create_mock_task_operation_output(

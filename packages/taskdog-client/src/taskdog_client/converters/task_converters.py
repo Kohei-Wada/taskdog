@@ -4,7 +4,6 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto, TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
@@ -43,7 +42,7 @@ def _model_validate[M: BaseModel](model_cls: type[M], data: dict[str, Any]) -> M
 def _build_task_detail_dto(data: dict[str, Any]) -> TaskDetailDto:
     """Build TaskDetailDto from API response data.
 
-    Shared by convert_to_get_task_by_id_output and convert_to_get_task_detail_output.
+    Used by convert_to_get_task_detail_output.
 
     Args:
         data: API response data containing task fields
@@ -113,19 +112,6 @@ def convert_to_task_list_output(data: dict[str, Any]) -> TaskListOutput:
         filtered_count=require_key(data, "filtered_count"),
         gantt_data=gantt_data,
     )
-
-
-def convert_to_get_task_by_id_output(data: dict[str, Any]) -> TaskByIdOutput:
-    """Convert API response to TaskByIdOutput.
-
-    Args:
-        data: API response data
-
-    Returns:
-        TaskByIdOutput with task data
-    """
-    task = _build_task_detail_dto(data)
-    return TaskByIdOutput(task=task)
 
 
 def convert_to_get_task_detail_output(data: dict[str, Any]) -> TaskDetailOutput:

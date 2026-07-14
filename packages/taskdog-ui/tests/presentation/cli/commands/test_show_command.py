@@ -27,7 +27,7 @@ class TestShowCommand:
         """Test basic show display."""
         # Setup
         mock_detail = MagicMock()
-        self.api_client.get_task_detail.return_value = mock_detail
+        self.api_client.get_task_by_id.return_value = mock_detail
 
         mock_renderer = MagicMock()
         mock_renderer_class.return_value = mock_renderer
@@ -37,7 +37,7 @@ class TestShowCommand:
 
         # Verify
         assert result.exit_code == 0
-        self.api_client.get_task_detail.assert_called_once_with(1)
+        self.api_client.get_task_by_id.assert_called_once_with(1)
         mock_renderer.render.assert_called_once_with(mock_detail, raw=False)
 
     @patch("taskdog.cli.commands.show.RichDetailRenderer")
@@ -45,7 +45,7 @@ class TestShowCommand:
         """Test show with --raw option."""
         # Setup
         mock_detail = MagicMock()
-        self.api_client.get_task_detail.return_value = mock_detail
+        self.api_client.get_task_by_id.return_value = mock_detail
 
         mock_renderer = MagicMock()
         mock_renderer_class.return_value = mock_renderer
@@ -60,7 +60,7 @@ class TestShowCommand:
     def test_task_not_found(self):
         """Test show with non-existent task."""
         # Setup
-        self.api_client.get_task_detail.side_effect = TaskNotFoundException(999)
+        self.api_client.get_task_by_id.side_effect = TaskNotFoundException(999)
 
         # Execute
         result = self.runner.invoke(show_command, ["999"], obj=self.cli_context)
@@ -73,7 +73,7 @@ class TestShowCommand:
         """Test handling of general exception."""
         # Setup
         error = ValueError("Something went wrong")
-        self.api_client.get_task_detail.side_effect = error
+        self.api_client.get_task_by_id.side_effect = error
 
         # Execute
         result = self.runner.invoke(show_command, ["1"], obj=self.cli_context)

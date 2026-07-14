@@ -6,7 +6,6 @@ import pytest
 from taskdog_client.converters import (
     ConversionError,
     convert_to_gantt_overlay,
-    convert_to_get_task_by_id_output,
     convert_to_get_task_detail_output,
     convert_to_optimization_output,
     convert_to_statistics_output,
@@ -173,40 +172,6 @@ class TestConverters:
         assert result.tasks[1].id == 2
         assert result.tasks[1].is_finished is True
         assert result.tasks[1].has_notes is True
-
-    def test_convert_to_get_task_by_id_output(self):
-        """Test convert_to_get_task_by_id_output."""
-        data = {
-            "id": 1,
-            "name": "Task Detail",
-            "priority": 50,
-            "status": "PENDING",
-            "planned_start": None,
-            "planned_end": None,
-            "deadline": "2025-12-31T23:59:00",
-            "actual_start": None,
-            "actual_end": None,
-            "estimated_duration": 5.0,
-            "daily_allocations": {"2025-01-15": 2.5, "2025-01-16": 2.5},
-            "is_fixed": False,
-            "depends_on": [2],
-            "tags": ["test"],
-            "is_archived": False,
-            "created_at": "2025-01-01T00:00:00",
-            "updated_at": "2025-01-01T00:00:00",
-            "actual_duration_hours": None,
-            "is_active": False,
-            "is_finished": False,
-            "can_be_modified": True,
-            "is_schedulable": True,
-        }
-
-        result = convert_to_get_task_by_id_output(data)
-
-        assert result.task.id == 1
-        assert result.task.name == "Task Detail"
-        assert len(result.task.daily_allocations) == 2
-        assert result.task.can_be_modified is True
 
     def test_convert_to_get_task_detail_output(self):
         """Test convert_to_get_task_detail_output."""
@@ -497,7 +462,7 @@ class TestConverterErrorHandling:
         }
 
         with pytest.raises(ConversionError) as exc_info:
-            convert_to_get_task_by_id_output(data)
+            convert_to_get_task_detail_output(data)
 
         assert "daily_allocations" in str(exc_info.value)
         assert exc_info.value.field == "daily_allocations"
@@ -530,7 +495,7 @@ class TestConverterErrorHandling:
         }
 
         with pytest.raises(ConversionError) as exc_info:
-            convert_to_get_task_by_id_output(data)
+            convert_to_get_task_detail_output(data)
 
         assert "created_at" in str(exc_info.value)
         assert exc_info.value.field == "created_at"
@@ -563,7 +528,7 @@ class TestConverterErrorHandling:
         }
 
         with pytest.raises(ConversionError) as exc_info:
-            convert_to_get_task_by_id_output(data)
+            convert_to_get_task_detail_output(data)
 
         assert "created_at" in str(exc_info.value)
         assert exc_info.value.field == "created_at"
@@ -596,7 +561,7 @@ class TestConverterErrorHandling:
             "daily_allocations": {},  # Empty dict
         }
 
-        result = convert_to_get_task_by_id_output(data)
+        result = convert_to_get_task_detail_output(data)
 
         assert result.task.daily_allocations == {}
 
@@ -630,7 +595,7 @@ class TestConverterErrorHandling:
             },
         }
 
-        result = convert_to_get_task_by_id_output(data)
+        result = convert_to_get_task_detail_output(data)
 
         # Verify date keys are converted to date objects
         assert len(result.task.daily_allocations) == 2

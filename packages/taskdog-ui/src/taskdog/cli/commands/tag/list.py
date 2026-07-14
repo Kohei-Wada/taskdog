@@ -10,7 +10,6 @@ from taskdog.cli.error_handler import handle_task_errors
 
 if TYPE_CHECKING:
     from taskdog.cli.context import CliContext
-from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
 @click.command(name="list", help="List all tags, or the tags of a single task.")
@@ -43,8 +42,6 @@ def list_command(ctx: click.Context, task_id: int | None) -> None:
 
     # Task ID - show tags for that task
     result = ctx_obj.api_client.get_task_by_id(task_id)
-    if not result.task:
-        raise TaskNotFoundException(task_id)
 
     if not result.task.tags:
         console_writer.info(f"Task {task_id} has no tags.")

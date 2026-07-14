@@ -281,11 +281,6 @@ class TestTaskdogApiClientDelegation:
         client.get_task_by_id(task_id=1)
         client._queries.get_task_by_id.assert_called_once_with(1)
 
-    def test_get_task_detail(self, client):
-        """Test get_task_detail delegates to QueryClient."""
-        client.get_task_detail(task_id=1)
-        client._queries.get_task_detail.assert_called_once_with(1)
-
     def test_get_gantt_data(self, client):
         """Test get_gantt_data delegates to QueryClient."""
         client.get_gantt_data()

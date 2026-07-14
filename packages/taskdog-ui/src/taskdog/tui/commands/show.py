@@ -31,7 +31,7 @@ class ShowCommand(TUICommandBase):
         """
         try:
             detail = await asyncio.to_thread(
-                self.context.api_client.get_task_detail, task_id
+                self.context.api_client.get_task_by_id, task_id
             )
         except Exception as e:
             self.notify_error("Failed to fetch task details", e)
