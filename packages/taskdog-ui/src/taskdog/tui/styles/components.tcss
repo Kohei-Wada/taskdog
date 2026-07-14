@@ -156,3 +156,80 @@ AuditLogScreen {
 #audit-log-table:focus {
     border: round $accent;
 }
+
+/* =============================================================================
+   Statistics Screen (full-page modal without dimming)
+   ============================================================================= */
+
+StatsScreen {
+    background: $surface;
+}
+
+#stats-tabs {
+    height: 1fr;
+    border: round $primary;
+}
+
+.stats-tab-scroll {
+    padding: 1;
+    margin: 0;
+    overflow-y: auto;
+}
+
+.stats-section {
+    height: auto;
+    padding: 0 1;
+    margin-bottom: 1;
+}
+
+.section-spacer {
+    height: 1;
+}
+
+/* Stats section title */
+.stats-section-title {
+    text-style: bold;
+    color: $primary;
+    padding: 0 0 1 0;
+}
+
+/* Stats label (left side) */
+.stats-label {
+    color: $text-muted;
+    width: 20;
+}
+
+/* Stats value variations */
+.stats-value {
+    width: 1fr;
+}
+
+.stats-value-success {
+    color: $success;
+}
+
+.stats-value-warning {
+    color: $warning;
+}
+
+.stats-value-error {
+    color: $error;
+}
+
+.stats-value-info {
+    color: $secondary;
+}
+
+.stats-value-muted {
+    color: $text-muted;
+}
+
+.stats-value-bold {
+    text-style: bold;
+}
+
+/* Stats row container */
+.stats-row {
+    height: auto;
+    padding: 0 2;
+}

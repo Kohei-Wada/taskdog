@@ -1,18 +1,18 @@
-"""Statistics dialog for TUI."""
+"""Statistics screen for TUI - full-page statistics dashboard."""
 
 import asyncio
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from taskdog_client.taskdog_api_client import TaskdogApiClient
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical, VerticalScroll
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.css.query import NoMatches
-from textual.widgets import Label, Static, TabbedContent, TabPane, Tabs
+from textual.screen import ModalScreen
+from textual.widgets import Header, Label, Static, TabbedContent, TabPane, Tabs
 from textual_plotext import PlotextPlot
 
 from taskdog.presenters.statistics_presenter import StatisticsPresenter
-from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 from taskdog.view_models.statistics_view_model import (
     StatisticsViewModel,
@@ -36,13 +36,17 @@ _TAB_PERIOD_MAP: dict[str, str] = {
 }
 
 
-class StatsDialog(BaseModalDialog[None], ViNavigationMixin):
-    """Modal dialog for displaying task statistics.
+class StatsScreen(ModalScreen[None], ViNavigationMixin):
+    """Full-page screen for displaying task statistics.
 
-    Shows comprehensive statistics across three period tabs:
+    Uses ModalScreen to block App-level bindings (add, start, done, etc.)
+    so only stats-specific keys are active.
+
+    Shows comprehensive statistics across period tabs:
     - All: All-time statistics
     - 7 Days: Last 7 days statistics
     - 30 Days: Last 30 days statistics
+    - Activity: Completion pattern charts
 
     Each tab lazy-loads its data on first activation.
     """
@@ -50,8 +54,8 @@ class StatsDialog(BaseModalDialog[None], ViNavigationMixin):
     BINDINGS: ClassVar = [
         *ViNavigationMixin.VI_VERTICAL_BINDINGS,
         *ViNavigationMixin.VI_PAGE_BINDINGS,
-        Binding("q", "cancel", "Close", tooltip="Close the statistics dialog"),
-        Binding("escape", "cancel", "Close", show=False),
+        Binding("q", "pop_screen", "Back", tooltip="Close the statistics screen"),
+        Binding("escape", "pop_screen", "Back", show=False),
         Binding(
             "greater_than_sign",
             "next_tab",
@@ -70,70 +74,66 @@ class StatsDialog(BaseModalDialog[None], ViNavigationMixin):
         ),
     ]
 
-    def __init__(
-        self,
-        *args: Any,
-        api_client: TaskdogApiClient,
-        **kwargs: Any,
-    ):
-        """Initialize the statistics dialog.
+    def __init__(self, api_client: TaskdogApiClient) -> None:
+        """Initialize the statistics screen.
 
         Args:
             api_client: API client for fetching statistics
         """
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self._api_client = api_client
         self._loaded_periods: dict[str, bool] = {}
 
     def compose(self) -> ComposeResult:
-        """Compose the dialog layout."""
-        with Container(
-            id="stats-dialog", classes="dialog-base dialog-wide"
-        ) as container:
-            container.border_title = "Task Statistics"
+        """Compose the screen layout."""
+        yield Header(show_clock=True)
 
-            with TabbedContent(id="stats-tabs"):
-                with (
-                    TabPane("All", id="tab-all"),
-                    VerticalScroll(id="stats-all-scroll", classes="stats-tab-scroll"),
-                ):
-                    yield Static(
-                        "[dim]Loading statistics...[/dim]",
-                        id="stats-all-placeholder",
-                    )
+        with TabbedContent(id="stats-tabs") as tabs:
+            tabs.border_title = "Task Statistics"
 
-                with (
-                    TabPane("7 Days", id="tab-7d"),
-                    VerticalScroll(id="stats-7d-scroll", classes="stats-tab-scroll"),
-                ):
-                    yield Static(
-                        "[dim]Select this tab to load statistics...[/dim]",
-                        id="stats-7d-placeholder",
-                    )
+            with (
+                TabPane("All", id="tab-all"),
+                VerticalScroll(id="stats-all-scroll", classes="stats-tab-scroll"),
+            ):
+                yield Static(
+                    "[dim]Loading statistics...[/dim]",
+                    id="stats-all-placeholder",
+                )
 
-                with (
-                    TabPane("30 Days", id="tab-30d"),
-                    VerticalScroll(id="stats-30d-scroll", classes="stats-tab-scroll"),
-                ):
-                    yield Static(
-                        "[dim]Select this tab to load statistics...[/dim]",
-                        id="stats-30d-placeholder",
-                    )
+            with (
+                TabPane("7 Days", id="tab-7d"),
+                VerticalScroll(id="stats-7d-scroll", classes="stats-tab-scroll"),
+            ):
+                yield Static(
+                    "[dim]Select this tab to load statistics...[/dim]",
+                    id="stats-7d-placeholder",
+                )
 
-                with (
-                    TabPane("Activity", id="tab-activity"),
-                    VerticalScroll(
-                        id="stats-activity-scroll", classes="stats-tab-scroll"
-                    ),
-                ):
-                    yield Static(
-                        "[dim]Select this tab to load activity graphs...[/dim]",
-                        id="stats-activity-placeholder",
-                    )
+            with (
+                TabPane("30 Days", id="tab-30d"),
+                VerticalScroll(id="stats-30d-scroll", classes="stats-tab-scroll"),
+            ):
+                yield Static(
+                    "[dim]Select this tab to load statistics...[/dim]",
+                    id="stats-30d-placeholder",
+                )
+
+            with (
+                TabPane("Activity", id="tab-activity"),
+                VerticalScroll(id="stats-activity-scroll", classes="stats-tab-scroll"),
+            ):
+                yield Static(
+                    "[dim]Select this tab to load activity graphs...[/dim]",
+                    id="stats-activity-placeholder",
+                )
 
     def on_mount(self) -> None:
         """Load the initial tab (All) on mount."""
         self._load_period("tab-all")
+
+    def action_pop_screen(self) -> None:
+        """Go back to the main screen."""
+        self.app.pop_screen()
 
     def on_tabbed_content_tab_activated(
         self, event: TabbedContent.TabActivated
