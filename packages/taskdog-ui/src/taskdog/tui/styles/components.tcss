@@ -158,78 +158,37 @@ AuditLogScreen {
 }
 
 /* =============================================================================
-   Statistics Screen (full-page modal without dimming)
+   Statistics Screen (full-page btop-style dashboard)
    ============================================================================= */
 
 StatsScreen {
     background: $surface;
 }
 
-#stats-tabs {
+#stats-columns {
     height: 1fr;
-    border: round $primary;
 }
 
-.stats-tab-scroll {
-    padding: 1;
-    margin: 0;
-    overflow-y: auto;
-}
-
-.stats-section {
-    height: auto;
+#stats-left {
+    width: 56;
     padding: 0 1;
+}
+
+#stats-right {
+    width: 1fr;
+    padding: 0 1;
+}
+
+.stats-panel {
+    border: round $primary;
+    border-title-color: $primary;
+    padding: 0 1;
+    width: 100%;
+    height: auto;
     margin-bottom: 1;
 }
 
-.section-spacer {
-    height: 1;
-}
-
-/* Stats section title */
-.stats-section-title {
-    text-style: bold;
-    color: $primary;
-    padding: 0 0 1 0;
-}
-
-/* Stats label (left side) */
-.stats-label {
-    color: $text-muted;
-    width: 20;
-}
-
-/* Stats value variations */
-.stats-value {
-    width: 1fr;
-}
-
-.stats-value-success {
-    color: $success;
-}
-
-.stats-value-warning {
-    color: $warning;
-}
-
-.stats-value-error {
-    color: $error;
-}
-
-.stats-value-info {
-    color: $secondary;
-}
-
-.stats-value-muted {
-    color: $text-muted;
-}
-
-.stats-value-bold {
-    text-style: bold;
-}
-
-/* Stats row container */
-.stats-row {
-    height: auto;
-    padding: 0 2;
+.stats-chart {
+    height: 18;
+    margin-bottom: 1;
 }
