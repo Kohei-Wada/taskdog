@@ -13,8 +13,11 @@ from textual.widgets import Header, Static
 from taskdog.presenters.statistics_presenter import StatisticsPresenter
 from taskdog.tui.widgets.stats_panels import (
     build_activity_charts,
+    build_chronic_slippers_table,
     build_deadline_priority_table,
+    build_lead_time_table,
     build_overview_table,
+    build_reschedule_table,
     build_time_estimation_table,
 )
 
@@ -71,6 +74,18 @@ class StatsScreen(ModalScreen[None]):
                 deadline_prio.border_title = "Deadline / Priority"
                 yield deadline_prio
 
+                reschedule = Static(id="stats-reschedule", classes="stats-panel")
+                reschedule.border_title = "Reschedule"
+                yield reschedule
+
+                lead_time = Static(id="stats-lead-time", classes="stats-panel")
+                lead_time.border_title = "Reschedule by Lead Time"
+                yield lead_time
+
+                slippers = Static(id="stats-chronic-slippers", classes="stats-panel")
+                slippers.border_title = "Chronic Slippers"
+                yield slippers
+
             yield Vertical(id="stats-right")
 
     def on_mount(self) -> None:
@@ -101,6 +116,11 @@ class StatsScreen(ModalScreen[None]):
         )
         self.query_one("#stats-deadline-priority", Static).update(
             build_deadline_priority_table(vms)
+        )
+        self.query_one("#stats-reschedule", Static).update(build_reschedule_table(vms))
+        self.query_one("#stats-lead-time", Static).update(build_lead_time_table(vms[0]))
+        self.query_one("#stats-chronic-slippers", Static).update(
+            build_chronic_slippers_table(vms[0])
         )
 
         right = self.query_one("#stats-right", Vertical)

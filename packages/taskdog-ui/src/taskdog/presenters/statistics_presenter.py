@@ -59,6 +59,7 @@ class StatisticsPresenter:
             priority_stats=statistics_result.priority_stats,
             trend_stats=statistics_result.trend_stats,
             activity_stats=statistics_result.activity_stats,
+            reschedule_stats=statistics_result.reschedule_stats,
         )
 
     def _map_time_statistics(

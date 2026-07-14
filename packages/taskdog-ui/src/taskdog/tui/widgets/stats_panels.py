@@ -273,6 +273,134 @@ def build_deadline_priority_table(vms: Sequence[StatisticsViewModel]) -> Table:
     return table
 
 
+_LEAD_TIME_LABELS = {
+    "same_day": "Same day",
+    "1_2_days": "1-2 days",
+    "3_7_days": "3-7 days",
+    "8_plus_days": "8+ days",
+}
+
+
+def _slip_rate_text(rate: float) -> Text:
+    """Render a reschedule rate — higher is worse, so the scale is reversed."""
+    if rate >= 0.5:
+        style = "red"
+    elif rate >= 0.25:
+        style = "yellow"
+    else:
+        style = "green"
+    return Text(f"{rate:.0%}", style=style)
+
+
+def build_reschedule_table(vms: Sequence[StatisticsViewModel]) -> Table:
+    """Build the deadline reschedule summary table (one column per period)."""
+    table = _new_table()
+    table.add_row(
+        "With Deadline",
+        *_cells(
+            vms,
+            lambda vm: (
+                str(vm.reschedule_stats.tasks_with_deadline)
+                if vm.reschedule_stats
+                else None
+            ),
+        ),
+    )
+    table.add_row(
+        "Rescheduled",
+        *_cells(
+            vms,
+            lambda vm: (
+                Text(str(vm.reschedule_stats.rescheduled_task_count), "yellow")
+                if vm.reschedule_stats
+                else None
+            ),
+        ),
+    )
+    table.add_row(
+        "Events",
+        *_cells(
+            vms,
+            lambda vm: (
+                str(vm.reschedule_stats.total_reschedule_events)
+                if vm.reschedule_stats
+                else None
+            ),
+        ),
+    )
+    table.add_row(
+        "Moved Earlier",
+        *_cells(
+            vms,
+            lambda vm: (
+                Text(str(vm.reschedule_stats.moved_earlier_count), "cyan")
+                if vm.reschedule_stats
+                else None
+            ),
+        ),
+    )
+    table.add_row(
+        "Reschedule Rate",
+        *_cells(
+            vms,
+            lambda vm: (
+                _slip_rate_text(vm.reschedule_stats.reschedule_rate)
+                if vm.reschedule_stats
+                else None
+            ),
+        ),
+    )
+    return table
+
+
+def build_lead_time_table(vm: StatisticsViewModel) -> Table | Text:
+    """Build the reschedule-rate-by-lead-time table (all-time statistics).
+
+    Shows the denominator (task count) alongside the rate so small
+    samples are not read as strong signals.
+    """
+    if vm.reschedule_stats is None or not vm.reschedule_stats.lead_time_breakdown:
+        return Text("No lead time data available.", style="dim")
+
+    table = Table(expand=True, box=None, pad_edge=False, header_style="bold")
+    table.add_column("Lead Time", ratio=3, style="dim", no_wrap=True)
+    table.add_column("Tasks", justify="right", ratio=2, no_wrap=True)
+    table.add_column("Slipped", justify="right", ratio=2, no_wrap=True)
+    table.add_column("Rate", justify="right", ratio=2, no_wrap=True)
+
+    for bucket in vm.reschedule_stats.lead_time_breakdown:
+        label = _LEAD_TIME_LABELS.get(bucket.category, bucket.category)
+        table.add_row(
+            label,
+            str(bucket.task_count),
+            str(bucket.rescheduled_count),
+            _slip_rate_text(bucket.reschedule_rate),
+        )
+    return table
+
+
+def build_chronic_slippers_table(vm: StatisticsViewModel) -> Table | Text:
+    """Build the chronic slippers table (all-time statistics).
+
+    Lists tasks rescheduled three or more times, worst first.
+    """
+    if vm.reschedule_stats is None or not vm.reschedule_stats.chronic_slippers:
+        return Text("No chronic slippers — deadlines are holding.", style="dim")
+
+    table = Table(expand=True, box=None, pad_edge=False, header_style="bold")
+    table.add_column("Task", ratio=6, style="dim", no_wrap=True, overflow="ellipsis")
+    table.add_column("Resched.", justify="right", ratio=2, no_wrap=True)
+    table.add_column("Slip", justify="right", ratio=2, no_wrap=True)
+
+    for slipper in vm.reschedule_stats.chronic_slippers:
+        table.add_row(
+            slipper.task_name,
+            Text(str(slipper.reschedule_count), "red"),
+            f"{slipper.total_slip_days:+.0f}d",
+        )
+    return table
+
+
 class StatsChart(PlotextPlot):
     """A bordered dashboard chart that configures its plot on mount."""
 
