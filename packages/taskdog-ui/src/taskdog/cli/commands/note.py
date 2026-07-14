@@ -33,6 +33,9 @@ def _read_content_from_source(
 
     Returns:
         str | None: Content if available, None if should use editor
+
+    Raises:
+        click.Abort: If an explicitly given --file cannot be read
     """
     if content is not None:
         return content
@@ -42,7 +45,7 @@ def _read_content_from_source(
             return Path(file).read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as e:
             console_writer.error("reading file", e)
-            return None
+            raise click.Abort() from e
 
     # Check stdin only if no explicit options provided
     if not sys.stdin.isatty() and select.select([sys.stdin], [], [], 0)[0]:
