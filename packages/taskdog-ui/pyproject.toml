@@ -34,7 +34,7 @@ dev = [
     "pytest-cov>=4.0.0",
     "pytest-asyncio>=1.0.0",
     "mypy>=1.0.0",
-    "ruff>=0.15.20",
+    "ruff>=0.15.21",
 ]
 server = [
     "taskdog-server==0.23.0",
