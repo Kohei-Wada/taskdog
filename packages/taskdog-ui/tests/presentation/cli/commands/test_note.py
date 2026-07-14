@@ -363,7 +363,9 @@ class TestNoteCommand:
         self.console_writer.validation_error.assert_called_once()
 
     def test_file_read_oserror(self):
-        """Test error handling when file read fails with OSError."""
+        """Test that file read failure with OSError aborts the command."""
+        import click
+
         from taskdog.cli.commands.note import _read_content_from_source
 
         # Create a mock file path that will fail to read
@@ -372,15 +374,15 @@ class TestNoteCommand:
             mock_path.read_text.side_effect = OSError("Permission denied")
             mock_path_cls.return_value = mock_path
 
-            # Execute
-            result = _read_content_from_source(None, "/fake/path", self.console_writer)
-
-            # Verify
-            assert result is None
+            # Execute & Verify: explicit --file failure must abort, not fall back
+            with pytest.raises(click.Abort):
+                _read_content_from_source(None, "/fake/path", self.console_writer)
             self.console_writer.error.assert_called_once()
 
     def test_file_read_unicode_error(self):
-        """Test error handling when file has encoding issues."""
+        """Test that file with encoding issues aborts the command."""
+        import click
+
         from taskdog.cli.commands.note import _read_content_from_source
 
         with patch("taskdog.cli.commands.note.Path") as mock_path_cls:
@@ -390,12 +392,33 @@ class TestNoteCommand:
             )
             mock_path_cls.return_value = mock_path
 
-            # Execute
-            result = _read_content_from_source(None, "/fake/path", self.console_writer)
-
-            # Verify
-            assert result is None
+            # Execute & Verify: explicit --file failure must abort, not fall back
+            with pytest.raises(click.Abort):
+                _read_content_from_source(None, "/fake/path", self.console_writer)
             self.console_writer.error.assert_called_once()
+
+    def test_file_read_failure_does_not_open_editor(self):
+        """Test that a non-UTF8 --file exits non-zero without opening editor."""
+        with NamedTemporaryFile(mode="wb", suffix=".md", delete=False) as tmp:
+            tmp.write(b"\xff\xfe invalid utf-8 \x80")
+            tmp_path = Path(tmp.name)
+
+        try:
+            with patch(
+                "taskdog.cli.commands.note._edit_with_editor_via_shared"
+            ) as mock_edit:
+                result = self.runner.invoke(
+                    note_command,
+                    ["1", "--file", str(tmp_path)],
+                    obj=self.cli_context,
+                )
+
+                assert result.exit_code != 0
+                mock_edit.assert_not_called()
+                self.api_client.update_task_notes.assert_not_called()
+                self.console_writer.error.assert_called_once()
+        finally:
+            tmp_path.unlink(missing_ok=True)
 
     def test_empty_stdin_falls_back_to_editor(self):
         """Test that empty stdin returns None (falls back to editor mode)."""
