@@ -109,7 +109,9 @@ def initialize_api_context(
     query_controller = QueryController(repository, notes_repository, time_provider)
     lifecycle_controller = TaskLifecycleController(repository, config)
     relationship_controller = TaskRelationshipController(repository, config)
-    analytics_controller = TaskAnalyticsController(repository, config, holiday_checker)
+    analytics_controller = TaskAnalyticsController(
+        repository, config, holiday_checker, audit_log_repository
+    )
     crud_controller = TaskCrudController(repository, config, holiday_checker)
     audit_log_controller = AuditLogController(audit_log_repository, time_provider)
     notes_controller = NotesController(repository, notes_repository)

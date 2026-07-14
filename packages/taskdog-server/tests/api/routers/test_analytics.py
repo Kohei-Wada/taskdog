@@ -58,6 +58,34 @@ class TestAnalyticsRouter:
         assert data["completion"]["pending"] == 1
         assert data["completion"]["canceled"] == 1
 
+    def test_get_statistics_includes_reschedule_section(
+        self, client, audit_log_repository
+    ):
+        """Reschedule statistics are derived from audit log deadline changes."""
+        from taskdog_core.domain.entities.audit_log import AuditLog
+
+        audit_log_repository.save(
+            AuditLog(
+                timestamp=datetime.now(),
+                operation="update_task",
+                resource_type="task",
+                success=True,
+                resource_id=1,
+                resource_name="slipping task",
+                old_values={"deadline": "2026-07-20T18:00:00"},
+                new_values={"deadline": "2026-07-25T18:00:00"},
+            )
+        )
+
+        response = client.get("/api/v1/statistics?period=all")
+
+        assert response.status_code == 200
+        reschedule = response.json()["reschedule"]
+        assert reschedule["tasks_with_deadline"] == 1
+        assert reschedule["total_reschedule_events"] == 1
+        assert reschedule["rescheduled_task_count"] == 1
+        assert len(reschedule["lead_time_breakdown"]) == 4
+
     def test_get_statistics_invalid_period(self, client):
         """Test getting statistics with invalid period parameter."""
         # Act

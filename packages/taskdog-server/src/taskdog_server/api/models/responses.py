@@ -257,6 +257,39 @@ class ActivityPattern(BaseModel):
     total_completed_with_time: int
 
 
+class LeadTimeBreakdownData(BaseModel):
+    """Reschedule likelihood for one planning lead time bucket."""
+
+    category: str
+    task_count: int
+    rescheduled_count: int
+    reschedule_rate: float
+
+
+class ChronicSlipperData(BaseModel):
+    """A task whose deadline was rescheduled repeatedly."""
+
+    task_id: int
+    task_name: str
+    reschedule_count: int
+    total_slip_days: float
+    first_deadline: str
+    latest_deadline: str
+
+
+class RescheduleStatisticsData(BaseModel):
+    """Deadline reschedule statistics derived from the audit log."""
+
+    tasks_with_deadline: int
+    rescheduled_task_count: int
+    total_reschedule_events: int
+    reschedule_rate: float
+    moved_earlier_count: int
+    lead_time_breakdown: list[LeadTimeBreakdownData]
+    chronic_slippers: list[ChronicSlipperData]
+    weekly_reschedule_trend: dict[str, int]
+
+
 class StatisticsResponse(BaseModel):
     """Response model for task statistics."""
 
@@ -267,6 +300,7 @@ class StatisticsResponse(BaseModel):
     priority: PriorityDistribution
     trends: TrendData | None = None
     activity: ActivityPattern | None = None
+    reschedule: RescheduleStatisticsData | None = None
 
 
 class TagStatisticsItem(BaseModel):

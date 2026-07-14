@@ -61,6 +61,36 @@ class TestTaskAnalyticsController:
         assert result is not None
         self.repository.get_all.assert_called_once()
 
+    def test_calculate_statistics_without_audit_repository_has_no_reschedule_stats(
+        self,
+    ):
+        """Reschedule stats are omitted when no audit repository is provided."""
+        self.repository.get_all.return_value = []
+
+        result = self.controller.calculate_statistics(period="all")
+
+        assert result.reschedule_stats is None
+
+    def test_calculate_statistics_with_audit_repository_includes_reschedule_stats(
+        self,
+    ):
+        """Reschedule stats are calculated when an audit repository is provided."""
+        self.repository.get_all.return_value = []
+        audit_repository = MagicMock()
+        audit_repository.get_deadline_changes.return_value = []
+        controller = TaskAnalyticsController(
+            repository=self.repository,
+            config=self.config,
+            holiday_checker=None,
+            audit_log_repository=audit_repository,
+        )
+
+        result = controller.calculate_statistics(period="all")
+
+        assert result.reschedule_stats is not None
+        assert result.reschedule_stats.tasks_with_deadline == 0
+        audit_repository.get_deadline_changes.assert_called_once()
+
     def test_calculate_statistics_raises_error_for_invalid_period(self):
         """Test that calculate_statistics raises ValueError for invalid period."""
         # Act & Assert

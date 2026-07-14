@@ -13,11 +13,15 @@ from taskdog_core.application.dto.statistics_output import (
     CalculateStatisticsInput,
     StatisticsOutput,
 )
+from taskdog_core.application.use_cases.calculate_reschedule_statistics import (
+    CalculateRescheduleStatisticsUseCase,
+)
 from taskdog_core.application.use_cases.calculate_statistics import (
     CalculateStatisticsUseCase,
 )
 from taskdog_core.application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from taskdog_core.controllers.base_controller import BaseTaskController
+from taskdog_core.domain.repositories.audit_log_repository import AuditLogRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.shared.config_manager import Config
@@ -43,6 +47,7 @@ class TaskAnalyticsController(BaseTaskController):
         repository: TaskRepository,
         config: Config,
         holiday_checker: IHolidayChecker | None,
+        audit_log_repository: AuditLogRepository | None = None,
     ):
         """Initialize the analytics controller.
 
@@ -50,9 +55,12 @@ class TaskAnalyticsController(BaseTaskController):
             repository: Task repository
             config: Application configuration
             holiday_checker: Holiday checker for workday validation (optional)
+            audit_log_repository: Audit log repository for reschedule
+                statistics (optional; reschedule stats are omitted without it)
         """
         super().__init__(repository, config)
         self.holiday_checker = holiday_checker
+        self.audit_log_repository = audit_log_repository
 
     def calculate_statistics(self, period: str = "all") -> StatisticsOutput:
         """Calculate task statistics.
@@ -61,7 +69,9 @@ class TaskAnalyticsController(BaseTaskController):
             period: Time period for filtering ('7d', '30d', or 'all')
 
         Returns:
-            StatisticsOutput containing comprehensive task statistics
+            StatisticsOutput containing comprehensive task statistics,
+            including reschedule statistics when an audit log repository
+            is available
 
         Raises:
             ValueError: If period is invalid
@@ -71,7 +81,17 @@ class TaskAnalyticsController(BaseTaskController):
 
         use_case = CalculateStatisticsUseCase(self.repository)
         request = CalculateStatisticsInput(period=period)
-        return use_case.execute(request)
+        output = use_case.execute(request)
+
+        if self.audit_log_repository is not None:
+            reschedule_use_case = CalculateRescheduleStatisticsUseCase(
+                self.audit_log_repository
+            )
+            output = output.model_copy(
+                update={"reschedule_stats": reschedule_use_case.execute(request)}
+            )
+
+        return output
 
     def optimize_schedule(
         self,
