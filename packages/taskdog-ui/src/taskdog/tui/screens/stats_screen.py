@@ -6,7 +6,7 @@ from typing import ClassVar
 from taskdog_client.taskdog_api_client import TaskdogApiClient
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, VerticalScroll
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Header, Static
 
@@ -71,7 +71,7 @@ class StatsScreen(ModalScreen[None]):
                 deadline_prio.border_title = "Deadline / Priority"
                 yield deadline_prio
 
-            yield VerticalScroll(id="stats-right")
+            yield Vertical(id="stats-right")
 
     def on_mount(self) -> None:
         """Fetch all periods after the screen is mounted."""
@@ -103,7 +103,7 @@ class StatsScreen(ModalScreen[None]):
             build_deadline_priority_table(vms)
         )
 
-        right = self.query_one("#stats-right", VerticalScroll)
+        right = self.query_one("#stats-right", Vertical)
         charts = build_activity_charts(vms[0])
         if charts:
             right.mount(*charts)

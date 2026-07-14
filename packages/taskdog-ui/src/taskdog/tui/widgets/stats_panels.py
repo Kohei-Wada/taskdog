@@ -8,7 +8,7 @@ from collections.abc import Callable, Sequence
 
 from rich.table import Table
 from rich.text import Text
-from textual_plotext import PlotextPlot
+from textual_plotext import Plot, PlotextPlot
 
 from taskdog.view_models.statistics_view_model import StatisticsViewModel
 
@@ -273,7 +273,20 @@ def build_deadline_priority_table(vms: Sequence[StatisticsViewModel]) -> Table:
     return table
 
 
-def build_activity_charts(vm: StatisticsViewModel) -> list[PlotextPlot]:
+class StatsChart(PlotextPlot):
+    """A bordered dashboard chart that configures its plot on mount."""
+
+    def __init__(self, title: str, configure: Callable[[Plot], None]) -> None:
+        super().__init__(classes="stats-chart")
+        self.border_title = title
+        self._configure = configure
+
+    def on_mount(self) -> None:
+        self._configure(self.plt)
+        self.refresh()
+
+
+def build_activity_charts(vm: StatisticsViewModel) -> list[StatsChart]:
     """Build activity pattern charts from all-time statistics.
 
     Returns an empty list when no activity data is available.
@@ -282,57 +295,37 @@ def build_activity_charts(vm: StatisticsViewModel) -> list[PlotextPlot]:
     if stats is None:
         return []
 
-    charts: list[PlotextPlot] = []
+    charts: list[StatsChart] = []
 
-    hourly_plot = PlotextPlot(classes="stats-chart")
-
-    def setup_hourly(plot: PlotextPlot) -> None:
-        plt = plot.plt
-        plt.clear_figure()
+    def setup_hourly(plt: Plot) -> None:
         hours = list(range(24))
         counts = [stats.hourly_completions.get(h, 0) for h in hours]
         plt.plot(hours, counts, marker="braille")
-        plt.title("Completions by Hour")
         plt.xlabel("Hour")
-        plt.ylabel("Tasks")
         plt.xticks([float(h) for h in hours], [str(h) for h in hours])
 
-    hourly_plot.call_after_refresh(lambda: setup_hourly(hourly_plot))
-    charts.append(hourly_plot)
+    charts.append(StatsChart("Completions by Hour", setup_hourly))
 
     trend_stats = vm.trend_stats
     if trend_stats and trend_stats.monthly_completion_trend:
-        trend_plot = PlotextPlot(classes="stats-chart")
         monthly = trend_stats.monthly_completion_trend
 
-        def setup_trend(plot: PlotextPlot, data: dict[str, int]) -> None:
-            plt = plot.plt
-            plt.clear_figure()
-            sorted_months = sorted(data.items())
+        def setup_trend(plt: Plot) -> None:
+            sorted_months = sorted(monthly.items())
             labels = [m for m, _ in sorted_months]
             values = [c for _, c in sorted_months]
             x = list(range(len(labels)))
             plt.plot(x, values, marker="braille")
-            plt.title("Monthly Trend")
-            plt.ylabel("Tasks")
             plt.xticks([float(i) for i in x], labels)
 
-        trend_plot.call_after_refresh(lambda: setup_trend(trend_plot, monthly))
-        charts.append(trend_plot)
+        charts.append(StatsChart("Monthly Trend", setup_trend))
 
-    daily_plot = PlotextPlot(classes="stats-chart")
-
-    def setup_daily(plot: PlotextPlot) -> None:
-        plt = plot.plt
-        plt.clear_figure()
+    def setup_daily(plt: Plot) -> None:
         days = list(range(7))
         counts = [stats.daily_completions.get(d, 0) for d in days]
         plt.plot(days, counts, marker="braille")
-        plt.title("Completions by Day of Week")
-        plt.ylabel("Tasks")
         plt.xticks([float(d) for d in days], _DAY_LABELS)
 
-    daily_plot.call_after_refresh(lambda: setup_daily(daily_plot))
-    charts.append(daily_plot)
+    charts.append(StatsChart("Completions by Day of Week", setup_daily))
 
     return charts
