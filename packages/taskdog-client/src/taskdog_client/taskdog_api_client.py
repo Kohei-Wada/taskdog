@@ -26,7 +26,6 @@ from taskdog_core.application.dto.audit_log_dto import (
 )
 from taskdog_core.application.dto.bulk_operation_output import BulkOperationOutput
 from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
-from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
 from taskdog_core.application.dto.restore_result import RestoreResultDTO
 from taskdog_core.application.dto.statistics_output import StatisticsOutput
@@ -328,13 +327,9 @@ class TaskdogApiClient:
             gantt_end_date,
         )
 
-    def get_task_by_id(self, task_id: int) -> TaskByIdOutput:
-        """Get task by ID."""
+    def get_task_by_id(self, task_id: int) -> TaskDetailOutput:
+        """Get task by ID, including notes."""
         return self._queries.get_task_by_id(task_id)
-
-    def get_task_detail(self, task_id: int) -> TaskDetailOutput:
-        """Get task details with notes."""
-        return self._queries.get_task_detail(task_id)
 
     def get_gantt_data(
         self,

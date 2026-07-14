@@ -80,9 +80,7 @@ class TestTagListCommand(_TagCommandFixture):
 
     def test_show_task_tags_not_found(self):
         """Test showing tags for non-existent task."""
-        mock_result = MagicMock()
-        mock_result.task = None
-        self.api_client.get_task_by_id.return_value = mock_result
+        self.api_client.get_task_by_id.side_effect = TaskNotFoundException(999)
 
         result = self.runner.invoke(list_command, ["999"], obj=self.cli_context)
 

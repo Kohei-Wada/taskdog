@@ -24,7 +24,7 @@ def show_command(ctx: click.Context, task_id: int, raw: bool) -> None:
     console_writer = ctx_obj.console_writer
 
     # Get task detail via API client
-    detail = ctx_obj.api_client.get_task_detail(task_id)
+    detail = ctx_obj.api_client.get_task_by_id(task_id)
 
     # Render and display using renderer
     renderer = RichDetailRenderer(console_writer)

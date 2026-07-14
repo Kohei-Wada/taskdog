@@ -107,7 +107,7 @@ def register_decomposition_tools(mcp: FastMCP, client: TaskdogApiClient) -> None
         Returns:
             Decomposition result with created subtask IDs
         """
-        original = client.get_task_detail(task_id)
+        original = client.get_task_by_id(task_id)
         # TaskDetailOutput has .task (TaskDetailDto)
         original_task = original.task
         original_tags = str_list(original_task.tags)

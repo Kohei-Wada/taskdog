@@ -64,9 +64,6 @@ class NoteCommand(TUICommandBase):
 
         # Fetch task via API client
         output = self.context.api_client.get_task_by_id(task_id)
-        if output.task is None:
-            self.notify_warning(f"Task #{task_id} not found")
-            return
 
         # Edit note using shared helper (uses API client via NotesProvider protocol)
         edit_task_note(

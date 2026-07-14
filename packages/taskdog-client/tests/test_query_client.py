@@ -56,28 +56,17 @@ class TestQueryClient:
         assert result == mock_output
         mock_convert.assert_called_once_with(mock_json)
 
-    @pytest.mark.parametrize(
-        "method_name,converter_name,mock_json",
-        [
-            ("get_task_by_id", "convert_to_get_task_by_id_output", {"id": 1}),
-            (
-                "get_task_detail",
-                "convert_to_get_task_detail_output",
-                {"id": 1, "notes": "Content"},
-            ),
-        ],
-        ids=["get_task_by_id", "get_task_detail"],
-    )
-    def test_get_single_task_operations(self, method_name, converter_name, mock_json):
-        """Test single task GET operations make correct API calls."""
-        with patch(f"taskdog_client.query_client.{converter_name}") as mock_convert:
-            self.mock_base._request_json.return_value = mock_json
+    def test_get_task_by_id(self):
+        """Test get_task_by_id makes correct API call."""
+        with patch(
+            "taskdog_client.query_client.convert_to_get_task_detail_output"
+        ) as mock_convert:
+            self.mock_base._request_json.return_value = {"id": 1, "notes": "Content"}
 
             mock_output = Mock()
             mock_convert.return_value = mock_output
 
-            method = getattr(self.client, method_name)
-            result = method(task_id=1)
+            result = self.client.get_task_by_id(task_id=1)
 
             self.mock_base._request_json.assert_called_once_with(
                 "get", "/api/v1/tasks/1"

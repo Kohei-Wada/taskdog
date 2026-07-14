@@ -11,7 +11,6 @@ import click
 
 from taskdog.cli.error_handler import handle_task_errors
 from taskdog.utils.note_editor import EditorInterruptedError, edit_task_note
-from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 if TYPE_CHECKING:
     from taskdog_client import TaskdogApiClient
@@ -146,10 +145,7 @@ def note_command(
         return
 
     # Get task from API
-    result = api_client.get_task_by_id(task_id)
-    if not result.task:
-        raise TaskNotFoundException(task_id)
-    task = result.task
+    task = api_client.get_task_by_id(task_id).task
 
     # Try to read content from sources (priority: --content, --file, stdin)
     new_content = _read_content_from_source(content, file, console_writer)
