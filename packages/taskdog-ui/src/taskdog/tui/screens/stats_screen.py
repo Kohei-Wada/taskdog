@@ -13,12 +13,8 @@ from textual.widgets import Header, Static
 from taskdog.presenters.statistics_presenter import StatisticsPresenter
 from taskdog.tui.widgets.stats_panels import (
     build_activity_charts,
-    build_chronic_slippers_table,
-    build_deadline_priority_table,
-    build_lead_time_table,
-    build_overview_table,
-    build_reschedule_table,
-    build_time_estimation_table,
+    build_overview_panel,
+    build_reschedule_panel,
 )
 
 _PERIODS = ("all", "7d", "30d")
@@ -56,35 +52,17 @@ class StatsScreen(ModalScreen[None]):
 
         with Horizontal(id="stats-columns"):
             with VerticalScroll(id="stats-left"):
-                overview = Static(
-                    "[dim]Loading statistics...[/dim]",
-                    id="stats-overview",
-                    classes="stats-panel",
-                )
-                overview.border_title = "Overview"
-                yield overview
+                with Vertical(
+                    id="stats-overview-panel", classes="stats-panel"
+                ) as overview:
+                    overview.border_title = "Overview"
+                    yield Static("[dim]Loading statistics...[/dim]")
 
-                time_est = Static(id="stats-time-estimation", classes="stats-panel")
-                time_est.border_title = "Time / Estimation"
-                yield time_est
-
-                deadline_prio = Static(
-                    id="stats-deadline-priority", classes="stats-panel"
-                )
-                deadline_prio.border_title = "Deadline / Priority"
-                yield deadline_prio
-
-                reschedule = Static(id="stats-reschedule", classes="stats-panel")
-                reschedule.border_title = "Reschedule"
-                yield reschedule
-
-                lead_time = Static(id="stats-lead-time", classes="stats-panel")
-                lead_time.border_title = "Reschedule by Lead Time"
-                yield lead_time
-
-                slippers = Static(id="stats-chronic-slippers", classes="stats-panel")
-                slippers.border_title = "Chronic Slippers"
-                yield slippers
+                with Vertical(
+                    id="stats-reschedule-panel", classes="stats-panel"
+                ) as reschedule:
+                    reschedule.border_title = "Reschedule"
+                    yield Static("")
 
             yield Vertical(id="stats-right")
 
@@ -110,18 +88,13 @@ class StatsScreen(ModalScreen[None]):
         presenter = StatisticsPresenter()
         vms = [presenter.present(output) for output in outputs]
 
-        self.query_one("#stats-overview", Static).update(build_overview_table(vms))
-        self.query_one("#stats-time-estimation", Static).update(
-            build_time_estimation_table(vms)
-        )
-        self.query_one("#stats-deadline-priority", Static).update(
-            build_deadline_priority_table(vms)
-        )
-        self.query_one("#stats-reschedule", Static).update(build_reschedule_table(vms))
-        self.query_one("#stats-lead-time", Static).update(build_lead_time_table(vms[0]))
-        self.query_one("#stats-chronic-slippers", Static).update(
-            build_chronic_slippers_table(vms[0])
-        )
+        overview_panel = self.query_one("#stats-overview-panel", Vertical)
+        await overview_panel.remove_children()
+        await overview_panel.mount(*build_overview_panel(vms))
+
+        reschedule_panel = self.query_one("#stats-reschedule-panel", Vertical)
+        await reschedule_panel.remove_children()
+        await reschedule_panel.mount(*build_reschedule_panel(vms))
 
         right = self.query_one("#stats-right", Vertical)
         charts = build_activity_charts(vms[0])

@@ -16,7 +16,7 @@ _.handle_bindings_clash  # Textual override called by the framework (packages/ta
 node  # Textual override signature param (packages/taskdog-ui/src/taskdog/tui/app.py)
 activity  # StatisticsPayload / StatisticsResponse field (used by API serialization)
 _.margin  # Textual widget styles attribute (PlotextPlot styling)
+_.show_header  # Rich Table attribute set to suppress repeated period headers
 reschedule  # StatisticsPayload / StatisticsResponse field (used by API serialization)
-weekly_reschedule_trend  # RescheduleStatistics DTO field (API-only; not yet in the TUI)
 first_deadline  # ChronicSlipperTask DTO field (API-only; not yet in the TUI)
 latest_deadline  # ChronicSlipperTask DTO field (API-only; not yet in the TUI)

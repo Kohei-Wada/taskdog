@@ -8,6 +8,8 @@ from collections.abc import Callable, Sequence
 
 from rich.table import Table
 from rich.text import Text
+from textual.widget import Widget
+from textual.widgets import Rule, Sparkline, Static
 from textual_plotext import Plot, PlotextPlot
 
 from taskdog.view_models.statistics_view_model import StatisticsViewModel
@@ -15,6 +17,8 @@ from taskdog.view_models.statistics_view_model import StatisticsViewModel
 PERIOD_LABELS = ("All", "7 Days", "30 Days")
 
 _DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+_DASH = Text("-", style="dim")
 
 
 def _rate_text(rate: float) -> Text:
@@ -56,8 +60,8 @@ def _cells(
     vms: Sequence[StatisticsViewModel],
     value: Callable[[StatisticsViewModel], str | Text | None],
 ) -> list[str | Text]:
-    """Build one cell per period, rendering None as a dash."""
-    return [value(vm) or "-" for vm in vms]
+    """Build one cell per period, rendering None as a dim dash."""
+    return [value(vm) or _DASH for vm in vms]
 
 
 def build_overview_table(vms: Sequence[StatisticsViewModel]) -> Table:
@@ -66,19 +70,19 @@ def build_overview_table(vms: Sequence[StatisticsViewModel]) -> Table:
     table.add_row("Total", *_cells(vms, lambda vm: str(vm.task_stats.total_tasks)))
     table.add_row(
         "Pending",
-        *_cells(vms, lambda vm: Text(str(vm.task_stats.pending_count), "yellow")),
+        *_cells(vms, lambda vm: str(vm.task_stats.pending_count)),
     )
     table.add_row(
         "In Progress",
-        *_cells(vms, lambda vm: Text(str(vm.task_stats.in_progress_count), "cyan")),
+        *_cells(vms, lambda vm: str(vm.task_stats.in_progress_count)),
     )
     table.add_row(
         "Completed",
-        *_cells(vms, lambda vm: Text(str(vm.task_stats.completed_count), "green")),
+        *_cells(vms, lambda vm: str(vm.task_stats.completed_count)),
     )
     table.add_row(
         "Canceled",
-        *_cells(vms, lambda vm: Text(str(vm.task_stats.canceled_count), "red")),
+        *_cells(vms, lambda vm: str(vm.task_stats.canceled_count)),
     )
     table.add_row(
         "Completion Rate",
@@ -154,7 +158,7 @@ def build_time_estimation_table(vms: Sequence[StatisticsViewModel]) -> Table:
         *_cells(
             vms,
             lambda vm: (
-                Text(str(vm.estimation_stats.over_estimated_count), "cyan")
+                str(vm.estimation_stats.over_estimated_count)
                 if vm.estimation_stats
                 else None
             ),
@@ -165,7 +169,7 @@ def build_time_estimation_table(vms: Sequence[StatisticsViewModel]) -> Table:
         *_cells(
             vms,
             lambda vm: (
-                Text(str(vm.estimation_stats.under_estimated_count), "yellow")
+                str(vm.estimation_stats.under_estimated_count)
                 if vm.estimation_stats
                 else None
             ),
@@ -176,9 +180,7 @@ def build_time_estimation_table(vms: Sequence[StatisticsViewModel]) -> Table:
         *_cells(
             vms,
             lambda vm: (
-                Text(str(vm.estimation_stats.exact_count), "green")
-                if vm.estimation_stats
-                else None
+                str(vm.estimation_stats.exact_count) if vm.estimation_stats else None
             ),
         ),
     )
@@ -204,9 +206,7 @@ def build_deadline_priority_table(vms: Sequence[StatisticsViewModel]) -> Table:
         *_cells(
             vms,
             lambda vm: (
-                Text(str(vm.deadline_stats.met_deadline_count), "green")
-                if vm.deadline_stats
-                else None
+                str(vm.deadline_stats.met_deadline_count) if vm.deadline_stats else None
             ),
         ),
     )
@@ -246,22 +246,15 @@ def build_deadline_priority_table(vms: Sequence[StatisticsViewModel]) -> Table:
     )
     table.add_row(
         "High (≥70)",
-        *_cells(
-            vms, lambda vm: Text(str(vm.priority_stats.high_priority_count), "red")
-        ),
+        *_cells(vms, lambda vm: str(vm.priority_stats.high_priority_count)),
     )
     table.add_row(
         "Medium (30-69)",
-        *_cells(
-            vms,
-            lambda vm: Text(str(vm.priority_stats.medium_priority_count), "yellow"),
-        ),
+        *_cells(vms, lambda vm: str(vm.priority_stats.medium_priority_count)),
     )
     table.add_row(
         "Low (<30)",
-        *_cells(
-            vms, lambda vm: Text(str(vm.priority_stats.low_priority_count), "green")
-        ),
+        *_cells(vms, lambda vm: str(vm.priority_stats.low_priority_count)),
     )
     table.add_row(
         "High Prio. Done",
@@ -311,7 +304,7 @@ def build_reschedule_table(vms: Sequence[StatisticsViewModel]) -> Table:
         *_cells(
             vms,
             lambda vm: (
-                Text(str(vm.reschedule_stats.rescheduled_task_count), "yellow")
+                str(vm.reschedule_stats.rescheduled_task_count)
                 if vm.reschedule_stats
                 else None
             ),
@@ -333,7 +326,7 @@ def build_reschedule_table(vms: Sequence[StatisticsViewModel]) -> Table:
         *_cells(
             vms,
             lambda vm: (
-                Text(str(vm.reschedule_stats.moved_earlier_count), "cyan")
+                str(vm.reschedule_stats.moved_earlier_count)
                 if vm.reschedule_stats
                 else None
             ),
@@ -399,6 +392,63 @@ def build_chronic_slippers_table(vm: StatisticsViewModel) -> Table | Text:
             f"{slipper.total_slip_days:+.0f}d",
         )
     return table
+
+
+def _subhead(text: str) -> Static:
+    """A dim section label used inside a consolidated panel."""
+    return Static(Text(text, style="bold"), classes="stats-subhead")
+
+
+def _divider() -> Rule:
+    return Rule(line_style="dashed", classes="stats-divider")
+
+
+def build_overview_panel(vms: Sequence[StatisticsViewModel]) -> list[Widget]:
+    """Compose the Overview panel: task/time/deadline sections under one border.
+
+    The period header (All / 7 Days / 30 Days) is printed once, on the top
+    table; the following sections reuse the same columns without a header.
+    """
+    time_table = build_time_estimation_table(vms)
+    time_table.show_header = False
+    deadline_table = build_deadline_priority_table(vms)
+    deadline_table.show_header = False
+    return [
+        Static(build_overview_table(vms)),
+        _divider(),
+        _subhead("Time / Estimation"),
+        Static(time_table),
+        _divider(),
+        _subhead("Deadline / Priority"),
+        Static(deadline_table),
+    ]
+
+
+def build_reschedule_panel(vms: Sequence[StatisticsViewModel]) -> list[Widget]:
+    """Compose the Reschedule panel: summary, weekly trend, lead time, slippers."""
+    widgets: list[Widget] = [Static(build_reschedule_table(vms))]
+
+    reschedule = vms[0].reschedule_stats if vms else None
+    if reschedule and reschedule.weekly_reschedule_trend:
+        trend = [
+            count for _, count in sorted(reschedule.weekly_reschedule_trend.items())
+        ]
+        if any(trend):
+            widgets += [
+                _divider(),
+                _subhead("Weekly Reschedules"),
+                Sparkline(trend, summary_function=max, classes="stats-sparkline"),
+            ]
+
+    widgets += [
+        _divider(),
+        _subhead("By Lead Time"),
+        Static(build_lead_time_table(vms[0])),
+        _divider(),
+        _subhead("Chronic Slippers"),
+        Static(build_chronic_slippers_table(vms[0])),
+    ]
+    return widgets
 
 
 class StatsChart(PlotextPlot):

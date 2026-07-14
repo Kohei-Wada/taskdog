@@ -2,10 +2,13 @@
 
 from rich.table import Table
 from rich.text import Text
+from textual.widgets import Sparkline
 
 from taskdog.tui.widgets.stats_panels import (
     build_chronic_slippers_table,
     build_lead_time_table,
+    build_overview_panel,
+    build_reschedule_panel,
     build_reschedule_table,
 )
 from taskdog.view_models.statistics_view_model import StatisticsViewModel
@@ -61,6 +64,7 @@ def _reschedule(
     moved_earlier_count: int = 1,
     lead_time_breakdown: list[LeadTimeBreakdown] | None = None,
     chronic_slippers: list[ChronicSlipperTask] | None = None,
+    weekly_reschedule_trend: dict[str, int] | None = None,
 ) -> RescheduleStatistics:
     return RescheduleStatistics(
         tasks_with_deadline=tasks_with_deadline,
@@ -70,7 +74,7 @@ def _reschedule(
         moved_earlier_count=moved_earlier_count,
         lead_time_breakdown=lead_time_breakdown or [],
         chronic_slippers=chronic_slippers or [],
-        weekly_reschedule_trend={},
+        weekly_reschedule_trend=weekly_reschedule_trend or {},
     )
 
 
@@ -176,3 +180,29 @@ class TestBuildChronicSlippersTable:
         output = _render(build_chronic_slippers_table(vm))
 
         assert "No chronic slippers" in output
+
+
+class TestBuildOverviewPanel:
+    def test_returns_non_empty_widget_list(self) -> None:
+        vms = [_vm(_reschedule()), _vm(_reschedule()), _vm(_reschedule())]
+
+        widgets = build_overview_panel(vms)
+
+        assert len(widgets) > 0
+
+
+class TestBuildReschedulePanel:
+    def test_includes_sparkline_when_trend_present(self) -> None:
+        trend = {"2026-W01": 2, "2026-W02": 5, "2026-W03": 1}
+        vms = [_vm(_reschedule(weekly_reschedule_trend=trend))] * 3
+
+        widgets = build_reschedule_panel(vms)
+
+        assert any(isinstance(w, Sparkline) for w in widgets)
+
+    def test_omits_sparkline_when_trend_empty(self) -> None:
+        vms = [_vm(_reschedule(weekly_reschedule_trend={}))] * 3
+
+        widgets = build_reschedule_panel(vms)
+
+        assert not any(isinstance(w, Sparkline) for w in widgets)
