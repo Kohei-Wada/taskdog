@@ -14,6 +14,13 @@ from taskdog_core.application.dto.task_dto import TaskDetailDto
 type EditorRunner = Callable[[str, Path], None]
 
 
+class EditorInterruptedError(RuntimeError):
+    """Raised when the editor session is interrupted by the user."""
+
+    def __init__(self) -> None:
+        super().__init__("Editor interrupted")
+
+
 class NotesProvider(Protocol):
     """Protocol for notes access (supports both API client and NotesRepository)."""
 
@@ -176,7 +183,7 @@ def _execute_edit(
             on_error("running editor", e)
     except KeyboardInterrupt:
         if on_error:
-            on_error("editor", RuntimeError("Editor interrupted"))
+            on_error("editor", EditorInterruptedError())
     except (OSError, UnicodeDecodeError) as e:
         if on_error:
             on_error("saving notes", e)

@@ -302,9 +302,7 @@ class TestNoteCommand:
         # Mock _read_content_from_source to return None (no stdin/file/content)
         with (
             patch("taskdog.cli.commands.note._read_content_from_source") as mock_read,
-            patch(
-                "taskdog.cli.commands.note._edit_with_editor_via_shared"
-            ) as mock_edit,
+            patch("taskdog.cli.commands.note.edit_task_note") as mock_edit,
         ):
             mock_read.return_value = None
 
@@ -320,11 +318,12 @@ class TestNoteCommand:
             mock_read.assert_called_once_with(None, None, self.console_writer)
             mock_edit.assert_called_once()
             # Verify it was called with correct arguments
-            call_args = mock_edit.call_args[0]
-            assert call_args[0] == 1  # task_id
-            assert call_args[1] == self.mock_task  # task
-            assert call_args[2] == self.api_client  # api_client
-            assert call_args[3] == self.console_writer  # console_writer
+            call_kwargs = mock_edit.call_args[1]
+            assert call_kwargs["task"] == self.mock_task
+            assert call_kwargs["notes_provider"] == self.api_client
+            assert call_kwargs["config"] == self.config
+            assert callable(call_kwargs["on_success"])
+            assert callable(call_kwargs["on_error"])
 
     def test_api_error_handling(self):
         """Test error handling when API call fails."""
@@ -404,9 +403,7 @@ class TestNoteCommand:
             tmp_path = Path(tmp.name)
 
         try:
-            with patch(
-                "taskdog.cli.commands.note._edit_with_editor_via_shared"
-            ) as mock_edit:
+            with patch("taskdog.cli.commands.note.edit_task_note") as mock_edit:
                 result = self.runner.invoke(
                     note_command,
                     ["1", "--file", str(tmp_path)],
@@ -438,66 +435,40 @@ class TestNoteCommand:
             # Verify: should return None to fall back to editor mode
             assert result is None
 
-    def test_edit_with_editor_via_shared_calls_edit_task_note(self):
-        """Test that _edit_with_editor_via_shared delegates to edit_task_note."""
-        from taskdog.cli.commands.note import _edit_with_editor_via_shared
+    def _invoke_editor_mode(self, mock_edit):
+        """Invoke note_command in editor mode and return edit_task_note kwargs."""
+        with patch("taskdog.cli.commands.note._read_content_from_source") as mock_read:
+            mock_read.return_value = None
+            result = self.runner.invoke(note_command, ["1"], obj=self.cli_context)
+            assert result.exit_code == 0
+        return mock_edit.call_args[1]
 
-        with patch("taskdog.cli.commands.note.edit_task_note") as mock_edit:
-            _edit_with_editor_via_shared(
-                1, self.mock_task, self.api_client, self.console_writer, None
-            )
-
-            mock_edit.assert_called_once()
-            call_kwargs = mock_edit.call_args[1]
-            assert call_kwargs["task"] == self.mock_task
-            assert call_kwargs["notes_provider"] == self.api_client
-            assert call_kwargs["config"] is None
-            assert callable(call_kwargs["on_success"])
-            assert callable(call_kwargs["on_error"])
-
-    def test_edit_with_editor_via_shared_on_success_callback(self):
+    def test_editor_on_success_callback(self):
         """Test that on_success callback writes success message."""
-        from taskdog.cli.commands.note import _edit_with_editor_via_shared
-
         with patch("taskdog.cli.commands.note.edit_task_note") as mock_edit:
-            _edit_with_editor_via_shared(
-                1, self.mock_task, self.api_client, self.console_writer, None
-            )
-
-            # Extract and call the on_success callback
-            on_success = mock_edit.call_args[1]["on_success"]
+            on_success = self._invoke_editor_mode(mock_edit)["on_success"]
             on_success("Test Task", 1)
 
             self.console_writer.success.assert_called_once_with(
                 "Notes saved for task #1"
             )
 
-    def test_edit_with_editor_via_shared_on_error_callback(self):
+    def test_editor_on_error_callback(self):
         """Test that on_error callback handles errors correctly."""
-        from taskdog.cli.commands.note import _edit_with_editor_via_shared
-
         with patch("taskdog.cli.commands.note.edit_task_note") as mock_edit:
-            _edit_with_editor_via_shared(
-                1, self.mock_task, self.api_client, self.console_writer, None
-            )
-
-            # Extract and call the on_error callback with a regular error
-            on_error = mock_edit.call_args[1]["on_error"]
+            on_error = self._invoke_editor_mode(mock_edit)["on_error"]
             on_error("finding editor", RuntimeError("No editor found"))
 
             self.console_writer.error.assert_called_once()
 
-    def test_edit_with_editor_via_shared_on_error_interrupt(self):
-        """Test that on_error callback handles keyboard interrupt correctly."""
-        from taskdog.cli.commands.note import _edit_with_editor_via_shared
+    def test_editor_on_error_interrupt(self):
+        """Test that on_error callback handles editor interruption by type."""
+        from taskdog.utils.note_editor import EditorInterruptedError
 
         with patch("taskdog.cli.commands.note.edit_task_note") as mock_edit:
-            _edit_with_editor_via_shared(
-                1, self.mock_task, self.api_client, self.console_writer, None
-            )
+            on_error = self._invoke_editor_mode(mock_edit)["on_error"]
+            on_error("editor", EditorInterruptedError())
 
-            # Extract and call the on_error callback with interrupt
-            on_error = mock_edit.call_args[1]["on_error"]
-            on_error("editor", RuntimeError("Editor interrupted"))
-
+            self.console_writer.empty_line.assert_called_once()
             self.console_writer.warning.assert_called_once_with("Editor interrupted")
+            self.console_writer.error.assert_not_called()

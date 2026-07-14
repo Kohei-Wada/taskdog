@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from taskdog.utils.note_editor import (
+    EditorInterruptedError,
     _create_temp_notes_file,
     _execute_edit,
     _prepare_temp_file,
@@ -238,6 +239,7 @@ class TestExecuteEdit:
 
         on_error.assert_called_once()
         assert "editor" in on_error.call_args[0][0]
+        assert isinstance(on_error.call_args[0][1], EditorInterruptedError)
 
     @patch("taskdog.utils.note_editor._edit_and_save_notes")
     def test_calls_error_callback_on_oserror(self, mock_edit_save: MagicMock) -> None:
