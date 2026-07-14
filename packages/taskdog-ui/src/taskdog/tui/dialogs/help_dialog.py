@@ -9,6 +9,7 @@ from textual.css.query import NoMatches
 from textual.widgets import Markdown, Static, TabbedContent, TabPane, Tabs
 
 from taskdog import __version__
+from taskdog.constants.ascii_art import TASKDOG_TAGLINE, TASKDOG_WORDMARK
 from taskdog.tui.constants.keybindings import (
     BASIC_WORKFLOW,
     BUG_REPORT_INFO,
@@ -61,6 +62,9 @@ class HelpDialog(BaseModalDialog[None], ViNavigationMixin):
                         classes="help-tab-scroll",
                     ),
                 ):
+                    yield Static(TASKDOG_WORDMARK, classes="help-wordmark")
+                    yield Static(TASKDOG_TAGLINE, classes="help-tagline")
+                    yield Static("", classes="help-spacer")
                     yield Markdown(TASKDOG_OVERVIEW, classes="help-section")
                     yield Static("", classes="help-spacer")
                     yield Markdown(BASIC_WORKFLOW, classes="help-section")
