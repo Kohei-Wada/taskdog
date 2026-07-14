@@ -33,6 +33,7 @@ from taskdog_server.api.models.responses import (
     OptimizationResponse,
     OptimizationSummary,
     PriorityDistribution,
+    RescheduleStatisticsData,
     SchedulingFailure,
     StatisticsResponse,
     TagStatisticsItem,
@@ -180,6 +181,13 @@ async def get_statistics(
                     total_completed_with_time=result.activity_stats.total_completed_with_time,
                 )
                 if result.activity_stats
+                else None
+            ),
+            reschedule=(
+                RescheduleStatisticsData.model_validate(
+                    result.reschedule_stats, from_attributes=True
+                )
+                if result.reschedule_stats
                 else None
             ),
         )

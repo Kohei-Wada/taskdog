@@ -5,6 +5,7 @@ abstracting away implementation details like database operations.
 """
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 from taskdog_core.domain.entities.audit_log import AuditLog, AuditQuery
 
@@ -56,4 +57,18 @@ class AuditLogRepository(ABC):
 
         Returns:
             Number of logs matching the query
+        """
+
+    @abstractmethod
+    def get_deadline_changes(self, since: datetime | None = None) -> list[AuditLog]:
+        """Get successful update_task logs whose deadline value changed.
+
+        Includes initial settings (null to value) and removals (value to
+        null) as well as reschedules (value to value).
+
+        Args:
+            since: Only include logs at or after this timestamp (None for all)
+
+        Returns:
+            The matching audit logs, oldest first
         """

@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy import delete, func, select
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from sqlalchemy.engine import Engine
 
 from taskdog_core.domain.entities.audit_log import AuditLog, AuditQuery
@@ -112,6 +114,38 @@ class SqliteAuditLogRepository(SqliteBaseRepository, AuditLogRepository):
             stmt = select(func.count(AuditLogModel.id))
             stmt = self._apply_filters(stmt, query)
             return session.scalar(stmt) or 0
+
+    def get_deadline_changes(self, since: datetime | None = None) -> list[AuditLog]:
+        """Get successful update_task logs whose deadline value changed.
+
+        Filtering happens DB-side via json_extract; NULL-safe comparison
+        (IS DISTINCT FROM) treats a missing deadline key as NULL, so
+        updates that never touched the deadline are excluded.
+
+        Args:
+            since: Only include logs at or after this timestamp (None for all)
+
+        Returns:
+            The matching audit logs, oldest first
+        """
+        old_deadline = func.json_extract(AuditLogModel.old_values, "$.deadline")
+        new_deadline = func.json_extract(AuditLogModel.new_values, "$.deadline")
+
+        with self.Session() as session:
+            stmt = (
+                select(AuditLogModel)
+                .where(AuditLogModel.operation == "update_task")
+                .where(AuditLogModel.success.is_(True))
+                .where(old_deadline.is_distinct_from(new_deadline))
+                .order_by(AuditLogModel.timestamp.asc())  # type: ignore[attr-defined]
+            )
+            if since is not None:
+                stmt = stmt.where(
+                    AuditLogModel.timestamp >= since  # type: ignore[operator]
+                )
+
+            models = session.scalars(stmt).all()
+            return [self._model_to_entity(model) for model in models]
 
     def _apply_filters(self, stmt: Any, query: AuditQuery) -> Any:
         """Apply query filters to a SELECT statement.

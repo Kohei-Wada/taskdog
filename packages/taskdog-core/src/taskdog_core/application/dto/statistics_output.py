@@ -138,6 +138,72 @@ class ActivityPatternStatistics(BaseModel):
     total_completed_with_time: int
 
 
+class LeadTimeBreakdown(BaseModel):
+    """Reschedule likelihood grouped by planning lead time.
+
+    Lead time is the distance between the moment a deadline was first set
+    and the deadline itself.
+
+    Attributes:
+        category: Lead time bucket ('same_day', '1_2_days', '3_7_days', '8_plus_days')
+        task_count: Number of tasks in this bucket
+        rescheduled_count: Number of those tasks that were rescheduled at least once
+        reschedule_rate: rescheduled_count / task_count
+    """
+
+    category: str
+    task_count: int
+    rescheduled_count: int
+    reschedule_rate: float
+
+
+class ChronicSlipperTask(BaseModel):
+    """A task whose deadline was rescheduled repeatedly.
+
+    Attributes:
+        task_id: Task ID
+        task_name: Task name (from the latest audit entry)
+        reschedule_count: Number of deadline reschedules
+        total_slip_days: Net days the deadline moved (positive = pushed later)
+        first_deadline: Earliest recorded deadline (ISO format)
+        latest_deadline: Latest recorded deadline (ISO format)
+    """
+
+    task_id: int
+    task_name: str
+    reschedule_count: int
+    total_slip_days: float
+    first_deadline: str
+    latest_deadline: str
+
+
+class RescheduleStatistics(BaseModel):
+    """Deadline rescheduling statistics derived from the audit log.
+
+    Only tasks that appear in the audit log are counted, so tasks created
+    before audit logging was enabled are invisible to these statistics.
+
+    Attributes:
+        tasks_with_deadline: Distinct tasks with any deadline event in the period
+        rescheduled_task_count: Distinct tasks with at least one reschedule
+        total_reschedule_events: Total deadline reschedules (value-to-value changes)
+        reschedule_rate: rescheduled_task_count / tasks_with_deadline
+        moved_earlier_count: Reschedules that moved the deadline earlier
+        lead_time_breakdown: Reschedule likelihood per planning lead time bucket
+        chronic_slippers: Tasks with 3+ reschedules, worst first
+        weekly_reschedule_trend: Reschedule counts per ISO week (e.g. '2026-W28')
+    """
+
+    tasks_with_deadline: int
+    rescheduled_task_count: int
+    total_reschedule_events: int
+    reschedule_rate: float
+    moved_earlier_count: int
+    lead_time_breakdown: list[LeadTimeBreakdown]
+    chronic_slippers: list[ChronicSlipperTask]
+    weekly_reschedule_trend: dict[str, int]
+
+
 class StatisticsOutput(BaseModel):
     """Complete statistics result.
 
@@ -149,6 +215,7 @@ class StatisticsOutput(BaseModel):
         priority_stats: Priority distribution statistics
         trend_stats: Trend statistics (None if period is not 'all')
         activity_stats: Activity pattern statistics (None if no completion time data)
+        reschedule_stats: Deadline reschedule statistics (None if audit data unavailable)
     """
 
     task_stats: TaskStatistics
@@ -158,6 +225,7 @@ class StatisticsOutput(BaseModel):
     priority_stats: PriorityDistributionStatistics
     trend_stats: TrendStatistics | None
     activity_stats: ActivityPatternStatistics | None = None
+    reschedule_stats: RescheduleStatistics | None = None
 
 
 @dataclass

@@ -217,7 +217,7 @@ def app(
         session_repository, mock_config
     )
     analytics_controller = TaskAnalyticsController(
-        session_repository, mock_config, None
+        session_repository, mock_config, None, session_audit_log_repository
     )
     crud_controller = TaskCrudController(session_repository, mock_config)
     audit_log_controller = AuditLogController(

@@ -334,6 +334,58 @@ class TestConvertToStatisticsOutput:
         assert result.deadline_stats is None
         assert result.priority_stats is not None
         assert result.trend_stats is None
+        assert result.reschedule_stats is None
+
+    def test_with_reschedule_section(self):
+        """Test conversion with the reschedule statistics section."""
+        data = {
+            "completion": {
+                "total": 1,
+                "pending": 0,
+                "in_progress": 0,
+                "completed": 1,
+                "canceled": 0,
+                "completion_rate": 1.0,
+            },
+            "priority": {
+                "distribution": {},
+            },
+            "reschedule": {
+                "tasks_with_deadline": 10,
+                "rescheduled_task_count": 3,
+                "total_reschedule_events": 7,
+                "reschedule_rate": 0.3,
+                "moved_earlier_count": 1,
+                "lead_time_breakdown": [
+                    {
+                        "category": "same_day",
+                        "task_count": 4,
+                        "rescheduled_count": 1,
+                        "reschedule_rate": 0.25,
+                    }
+                ],
+                "chronic_slippers": [
+                    {
+                        "task_id": 5,
+                        "task_name": "slipper",
+                        "reschedule_count": 4,
+                        "total_slip_days": 9.5,
+                        "first_deadline": "2026-07-01T18:00:00",
+                        "latest_deadline": "2026-07-10T18:00:00",
+                    }
+                ],
+                "weekly_reschedule_trend": {"2026-W28": 2},
+            },
+        }
+
+        result = convert_to_statistics_output(data)
+
+        assert result.reschedule_stats is not None
+        assert result.reschedule_stats.tasks_with_deadline == 10
+        assert result.reschedule_stats.reschedule_rate == 0.3
+        assert result.reschedule_stats.lead_time_breakdown[0].category == "same_day"
+        assert result.reschedule_stats.chronic_slippers[0].task_id == 5
+        assert result.reschedule_stats.weekly_reschedule_trend == {"2026-W28": 2}
 
     def test_with_time_only(self):
         """Test conversion with time stats but no other optional sections."""

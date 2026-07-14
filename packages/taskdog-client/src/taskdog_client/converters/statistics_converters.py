@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import NotRequired, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 from taskdog_core.application.dto.statistics_output import (
     ActivityPatternStatistics,
     DeadlineComplianceStatistics,
     EstimationAccuracyStatistics,
     PriorityDistributionStatistics,
+    RescheduleStatistics,
     StatisticsOutput,
     TaskStatistics,
     TimeStatistics,
@@ -93,6 +94,7 @@ class StatisticsPayload(TypedDict):
     priority: PriorityPayload
     trends: NotRequired[TrendPayload | None]
     activity: NotRequired[ActivityPayload | None]
+    reschedule: NotRequired[dict[str, Any] | None]
 
 
 # -- Converters -----------------------------------------------------------
@@ -218,6 +220,7 @@ def convert_to_statistics_output(data: StatisticsPayload) -> StatisticsOutput:
     raw_deadline = data.get("deadline")
     raw_trends = data.get("trends")
     raw_activity = data.get("activity")
+    raw_reschedule = data.get("reschedule")
 
     return StatisticsOutput(
         task_stats=task_stats,
@@ -232,5 +235,10 @@ def convert_to_statistics_output(data: StatisticsPayload) -> StatisticsOutput:
         trend_stats=_parse_trend_statistics(raw_trends) if raw_trends else None,
         activity_stats=(
             _parse_activity_statistics(raw_activity) if raw_activity else None
+        ),
+        reschedule_stats=(
+            RescheduleStatistics.model_validate(raw_reschedule)
+            if raw_reschedule
+            else None
         ),
     )
