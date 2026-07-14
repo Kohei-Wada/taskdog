@@ -12,6 +12,7 @@ from taskdog_core.application.dto.statistics_output import (
     ActivityPatternStatistics,
     DeadlineComplianceStatistics,
     PriorityDistributionStatistics,
+    RescheduleStatistics,
     TaskStatistics,
     TrendStatistics,
 )
@@ -100,6 +101,8 @@ class StatisticsViewModel(BaseViewModel):
         deadline_stats: Deadline compliance statistics (from DTO, no conversion needed)
         priority_stats: Priority distribution statistics (from DTO, no conversion needed)
         trend_stats: Trend statistics (from DTO, no conversion needed)
+        activity_stats: Activity pattern statistics (from DTO, no conversion needed)
+        reschedule_stats: Deadline reschedule statistics (from DTO, no conversion needed)
     """
 
     task_stats: TaskStatistics
@@ -109,3 +112,4 @@ class StatisticsViewModel(BaseViewModel):
     priority_stats: PriorityDistributionStatistics
     trend_stats: TrendStatistics | None
     activity_stats: ActivityPatternStatistics | None
+    reschedule_stats: RescheduleStatistics | None = None

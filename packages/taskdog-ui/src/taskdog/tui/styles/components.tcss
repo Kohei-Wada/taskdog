@@ -180,7 +180,7 @@ StatsScreen {
 }
 
 .stats-panel {
-    border: round $primary;
+    border: round $primary-darken-2;
     border-title-color: $primary;
     padding: 0 1;
     width: 100%;
@@ -188,8 +188,24 @@ StatsScreen {
     margin-bottom: 1;
 }
 
+.stats-subhead {
+    color: $text-muted;
+    margin-top: 1;
+}
+
+.stats-divider {
+    color: $primary-darken-3;
+    height: 1;
+    margin: 0;
+}
+
+.stats-sparkline {
+    height: 1;
+    margin: 0;
+}
+
 .stats-chart {
-    border: round $primary;
+    border: round $primary-darken-2;
     border-title-color: $primary;
     height: 1fr;
 }

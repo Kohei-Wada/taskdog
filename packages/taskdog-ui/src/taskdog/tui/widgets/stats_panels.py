@@ -8,6 +8,8 @@ from collections.abc import Callable, Sequence
 
 from rich.table import Table
 from rich.text import Text
+from textual.widget import Widget
+from textual.widgets import Rule, Sparkline, Static
 from textual_plotext import Plot, PlotextPlot
 
 from taskdog.view_models.statistics_view_model import StatisticsViewModel
@@ -15,6 +17,8 @@ from taskdog.view_models.statistics_view_model import StatisticsViewModel
 PERIOD_LABELS = ("All", "7 Days", "30 Days")
 
 _DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+_DASH = Text("-", style="dim")
 
 
 def _rate_text(rate: float) -> Text:
@@ -56,8 +60,8 @@ def _cells(
     vms: Sequence[StatisticsViewModel],
     value: Callable[[StatisticsViewModel], str | Text | None],
 ) -> list[str | Text]:
-    """Build one cell per period, rendering None as a dash."""
-    return [value(vm) or "-" for vm in vms]
+    """Build one cell per period, rendering None as a dim dash."""
+    return [value(vm) or _DASH for vm in vms]
 
 
 def build_overview_table(vms: Sequence[StatisticsViewModel]) -> Table:
@@ -66,19 +70,19 @@ def build_overview_table(vms: Sequence[StatisticsViewModel]) -> Table:
     table.add_row("Total", *_cells(vms, lambda vm: str(vm.task_stats.total_tasks)))
     table.add_row(
         "Pending",
-        *_cells(vms, lambda vm: Text(str(vm.task_stats.pending_count), "yellow")),
+        *_cells(vms, lambda vm: str(vm.task_stats.pending_count)),
     )
     table.add_row(
         "In Progress",
-        *_cells(vms, lambda vm: Text(str(vm.task_stats.in_progress_count), "cyan")),
+        *_cells(vms, lambda vm: str(vm.task_stats.in_progress_count)),
     )
     table.add_row(
         "Completed",
-        *_cells(vms, lambda vm: Text(str(vm.task_stats.completed_count), "green")),
+        *_cells(vms, lambda vm: str(vm.task_stats.completed_count)),
     )
     table.add_row(
         "Canceled",
-        *_cells(vms, lambda vm: Text(str(vm.task_stats.canceled_count), "red")),
+        *_cells(vms, lambda vm: str(vm.task_stats.canceled_count)),
     )
     table.add_row(
         "Completion Rate",
@@ -154,7 +158,7 @@ def build_time_estimation_table(vms: Sequence[StatisticsViewModel]) -> Table:
         *_cells(
             vms,
             lambda vm: (
-                Text(str(vm.estimation_stats.over_estimated_count), "cyan")
+                str(vm.estimation_stats.over_estimated_count)
                 if vm.estimation_stats
                 else None
             ),
@@ -165,7 +169,7 @@ def build_time_estimation_table(vms: Sequence[StatisticsViewModel]) -> Table:
         *_cells(
             vms,
             lambda vm: (
-                Text(str(vm.estimation_stats.under_estimated_count), "yellow")
+                str(vm.estimation_stats.under_estimated_count)
                 if vm.estimation_stats
                 else None
             ),
@@ -176,9 +180,7 @@ def build_time_estimation_table(vms: Sequence[StatisticsViewModel]) -> Table:
         *_cells(
             vms,
             lambda vm: (
-                Text(str(vm.estimation_stats.exact_count), "green")
-                if vm.estimation_stats
-                else None
+                str(vm.estimation_stats.exact_count) if vm.estimation_stats else None
             ),
         ),
     )
@@ -204,9 +206,7 @@ def build_deadline_priority_table(vms: Sequence[StatisticsViewModel]) -> Table:
         *_cells(
             vms,
             lambda vm: (
-                Text(str(vm.deadline_stats.met_deadline_count), "green")
-                if vm.deadline_stats
-                else None
+                str(vm.deadline_stats.met_deadline_count) if vm.deadline_stats else None
             ),
         ),
     )
@@ -246,22 +246,15 @@ def build_deadline_priority_table(vms: Sequence[StatisticsViewModel]) -> Table:
     )
     table.add_row(
         "High (≥70)",
-        *_cells(
-            vms, lambda vm: Text(str(vm.priority_stats.high_priority_count), "red")
-        ),
+        *_cells(vms, lambda vm: str(vm.priority_stats.high_priority_count)),
     )
     table.add_row(
         "Medium (30-69)",
-        *_cells(
-            vms,
-            lambda vm: Text(str(vm.priority_stats.medium_priority_count), "yellow"),
-        ),
+        *_cells(vms, lambda vm: str(vm.priority_stats.medium_priority_count)),
     )
     table.add_row(
         "Low (<30)",
-        *_cells(
-            vms, lambda vm: Text(str(vm.priority_stats.low_priority_count), "green")
-        ),
+        *_cells(vms, lambda vm: str(vm.priority_stats.low_priority_count)),
     )
     table.add_row(
         "High Prio. Done",
@@ -271,6 +264,191 @@ def build_deadline_priority_table(vms: Sequence[StatisticsViewModel]) -> Table:
         ),
     )
     return table
+
+
+_LEAD_TIME_LABELS = {
+    "same_day": "Same day",
+    "1_2_days": "1-2 days",
+    "3_7_days": "3-7 days",
+    "8_plus_days": "8+ days",
+}
+
+
+def _slip_rate_text(rate: float) -> Text:
+    """Render a reschedule rate — higher is worse, so the scale is reversed."""
+    if rate >= 0.5:
+        style = "red"
+    elif rate >= 0.25:
+        style = "yellow"
+    else:
+        style = "green"
+    return Text(f"{rate:.0%}", style=style)
+
+
+def build_reschedule_table(vms: Sequence[StatisticsViewModel]) -> Table:
+    """Build the deadline reschedule summary table (one column per period)."""
+    table = _new_table()
+    table.add_row(
+        "With Deadline",
+        *_cells(
+            vms,
+            lambda vm: (
+                str(vm.reschedule_stats.tasks_with_deadline)
+                if vm.reschedule_stats
+                else None
+            ),
+        ),
+    )
+    table.add_row(
+        "Rescheduled",
+        *_cells(
+            vms,
+            lambda vm: (
+                str(vm.reschedule_stats.rescheduled_task_count)
+                if vm.reschedule_stats
+                else None
+            ),
+        ),
+    )
+    table.add_row(
+        "Events",
+        *_cells(
+            vms,
+            lambda vm: (
+                str(vm.reschedule_stats.total_reschedule_events)
+                if vm.reschedule_stats
+                else None
+            ),
+        ),
+    )
+    table.add_row(
+        "Moved Earlier",
+        *_cells(
+            vms,
+            lambda vm: (
+                str(vm.reschedule_stats.moved_earlier_count)
+                if vm.reschedule_stats
+                else None
+            ),
+        ),
+    )
+    table.add_row(
+        "Reschedule Rate",
+        *_cells(
+            vms,
+            lambda vm: (
+                _slip_rate_text(vm.reschedule_stats.reschedule_rate)
+                if vm.reschedule_stats
+                else None
+            ),
+        ),
+    )
+    return table
+
+
+def build_lead_time_table(vm: StatisticsViewModel) -> Table | Text:
+    """Build the reschedule-rate-by-lead-time table (all-time statistics).
+
+    Shows the denominator (task count) alongside the rate so small
+    samples are not read as strong signals.
+    """
+    if vm.reschedule_stats is None or not vm.reschedule_stats.lead_time_breakdown:
+        return Text("No lead time data available.", style="dim")
+
+    table = Table(expand=True, box=None, pad_edge=False, header_style="bold")
+    table.add_column("Lead Time", ratio=3, style="dim", no_wrap=True)
+    table.add_column("Tasks", justify="right", ratio=2, no_wrap=True)
+    table.add_column("Slipped", justify="right", ratio=2, no_wrap=True)
+    table.add_column("Rate", justify="right", ratio=2, no_wrap=True)
+
+    for bucket in vm.reschedule_stats.lead_time_breakdown:
+        label = _LEAD_TIME_LABELS.get(bucket.category, bucket.category)
+        table.add_row(
+            label,
+            str(bucket.task_count),
+            str(bucket.rescheduled_count),
+            _slip_rate_text(bucket.reschedule_rate),
+        )
+    return table
+
+
+def build_chronic_slippers_table(vm: StatisticsViewModel) -> Table | Text:
+    """Build the chronic slippers table (all-time statistics).
+
+    Lists tasks rescheduled three or more times, worst first.
+    """
+    if vm.reschedule_stats is None or not vm.reschedule_stats.chronic_slippers:
+        return Text("No chronic slippers — deadlines are holding.", style="dim")
+
+    table = Table(expand=True, box=None, pad_edge=False, header_style="bold")
+    table.add_column("Task", ratio=6, style="dim", no_wrap=True, overflow="ellipsis")
+    table.add_column("Resched.", justify="right", ratio=2, no_wrap=True)
+    table.add_column("Slip", justify="right", ratio=2, no_wrap=True)
+
+    for slipper in vm.reschedule_stats.chronic_slippers:
+        table.add_row(
+            slipper.task_name,
+            Text(str(slipper.reschedule_count), "red"),
+            f"{slipper.total_slip_days:+.0f}d",
+        )
+    return table
+
+
+def _subhead(text: str) -> Static:
+    """A dim section label used inside a consolidated panel."""
+    return Static(Text(text, style="bold"), classes="stats-subhead")
+
+
+def _divider() -> Rule:
+    return Rule(line_style="dashed", classes="stats-divider")
+
+
+def build_overview_panel(vms: Sequence[StatisticsViewModel]) -> list[Widget]:
+    """Compose the Overview panel: task/time/deadline sections under one border.
+
+    The period header (All / 7 Days / 30 Days) is printed once, on the top
+    table; the following sections reuse the same columns without a header.
+    """
+    time_table = build_time_estimation_table(vms)
+    time_table.show_header = False
+    deadline_table = build_deadline_priority_table(vms)
+    deadline_table.show_header = False
+    return [
+        Static(build_overview_table(vms)),
+        _divider(),
+        _subhead("Time / Estimation"),
+        Static(time_table),
+        _divider(),
+        _subhead("Deadline / Priority"),
+        Static(deadline_table),
+    ]
+
+
+def build_reschedule_panel(vms: Sequence[StatisticsViewModel]) -> list[Widget]:
+    """Compose the Reschedule panel: summary, weekly trend, lead time, slippers."""
+    widgets: list[Widget] = [Static(build_reschedule_table(vms))]
+
+    reschedule = vms[0].reschedule_stats if vms else None
+    if reschedule and reschedule.weekly_reschedule_trend:
+        trend = [
+            count for _, count in sorted(reschedule.weekly_reschedule_trend.items())
+        ]
+        if any(trend):
+            widgets += [
+                _divider(),
+                _subhead("Weekly Reschedules"),
+                Sparkline(trend, summary_function=max, classes="stats-sparkline"),
+            ]
+
+    widgets += [
+        _divider(),
+        _subhead("By Lead Time"),
+        Static(build_lead_time_table(vms[0])),
+        _divider(),
+        _subhead("Chronic Slippers"),
+        Static(build_chronic_slippers_table(vms[0])),
+    ]
+    return widgets
 
 
 class StatsChart(PlotextPlot):
