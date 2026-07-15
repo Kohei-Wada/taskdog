@@ -16,11 +16,12 @@ from taskdog.tui.widgets.stats_panels import (
     build_overview_panel,
     build_reschedule_panel,
 )
+from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 
 _PERIODS = ("all", "7d", "30d")
 
 
-class StatsScreen(ModalScreen[None]):
+class StatsScreen(ViNavigationMixin, ModalScreen[None]):
     """Full-page btop-style statistics dashboard.
 
     Uses ModalScreen to block App-level bindings (add, start, done, etc.)
@@ -35,6 +36,8 @@ class StatsScreen(ModalScreen[None]):
     BINDINGS: ClassVar = [
         Binding("q", "pop_screen", "Back", tooltip="Close the statistics screen"),
         Binding("escape", "pop_screen", "Back", show=False),
+        *ViNavigationMixin.VI_VERTICAL_BINDINGS,
+        *ViNavigationMixin.VI_PAGE_BINDINGS,
     ]
 
     def __init__(self, api_client: TaskdogApiClient) -> None:
@@ -65,6 +68,10 @@ class StatsScreen(ModalScreen[None]):
                     yield Static("")
 
             yield Vertical(id="stats-right")
+
+    def _get_active_scroll_widget(self) -> VerticalScroll | None:
+        """Return the scrollable left column for Vi-style navigation."""
+        return self.query_one("#stats-left", VerticalScroll)
 
     def on_mount(self) -> None:
         """Fetch all periods after the screen is mounted."""
