@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_mcp.tools.serializers import iso, str_list
 
 if TYPE_CHECKING:
@@ -98,8 +99,21 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             reverse=True,
         )
 
+        # Filter out pending tasks with unmet dependencies
+        executable_pending = []
+        for t in pending.tasks:
+            if not t.depends_on:
+                executable_pending.append(t)
+                continue
+            deps_met = all(
+                client.get_task_by_id(dep_id).task.status == TaskStatus.COMPLETED
+                for dep_id in t.depends_on
+            )
+            if deps_met:
+                executable_pending.append(t)
+
         # Combine and limit
-        all_tasks = list(in_progress.tasks) + list(pending.tasks)
+        all_tasks = list(in_progress.tasks) + executable_pending
         limited_tasks = all_tasks[:limit]
 
         return {

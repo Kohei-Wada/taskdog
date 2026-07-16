@@ -25,6 +25,7 @@ def create_mock_task_row(
     name: str = "Test Task",
     status: TaskStatus = TaskStatus.PENDING,
     priority: int = 50,
+    depends_on: list[int] | None = None,
 ) -> TaskRowDto:
     """Create a mock TaskRowDto for testing."""
     return TaskRowDto(
@@ -40,7 +41,7 @@ def create_mock_task_row(
         estimated_duration=2.0,
         actual_duration_hours=None,
         is_fixed=False,
-        depends_on=[],
+        depends_on=depends_on or [],
         tags=["test"],
         is_archived=False,
         is_finished=False,
@@ -991,6 +992,63 @@ class TestTaskQueryTools:
 
         assert len(result["tasks"]) == 3
         assert result["total"] == 3
+
+    def test_get_executable_tasks_excludes_pending_with_unmet_dependency(
+        self,
+    ) -> None:
+        """Pending task depending on a non-completed task must be excluded."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_query
+
+        client = create_mock_client()
+        pending_task = create_mock_task_row(
+            task_id=2, name="Pending", status=TaskStatus.PENDING, depends_on=[99]
+        )
+        client.list_tasks.side_effect = [
+            TaskListOutput(tasks=[pending_task], total_count=1, filtered_count=1),
+            TaskListOutput(tasks=[], total_count=0, filtered_count=0),
+        ]
+        client.get_task_by_id.return_value = create_mock_task_detail_output(
+            task_id=99, status=TaskStatus.PENDING
+        )
+
+        mcp = FastMCP("test")
+        task_query.register_tools(mcp, client)
+
+        get_executable_fn = mcp._tool_manager._tools["get_executable_tasks"].fn
+        result = get_executable_fn(limit=5)
+
+        assert result["tasks"] == []
+        assert result["total"] == 0
+
+    def test_get_executable_tasks_includes_pending_with_met_dependency(
+        self,
+    ) -> None:
+        """Pending task depending on a completed task must be included."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_query
+
+        client = create_mock_client()
+        pending_task = create_mock_task_row(
+            task_id=2, name="Pending", status=TaskStatus.PENDING, depends_on=[99]
+        )
+        client.list_tasks.side_effect = [
+            TaskListOutput(tasks=[pending_task], total_count=1, filtered_count=1),
+            TaskListOutput(tasks=[], total_count=0, filtered_count=0),
+        ]
+        client.get_task_by_id.return_value = create_mock_task_detail_output(
+            task_id=99, status=TaskStatus.COMPLETED
+        )
+
+        mcp = FastMCP("test")
+        task_query.register_tools(mcp, client)
+
+        get_executable_fn = mcp._tool_manager._tools["get_executable_tasks"].fn
+        result = get_executable_fn(limit=5)
+
+        assert len(result["tasks"]) == 1
+        assert result["tasks"][0]["id"] == 2
+        assert result["total"] == 1
 
 
 class TestTaskDecompositionTools:
