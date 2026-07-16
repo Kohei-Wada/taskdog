@@ -1,11 +1,12 @@
 """Tests for pause command."""
 
-from taskdog.cli.commands.pause import pause_command
-from taskdog_core.shared.constants import StatusVerbs
-from tests.presentation.cli.commands.bulk_command_test_base import (
+from tests.cli.commands.bulk_command_test_base import (
     BaseBulkCommandTest,
     make_success_result,
 )
+
+from taskdog.cli.commands.pause import pause_command
+from taskdog_core.shared.constants import StatusVerbs
 
 
 class TestPauseCommand(BaseBulkCommandTest):

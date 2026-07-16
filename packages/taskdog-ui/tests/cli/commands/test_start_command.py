@@ -1,11 +1,12 @@
 """Tests for start command."""
 
-from taskdog.cli.commands.start import start_command
-from taskdog_core.shared.constants import StatusVerbs
-from tests.presentation.cli.commands.bulk_command_test_base import (
+from tests.cli.commands.bulk_command_test_base import (
     BaseBulkCommandTest,
     make_success_result,
 )
+
+from taskdog.cli.commands.start import start_command
+from taskdog_core.shared.constants import StatusVerbs
 
 
 class TestStartCommand(BaseBulkCommandTest):
