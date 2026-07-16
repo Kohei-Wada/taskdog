@@ -51,7 +51,7 @@ router = APIRouter()
 
 
 @router.get("/statistics", response_model=StatisticsResponse)
-async def get_statistics(
+def get_statistics(
     controller: AnalyticsControllerDep,
     _client_name: AuthenticatedClientDep,
     period: str = Query(VALID_PERIODS[0], description="Time period: all, 7d, or 30d"),
@@ -199,7 +199,7 @@ async def get_statistics(
 
 
 @router.get("/tags/statistics", response_model=TagStatisticsResponse)
-async def get_tag_statistics(
+def get_tag_statistics(
     controller: QueryControllerDep,
     _client_name: AuthenticatedClientDep,
 ) -> TagStatisticsResponse:
@@ -225,7 +225,7 @@ async def get_tag_statistics(
 
 
 @router.get("/gantt", response_model=TaskListResponse)
-async def get_gantt_chart(
+def get_gantt_chart(
     controller: QueryControllerDep,
     holiday_checker: HolidayCheckerDep,
     _client_name: AuthenticatedClientDep,
@@ -295,7 +295,7 @@ async def get_gantt_chart(
 
 
 @router.post("/optimize", response_model=OptimizationResponse)
-async def optimize_schedule(
+def optimize_schedule(
     request: OptimizeScheduleRequest,
     controller: AnalyticsControllerDep,
     broadcaster: EventBroadcasterDep,
@@ -408,7 +408,7 @@ async def optimize_schedule(
 
 
 @router.get("/algorithms", response_model=list[dict[str, str]])
-async def list_algorithms(
+def list_algorithms(
     controller: QueryControllerDep,
     _client_name: AuthenticatedClientDep,
 ) -> list[dict[str, str]]:

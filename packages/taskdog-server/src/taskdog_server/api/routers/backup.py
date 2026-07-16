@@ -20,7 +20,7 @@ _CHUNK_SIZE = 1024 * 1024
 
 
 @router.get("/backup")
-async def backup(
+def backup(
     controller: BackupControllerDep,
     _client_name: AuthenticatedClientDep,
 ) -> StreamingResponse:
@@ -35,7 +35,7 @@ async def backup(
 
 
 @router.post("/restore", response_model=RestoreResultDTO)
-async def restore(
+def restore(
     controller: BackupControllerDep,
     _client_name: AuthenticatedClientDep,
     file: Annotated[UploadFile, File()],

@@ -15,7 +15,7 @@ router = APIRouter()
 
 
 @router.get("/{task_id}/notes", response_model=NotesResponse)
-async def get_task_notes(
+def get_task_notes(
     task_id: int,
     controller: NotesControllerDep,
     _client_name: AuthenticatedClientDep,
@@ -39,7 +39,7 @@ async def get_task_notes(
 
 
 @router.put("/{task_id}/notes", response_model=NotesResponse)
-async def update_task_notes(
+def update_task_notes(
     task_id: int,
     request: UpdateNotesRequest,
     controller: NotesControllerDep,
@@ -84,7 +84,7 @@ async def update_task_notes(
 
 
 @router.delete("/{task_id}/notes", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_task_notes(
+def delete_task_notes(
     task_id: int,
     controller: NotesControllerDep,
     broadcaster: EventBroadcasterDep,

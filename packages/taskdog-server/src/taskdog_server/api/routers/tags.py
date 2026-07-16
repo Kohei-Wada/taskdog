@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 @router.delete("/{tag_name}", response_model=DeleteTagResponse)
-async def delete_tag(
+def delete_tag(
     tag_name: str,
     controller: RelationshipControllerDep,
     audit_controller: AuditLogControllerDep,

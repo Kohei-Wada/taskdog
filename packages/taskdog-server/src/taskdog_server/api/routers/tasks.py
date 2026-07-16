@@ -38,7 +38,7 @@ router = APIRouter()
 @router.post(
     "", response_model=TaskOperationResponse, status_code=status.HTTP_201_CREATED
 )
-async def create_task(
+def create_task(
     request: CreateTaskRequest,
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,
@@ -90,7 +90,7 @@ async def create_task(
 
 
 @router.get("", response_model=TaskListResponse)
-async def list_tasks(
+def list_tasks(
     controller: QueryControllerDep,
     holiday_checker: HolidayCheckerDep,
     _client_name: AuthenticatedClientDep,
@@ -165,7 +165,7 @@ async def list_tasks(
 
 
 @router.get("/{task_id}", response_model=TaskDetailResponse)
-async def get_task(
+def get_task(
     task_id: int,
     controller: QueryControllerDep,
     _client_name: AuthenticatedClientDep,
@@ -187,7 +187,7 @@ async def get_task(
 
 
 @router.patch("/{task_id}", response_model=UpdateTaskResponse)
-async def update_task(
+def update_task(
     task_id: int,
     request: UpdateTaskRequest,
     controller: CrudControllerDep,
@@ -249,7 +249,7 @@ async def update_task(
 
 
 @router.post("/{task_id}/archive", response_model=TaskOperationResponse)
-async def archive_task(
+def archive_task(
     task_id: int,
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,
@@ -289,7 +289,7 @@ async def archive_task(
 
 
 @router.post("/{task_id}/restore", response_model=TaskOperationResponse)
-async def restore_task(
+def restore_task(
     task_id: int,
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,
@@ -329,7 +329,7 @@ async def restore_task(
 
 
 @router.delete("/{task_id}")
-async def delete_task(
+def delete_task(
     task_id: int,
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,

@@ -96,7 +96,7 @@ def _create_bulk_lifecycle_endpoint(op: BulkLifecycleOperation) -> None:
         response_model=BulkOperationResponse,
         summary=op.description,
     )
-    async def endpoint(
+    def endpoint(
         request: BulkTaskIdsRequest,
         bulk_controller: BulkTaskControllerDep,
         broadcaster: EventBroadcasterDep,
@@ -130,7 +130,7 @@ def _create_bulk_crud_endpoint(op: BulkCrudOperation) -> None:
         response_model=BulkOperationResponse,
         summary=op.description,
     )
-    async def endpoint(
+    def endpoint(
         request: BulkTaskIdsRequest,
         bulk_controller: BulkTaskControllerDep,
         broadcaster: EventBroadcasterDep,
