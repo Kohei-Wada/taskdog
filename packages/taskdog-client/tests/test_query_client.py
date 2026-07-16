@@ -56,6 +56,30 @@ class TestQueryClient:
         assert result == mock_output
         mock_convert.assert_called_once_with(mock_json)
 
+    @patch("taskdog_client.query_client.convert_to_task_list_output")
+    def test_get_tasks_by_ids(self, mock_convert):
+        """Test get_tasks_by_ids makes one batched API call with ids param."""
+        mock_json = {"tasks": [], "total_count": 0, "filtered_count": 0}
+        self.mock_base._request_json.return_value = mock_json
+        mock_output = Mock()
+        mock_convert.return_value = mock_output
+
+        result = self.client.get_tasks_by_ids([3, 1, 2])
+
+        self.mock_base._request_json.assert_called_once_with(
+            "get", "/api/v1/tasks/by-ids", params={"ids": [3, 1, 2]}
+        )
+        assert result == mock_output
+        mock_convert.assert_called_once_with(mock_json)
+
+    def test_get_tasks_by_ids_empty_skips_request(self):
+        """Empty id list returns an empty result without an HTTP call."""
+        result = self.client.get_tasks_by_ids([])
+
+        self.mock_base._request_json.assert_not_called()
+        assert result.tasks == []
+        assert result.total_count == 0
+
     def test_get_task_by_id(self):
         """Test get_task_by_id makes correct API call."""
         with patch(

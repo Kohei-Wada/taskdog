@@ -132,6 +132,7 @@ def create_mock_client() -> MagicMock:
     # CRUD methods
     client.list_tasks = MagicMock()
     client.get_task_by_id = MagicMock()
+    client.get_tasks_by_ids = MagicMock()
     client.create_task = MagicMock()
     client.update_task = MagicMock()
     client.archive_task = MagicMock()
@@ -1008,8 +1009,12 @@ class TestTaskQueryTools:
             TaskListOutput(tasks=[pending_task], total_count=1, filtered_count=1),
             TaskListOutput(tasks=[], total_count=0, filtered_count=0),
         ]
-        client.get_task_by_id.return_value = create_mock_task_detail_output(
-            task_id=99, status=TaskStatus.PENDING
+        client.get_tasks_by_ids.return_value = TaskListOutput(
+            tasks=[
+                create_mock_task_row(task_id=99, name="Dep", status=TaskStatus.PENDING)
+            ],
+            total_count=1,
+            filtered_count=1,
         )
 
         mcp = FastMCP("test")
@@ -1020,6 +1025,8 @@ class TestTaskQueryTools:
 
         assert result["tasks"] == []
         assert result["total"] == 0
+        # Dependency statuses are fetched in a single batched call.
+        client.get_tasks_by_ids.assert_called_once()
 
     def test_get_executable_tasks_includes_pending_with_met_dependency(
         self,
@@ -1036,8 +1043,14 @@ class TestTaskQueryTools:
             TaskListOutput(tasks=[pending_task], total_count=1, filtered_count=1),
             TaskListOutput(tasks=[], total_count=0, filtered_count=0),
         ]
-        client.get_task_by_id.return_value = create_mock_task_detail_output(
-            task_id=99, status=TaskStatus.COMPLETED
+        client.get_tasks_by_ids.return_value = TaskListOutput(
+            tasks=[
+                create_mock_task_row(
+                    task_id=99, name="Dep", status=TaskStatus.COMPLETED
+                )
+            ],
+            total_count=1,
+            filtered_count=1,
         )
 
         mcp = FastMCP("test")
@@ -1057,10 +1070,6 @@ class TestTaskQueryTools:
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_query
 
-        from taskdog_core.domain.exceptions.task_exceptions import (
-            TaskNotFoundException,
-        )
-
         client = create_mock_client()
         pending_task = create_mock_task_row(
             task_id=2, name="Pending", status=TaskStatus.PENDING, depends_on=[99]
@@ -1069,7 +1078,10 @@ class TestTaskQueryTools:
             TaskListOutput(tasks=[pending_task], total_count=1, filtered_count=1),
             TaskListOutput(tasks=[], total_count=0, filtered_count=0),
         ]
-        client.get_task_by_id.side_effect = TaskNotFoundException(99)
+        # A missing dependency is simply absent from the batched result.
+        client.get_tasks_by_ids.return_value = TaskListOutput(
+            tasks=[], total_count=0, filtered_count=0
+        )
 
         mcp = FastMCP("test")
         task_query.register_tools(mcp, client)
@@ -1096,11 +1108,18 @@ class TestTaskQueryTools:
             TaskListOutput(tasks=[], total_count=0, filtered_count=0),
         ]
 
-        def get_task_by_id(task_id: int) -> TaskDetailOutput:
-            status = TaskStatus.COMPLETED if task_id == 97 else TaskStatus.PENDING
-            return create_mock_task_detail_output(task_id=task_id, status=status)
-
-        client.get_task_by_id.side_effect = get_task_by_id
+        client.get_tasks_by_ids.return_value = TaskListOutput(
+            tasks=[
+                create_mock_task_row(
+                    task_id=97, name="Dep 97", status=TaskStatus.COMPLETED
+                ),
+                create_mock_task_row(
+                    task_id=98, name="Dep 98", status=TaskStatus.PENDING
+                ),
+            ],
+            total_count=2,
+            filtered_count=2,
+        )
 
         mcp = FastMCP("test")
         task_query.register_tools(mcp, client)

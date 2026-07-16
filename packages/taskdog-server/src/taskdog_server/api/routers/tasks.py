@@ -164,6 +164,31 @@ def list_tasks(
     return convert_to_task_list_response(result)
 
 
+@router.get("/by-ids", response_model=TaskListResponse)
+def get_tasks_by_ids(
+    controller: QueryControllerDep,
+    _client_name: AuthenticatedClientDep,
+    ids: Annotated[
+        list[int], Query(description="Task IDs to retrieve in a single request")
+    ],
+) -> TaskListResponse:
+    """Retrieve multiple tasks by ID in a single batched request.
+
+    Fetches all requested tasks with one query, avoiding per-id round trips.
+    Missing ids are omitted from the response; output order follows the input
+    id order.
+
+    Args:
+        controller: Query controller dependency
+        ids: Task IDs to retrieve
+
+    Returns:
+        List of the found tasks with metadata
+    """
+    result = controller.get_tasks_by_ids(ids)
+    return convert_to_task_list_response(result)
+
+
 @router.get("/{task_id}", response_model=TaskDetailResponse)
 def get_task(
     task_id: int,

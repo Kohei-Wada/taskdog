@@ -13,7 +13,7 @@ from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.query_inputs import ListTasksInput
 from taskdog_core.application.dto.tag_statistics_output import TagStatisticsOutput
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
-from taskdog_core.application.dto.task_dto import TaskDetailDto
+from taskdog_core.application.dto.task_dto import TaskDetailDto, TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.queries.task_query_service import TaskQueryService
 from taskdog_core.application.services.optimization.strategy_factory import (
@@ -147,6 +147,39 @@ class QueryController:
         # Convert Task to TaskDetailDto
         task_dto = TaskDetailDto.from_entity(task)
         return TaskByIdOutput(task=task_dto)
+
+    def get_tasks_by_ids(self, task_ids: list[int]) -> TaskListOutput:
+        """Get multiple tasks by their IDs in a single query.
+
+        Fetches all requested tasks with one batched repository call, avoiding
+        the N+1 pattern of calling get_task_by_id per id. Missing ids are simply
+        absent from the result. Output order follows the input id order.
+
+        Args:
+            task_ids: List of task IDs to retrieve
+
+        Returns:
+            TaskListOutput with the found tasks (total_count/filtered_count
+            reflect the number of tasks actually found)
+        """
+        tasks_by_id = self.repository.get_by_ids(task_ids)
+        # Preserve the caller's id order, skipping ids that were not found.
+        ordered = [tasks_by_id[tid] for tid in task_ids if tid in tasks_by_id]
+        rows = [TaskRowDto.from_entity(task) for task in ordered]
+
+        result = TaskListOutput(
+            tasks=rows,
+            total_count=len(rows),
+            filtered_count=len(rows),
+        )
+
+        if self.notes_repository is not None and rows:
+            found_ids = [row.id for row in rows]
+            result.task_ids_with_notes = self.notes_repository.get_task_ids_with_notes(
+                found_ids
+            )
+
+        return result
 
     def get_task_detail(self, task_id: int) -> TaskDetailOutput:
         """Get task details with notes.

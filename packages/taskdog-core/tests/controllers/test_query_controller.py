@@ -51,6 +51,34 @@ class TestQueryController:
         assert result.total_count == 3
         assert result.filtered_count == 1
 
+    def test_get_tasks_by_ids_returns_found_tasks_in_input_order(self):
+        """get_tasks_by_ids returns requested tasks preserving input id order."""
+        t1 = self.repository.create(name="Task 1", priority=1)
+        t2 = self.repository.create(name="Task 2", priority=2)
+        t3 = self.repository.create(name="Task 3", priority=3)
+
+        result = self.controller.get_tasks_by_ids([t3.id, t1.id, t2.id])
+
+        assert [t.id for t in result.tasks] == [t3.id, t1.id, t2.id]
+        assert result.total_count == 3
+        assert result.filtered_count == 3
+
+    def test_get_tasks_by_ids_skips_missing_ids(self):
+        """Missing ids are silently skipped, not raised."""
+        t1 = self.repository.create(name="Task 1", priority=1)
+
+        result = self.controller.get_tasks_by_ids([t1.id, 9999])
+
+        assert [t.id for t in result.tasks] == [t1.id]
+        assert result.filtered_count == 1
+
+    def test_get_tasks_by_ids_empty_input(self):
+        """Empty id list returns an empty result."""
+        result = self.controller.get_tasks_by_ids([])
+
+        assert result.tasks == []
+        assert result.total_count == 0
+
     def test_list_tasks_with_sorting(self):
         """Test list_tasks sorts correctly."""
         # Create test tasks with different priorities
