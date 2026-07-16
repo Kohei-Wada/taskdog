@@ -4,15 +4,15 @@ from unittest.mock import MagicMock
 
 import pytest
 from click.testing import CliRunner
+from tests.cli.commands.bulk_command_test_base import (
+    make_failure_result,
+    make_success_result,
+)
 
 from taskdog.cli.commands.rm import rm_command
 from taskdog_core.application.dto.bulk_operation_output import (
     BulkOperationOutput,
     BulkTaskResultOutput,
-)
-from tests.presentation.cli.commands.bulk_command_test_base import (
-    make_failure_result,
-    make_success_result,
 )
 
 
