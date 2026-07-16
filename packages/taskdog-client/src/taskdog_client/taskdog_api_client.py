@@ -331,6 +331,10 @@ class TaskdogApiClient:
         """Get task by ID, including notes."""
         return self._queries.get_task_by_id(task_id)
 
+    def get_tasks_by_ids(self, task_ids: list[int]) -> TaskListOutput:
+        """Get multiple tasks by their IDs in a single request."""
+        return self._queries.get_tasks_by_ids(task_ids)
+
     def get_gantt_data(
         self,
         include_archived: bool = False,

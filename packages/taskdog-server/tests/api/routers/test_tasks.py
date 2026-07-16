@@ -178,6 +178,37 @@ class TestTasksRouter:
         assert data["tasks"][0]["priority"] == 3
         assert data["tasks"][1]["priority"] == 1
 
+    def test_get_tasks_by_ids_returns_requested_in_order(self, client, task_factory):
+        """Test batch retrieval returns requested tasks in input id order."""
+        # Arrange
+        t1 = task_factory.create(name="Task 1", priority=1, status=TaskStatus.PENDING)
+        t2 = task_factory.create(name="Task 2", priority=2, status=TaskStatus.PENDING)
+        t3 = task_factory.create(name="Task 3", priority=3, status=TaskStatus.PENDING)
+
+        # Act
+        response = client.get(
+            f"/api/v1/tasks/by-ids?ids={t3.id}&ids={t1.id}&ids={t2.id}"
+        )
+
+        # Assert
+        assert response.status_code == 200
+        data = response.json()
+        assert [t["id"] for t in data["tasks"]] == [t3.id, t1.id, t2.id]
+        assert data["filtered_count"] == 3
+
+    def test_get_tasks_by_ids_skips_missing(self, client, task_factory):
+        """Test batch retrieval omits ids that do not exist."""
+        # Arrange
+        t1 = task_factory.create(name="Task 1", priority=1, status=TaskStatus.PENDING)
+
+        # Act
+        response = client.get(f"/api/v1/tasks/by-ids?ids={t1.id}&ids=99999")
+
+        # Assert
+        assert response.status_code == 200
+        data = response.json()
+        assert [t["id"] for t in data["tasks"]] == [t1.id]
+
     def test_get_task_success(self, client, task_factory):
         """Test getting a task by ID."""
         # Arrange

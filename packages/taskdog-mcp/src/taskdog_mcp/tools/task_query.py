@@ -8,7 +8,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from taskdog_core.domain.entities.task import TaskStatus
-from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_mcp.tools.serializers import iso, str_list
 
 if TYPE_CHECKING:
@@ -16,27 +15,24 @@ if TYPE_CHECKING:
     from taskdog_client import TaskdogApiClient
 
 
-def _dependencies_met(
-    depends_on: list[int],
+def _fetch_dependency_statuses(
+    pending_tasks: list[Any],
     client: TaskdogApiClient,
-    dep_status_cache: dict[int, TaskStatus | None],
-) -> bool:
-    """Check whether all dependency ids are COMPLETED.
+) -> dict[int, TaskStatus]:
+    """Fetch the status of every distinct dependency in one batched call.
 
-    A missing dependency (e.g. its task was deleted) counts as unmet,
-    matching DependencyValidator.validate_dependencies_met semantics.
-    Statuses are memoized in dep_status_cache so a dep shared across
-    multiple tasks is only fetched once per get_executable_tasks call.
+    Collapses what used to be one get_task_by_id request per dependency id
+    into a single get_tasks_by_ids round trip. A dependency absent from the
+    result (e.g. its task was deleted) is simply not in the map, which
+    callers treat as unmet.
     """
-    for dep_id in depends_on:
-        if dep_id not in dep_status_cache:
-            try:
-                dep_status_cache[dep_id] = client.get_task_by_id(dep_id).task.status
-            except TaskNotFoundException:
-                dep_status_cache[dep_id] = None
-        if dep_status_cache[dep_id] != TaskStatus.COMPLETED:
-            return False
-    return True
+    distinct_dep_ids = {
+        dep_id for t in pending_tasks for dep_id in (t.depends_on or [])
+    }
+    if not distinct_dep_ids:
+        return {}
+    result = client.get_tasks_by_ids(list(distinct_dep_ids))
+    return {t.id: t.status for t in result.tasks}
 
 
 def _select_executable_pending(
@@ -46,16 +42,17 @@ def _select_executable_pending(
 ) -> list[Any]:
     """Filter pending tasks down to those whose dependencies are met.
 
-    Stops scanning once max_count executable tasks have been found, so
-    dependency lookups for tasks beyond the eventual limit are skipped.
+    A dependency is met only when its status is COMPLETED; a missing
+    dependency counts as unmet, matching
+    DependencyValidator.validate_dependencies_met semantics.
     """
-    dep_status_cache: dict[int, TaskStatus | None] = {}
+    status_by_id = _fetch_dependency_statuses(pending_tasks, client)
     executable_pending: list[Any] = []
     for t in pending_tasks:
         if len(executable_pending) >= max_count:
             break
-        if not t.depends_on or _dependencies_met(
-            t.depends_on, client, dep_status_cache
+        if not t.depends_on or all(
+            status_by_id.get(dep_id) == TaskStatus.COMPLETED for dep_id in t.depends_on
         ):
             executable_pending.append(t)
     return executable_pending

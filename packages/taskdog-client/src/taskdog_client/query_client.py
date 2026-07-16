@@ -118,6 +118,27 @@ class QueryClient:
         data = self._base._request_json("get", "/api/v1/tasks", params=params)
         return convert_to_task_list_output(data)
 
+    def get_tasks_by_ids(self, task_ids: list[int]) -> TaskListOutput:
+        """Get multiple tasks by their IDs in a single request.
+
+        Batches what would otherwise be one get_task_by_id call per id into a
+        single HTTP round trip. Missing ids are omitted; output order follows
+        the input id order.
+
+        Args:
+            task_ids: Task IDs to retrieve
+
+        Returns:
+            TaskListOutput with the found tasks
+        """
+        if not task_ids:
+            return TaskListOutput(tasks=[], total_count=0, filtered_count=0)
+
+        data = self._base._request_json(
+            "get", "/api/v1/tasks/by-ids", params={"ids": task_ids}
+        )
+        return convert_to_task_list_output(data)
+
     def get_task_by_id(self, task_id: int) -> TaskDetailOutput:
         """Get task by ID, including notes.
 
