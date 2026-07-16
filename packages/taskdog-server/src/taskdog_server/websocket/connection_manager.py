@@ -60,9 +60,10 @@ class ConnectionManager:
         Args:
             message: The message dictionary to broadcast
         """
-        # Remove disconnected clients while broadcasting
+        # Snapshot the connections: sends yield control, so a concurrent
+        # disconnect must not mutate the dict we are iterating.
         disconnected = []
-        for client_id, connection in self.active_connections.items():
+        for client_id, connection in list(self.active_connections.items()):
             try:
                 await connection.send_json(message)
             except Exception as e:
@@ -85,11 +86,12 @@ class ConnectionManager:
             message: The message dictionary to send
             client_id: The target client identifier
         """
-        if client_id not in self.active_connections:
+        connection = self.active_connections.get(client_id)
+        if connection is None:
             return
 
         try:
-            await self.active_connections[client_id].send_json(message)
+            await connection.send_json(message)
         except Exception as e:
             # Connection is broken, remove it
             logger.warning(

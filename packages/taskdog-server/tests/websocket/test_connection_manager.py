@@ -121,6 +121,38 @@ class TestConnectionManager:
         assert "client-1" in self.manager.active_connections
         assert "client-3" in self.manager.active_connections
 
+    async def test_broadcast_survives_concurrent_disconnect(self):
+        """A client disconnecting mid-broadcast must not abort the broadcast.
+
+        Reproduces the "dictionary changed size during iteration" bug: while
+        awaiting send_json for one client, another coroutine (the /ws endpoint
+        handling a WebSocketDisconnect) removes a different client.
+        """
+        # Arrange
+        mock_websocket1 = AsyncMock(spec=WebSocket)
+        mock_websocket2 = AsyncMock(spec=WebSocket)
+        mock_websocket3 = AsyncMock(spec=WebSocket)
+
+        await self.manager.connect("client-1", mock_websocket1)
+        await self.manager.connect("client-2", mock_websocket2)
+        await self.manager.connect("client-3", mock_websocket3)
+
+        # While sending to client-1, simulate client-3 disconnecting concurrently.
+        async def disconnect_other(_message):
+            self.manager.disconnect("client-3")
+
+        mock_websocket1.send_json.side_effect = disconnect_other
+
+        message = {"type": "task_updated", "task_id": 123}
+
+        # Act - must not raise RuntimeError
+        await self.manager.broadcast(message)
+
+        # Assert - remaining clients still received the message
+        mock_websocket1.send_json.assert_called_once_with(message)
+        mock_websocket2.send_json.assert_called_once_with(message)
+        assert "client-3" not in self.manager.active_connections
+
     async def test_send_personal_message_to_existing_client(self):
         """Test sending personal message to existing client."""
         # Arrange
