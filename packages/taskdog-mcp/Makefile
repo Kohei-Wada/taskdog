@@ -1,7 +1,7 @@
 .PHONY: test lint typecheck format
 
 PACKAGE_NAME := taskdog_mcp
-COV_THRESHOLD := 50
+COV_THRESHOLD := 95
 ROOT_DIR ?= ../..
 CONFIG ?= $(ROOT_DIR)/pyproject.toml
 PKG_PATH := packages/taskdog-mcp
