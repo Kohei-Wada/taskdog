@@ -8,11 +8,57 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from taskdog_core.domain.entities.task import TaskStatus
+from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_mcp.tools.serializers import iso, str_list
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
     from taskdog_client import TaskdogApiClient
+
+
+def _dependencies_met(
+    depends_on: list[int],
+    client: TaskdogApiClient,
+    dep_status_cache: dict[int, TaskStatus | None],
+) -> bool:
+    """Check whether all dependency ids are COMPLETED.
+
+    A missing dependency (e.g. its task was deleted) counts as unmet,
+    matching DependencyValidator.validate_dependencies_met semantics.
+    Statuses are memoized in dep_status_cache so a dep shared across
+    multiple tasks is only fetched once per get_executable_tasks call.
+    """
+    for dep_id in depends_on:
+        if dep_id not in dep_status_cache:
+            try:
+                dep_status_cache[dep_id] = client.get_task_by_id(dep_id).task.status
+            except TaskNotFoundException:
+                dep_status_cache[dep_id] = None
+        if dep_status_cache[dep_id] != TaskStatus.COMPLETED:
+            return False
+    return True
+
+
+def _select_executable_pending(
+    pending_tasks: list[Any],
+    client: TaskdogApiClient,
+    max_count: int,
+) -> list[Any]:
+    """Filter pending tasks down to those whose dependencies are met.
+
+    Stops scanning once max_count executable tasks have been found, so
+    dependency lookups for tasks beyond the eventual limit are skipped.
+    """
+    dep_status_cache: dict[int, TaskStatus | None] = {}
+    executable_pending: list[Any] = []
+    for t in pending_tasks:
+        if len(executable_pending) >= max_count:
+            break
+        if not t.depends_on or _dependencies_met(
+            t.depends_on, client, dep_status_cache
+        ):
+            executable_pending.append(t)
+    return executable_pending
 
 
 def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
@@ -99,18 +145,12 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             reverse=True,
         )
 
-        # Filter out pending tasks with unmet dependencies
-        executable_pending = []
-        for t in pending.tasks:
-            if not t.depends_on:
-                executable_pending.append(t)
-                continue
-            deps_met = all(
-                client.get_task_by_id(dep_id).task.status == TaskStatus.COMPLETED
-                for dep_id in t.depends_on
-            )
-            if deps_met:
-                executable_pending.append(t)
+        # Filter out pending tasks with unmet dependencies, stopping once
+        # enough executable tasks are found to fill the remaining limit.
+        remaining_slots = max(limit - len(in_progress.tasks), 0)
+        executable_pending = _select_executable_pending(
+            pending.tasks, client, remaining_slots
+        )
 
         # Combine and limit
         all_tasks = list(in_progress.tasks) + executable_pending
