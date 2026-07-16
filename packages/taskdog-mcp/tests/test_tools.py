@@ -169,7 +169,7 @@ class TestTaskCrudTools:
     """Test task CRUD MCP tools."""
 
     def test_list_tasks_returns_formatted_response(self) -> None:
-        """Test list_tasks tool formats response correctly."""
+        """Test list_tasks tool formats the response with default args."""
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_crud
 
@@ -183,22 +183,51 @@ class TestTaskCrudTools:
         mcp = FastMCP("test")
         task_crud.register_tools(mcp, client)
 
-        # Call the tool directly through the registered function
-        client.list_tasks.assert_not_called()  # Not called yet
+        list_tasks_fn = mcp._tool_manager._tools["list_tasks"].fn
+        result = list_tasks_fn()
+
+        client.list_tasks.assert_called_once_with(
+            include_archived=False,
+            status=None,
+            tags=None,
+            sort_by="id",
+            reverse=False,
+        )
+        assert result["total"] == 1
+        assert len(result["tasks"]) == 1
+        task = result["tasks"][0]
+        assert task["id"] == 1
+        assert task["name"] == "Test Task"
+        assert task["status"] == "PENDING"
+        assert task["priority"] == 50
+        assert task["deadline"] is None
+        assert task["tags"] == ["test"]
+        assert task["estimated_duration"] == 2.0
+        assert task["is_archived"] is False
 
     def test_create_task_formats_response(self) -> None:
-        """Test create_task tool formats response correctly."""
+        """Test create_task tool formats the created-task response."""
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_crud
 
         client = create_mock_client()
-        client.create_task.return_value = create_mock_task_operation_output()
+        client.create_task.return_value = create_mock_task_operation_output(
+            name="New Task"
+        )
 
         mcp = FastMCP("test")
         task_crud.register_tools(mcp, client)
 
-        # Verify registration didn't raise
-        assert mcp is not None
+        create_task_fn = mcp._tool_manager._tools["create_task"].fn
+        result = create_task_fn(name="New Task")
+
+        client.create_task.assert_called_once()
+        assert client.create_task.call_args.kwargs["name"] == "New Task"
+        assert result["id"] == 1
+        assert result["name"] == "New Task"
+        assert result["status"] == "PENDING"
+        assert result["priority"] == 50
+        assert result["message"] == "Task 'New Task' created successfully"
 
     @pytest.mark.parametrize(
         ("input_kwargs", "expected_kwargs"),
