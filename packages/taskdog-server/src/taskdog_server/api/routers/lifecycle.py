@@ -48,7 +48,7 @@ def _create_lifecycle_endpoint(op: LifecycleOperation) -> None:
     """
 
     @router.post(f"/{{task_id}}/{op.name}", response_model=TaskOperationResponse)
-    async def endpoint(
+    def endpoint(
         task_id: int,
         controller: LifecycleControllerDep,
         broadcaster: EventBroadcasterDep,
@@ -79,7 +79,7 @@ for _op in OPERATIONS:
 
 
 @router.post("/{task_id}/fix-actual", response_model=TaskOperationResponse)
-async def fix_actual_times(
+def fix_actual_times(
     task_id: int,
     request: FixActualTimesRequest,
     controller: LifecycleControllerDep,

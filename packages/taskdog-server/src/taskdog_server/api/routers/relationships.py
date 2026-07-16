@@ -19,7 +19,7 @@ router = APIRouter()
 
 
 @router.post("/{task_id}/dependencies", response_model=TaskOperationResponse)
-async def add_dependency(
+def add_dependency(
     task_id: int,
     request: AddDependencyRequest,
     controller: RelationshipControllerDep,
@@ -62,7 +62,7 @@ async def add_dependency(
 @router.delete(
     "/{task_id}/dependencies/{depends_on_id}", response_model=TaskOperationResponse
 )
-async def remove_dependency(
+def remove_dependency(
     task_id: int,
     depends_on_id: int,
     controller: RelationshipControllerDep,
@@ -103,7 +103,7 @@ async def remove_dependency(
 
 
 @router.put("/{task_id}/tags", response_model=TaskOperationResponse)
-async def set_task_tags(
+def set_task_tags(
     task_id: int,
     request: SetTaskTagsRequest,
     controller: RelationshipControllerDep,

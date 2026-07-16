@@ -16,7 +16,7 @@ router = APIRouter()
 
 
 @router.get("", response_model=AuditLogListResponse)
-async def list_audit_logs(
+def list_audit_logs(
     controller: AuditLogControllerDep,
     _client_name: AuthenticatedClientDep,
     client_filter: Annotated[
@@ -109,7 +109,7 @@ async def list_audit_logs(
 
 
 @router.get("/{log_id}", response_model=AuditLogResponse)
-async def get_audit_log(
+def get_audit_log(
     log_id: int,
     controller: AuditLogControllerDep,
     _client_name: AuthenticatedClientDep,
