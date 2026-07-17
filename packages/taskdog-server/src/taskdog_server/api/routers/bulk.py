@@ -8,7 +8,7 @@ from taskdog_core.application.dto.bulk_operation_output import BulkOperationOutp
 from taskdog_server.api.dependencies import (
     AuditLogControllerDep,
     AuthenticatedClientDep,
-    BulkTaskControllerDep,
+    BulkOperationServiceDep,
     EventBroadcasterDep,
 )
 from taskdog_server.api.models.requests import BulkTaskIdsRequest
@@ -98,12 +98,12 @@ def _create_bulk_lifecycle_endpoint(op: BulkLifecycleOperation) -> None:
     )
     def endpoint(
         request: BulkTaskIdsRequest,
-        bulk_controller: BulkTaskControllerDep,
+        bulk_service: BulkOperationServiceDep,
         broadcaster: EventBroadcasterDep,
         audit_controller: AuditLogControllerDep,
         client_name: AuthenticatedClientDep,
     ) -> BulkOperationResponse:
-        output = bulk_controller.bulk_lifecycle(request.task_ids, op.name)
+        output = bulk_service.bulk_lifecycle(request.task_ids, op.name)
 
         for r in output.results:
             if r.success and r.task is not None:
@@ -132,12 +132,12 @@ def _create_bulk_crud_endpoint(op: BulkCrudOperation) -> None:
     )
     def endpoint(
         request: BulkTaskIdsRequest,
-        bulk_controller: BulkTaskControllerDep,
+        bulk_service: BulkOperationServiceDep,
         broadcaster: EventBroadcasterDep,
         audit_controller: AuditLogControllerDep,
         client_name: AuthenticatedClientDep,
     ) -> BulkOperationResponse:
-        method = getattr(bulk_controller, f"bulk_{op.name}")
+        method = getattr(bulk_service, f"bulk_{op.name}")
         output: BulkOperationOutput = method(request.task_ids)
 
         for r in output.results:

@@ -6,9 +6,11 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from taskdog_core.application.services.bulk_operation_service import (
+    BulkOperationService,
+)
 from taskdog_core.controllers.audit_log_controller import AuditLogController
 from taskdog_core.controllers.backup_controller import BackupController
-from taskdog_core.controllers.bulk_task_controller import BulkTaskController
 from taskdog_core.controllers.notes_controller import NotesController
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
@@ -73,11 +75,7 @@ class TestApp:
             notes_controller=NotesController(
                 self.mock_repository, self.mock_notes_repository
             ),
-            bulk_controller=BulkTaskController(
-                lifecycle_controller=lifecycle_controller,
-                crud_controller=crud_controller,
-                query_controller=query_controller,
-            ),
+            bulk_service=BulkOperationService(self.mock_repository),
             backup_controller=BackupController(SqliteBackupStore("sqlite:///:memory:")),
         )
 
