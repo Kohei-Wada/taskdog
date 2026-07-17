@@ -55,6 +55,9 @@ def test_concurrent_creates_all_persist(
     with ThreadPoolExecutor(max_workers=_WRITERS) as pool:
         ids = list(pool.map(create, range(_WRITERS)))
 
-    # No lost writes and no id collisions under concurrent inserts.
+    # No lost writes and no id collisions under concurrent inserts. Checked as a
+    # subset of the listing so the assertion verifies "every one of my creates
+    # persisted" without assuming the DB is globally empty.
     assert len(set(ids)) == _WRITERS
-    assert client.list_tasks().total_count == _WRITERS
+    persisted = {task.id for task in client.list_tasks().tasks}
+    assert set(ids) <= persisted
