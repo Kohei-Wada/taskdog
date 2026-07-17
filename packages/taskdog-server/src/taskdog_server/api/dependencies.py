@@ -7,9 +7,11 @@ from typing import Annotated
 from fastapi import BackgroundTasks, Depends, HTTPException, Request, WebSocket
 from fastapi.security import APIKeyHeader
 
+from taskdog_core.application.services.bulk_operation_service import (
+    BulkOperationService,
+)
 from taskdog_core.controllers.audit_log_controller import AuditLogController
 from taskdog_core.controllers.backup_controller import BackupController
-from taskdog_core.controllers.bulk_task_controller import BulkTaskController
 from taskdog_core.controllers.notes_controller import NotesController
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
@@ -116,9 +118,7 @@ def initialize_api_context(
     audit_log_controller = AuditLogController(audit_log_repository, time_provider)
     notes_controller = NotesController(repository, notes_repository)
 
-    bulk_controller = BulkTaskController(
-        lifecycle_controller, crud_controller, query_controller
-    )
+    bulk_service = BulkOperationService(repository)
 
     # Backup/restore controller over a storage-neutral port
     backup_controller = BackupController(SqliteBackupStore(db_url))
@@ -136,7 +136,7 @@ def initialize_api_context(
         time_provider=time_provider,
         audit_log_controller=audit_log_controller,
         notes_controller=notes_controller,
-        bulk_controller=bulk_controller,
+        bulk_service=bulk_service,
         backup_controller=backup_controller,
         engine=engine,
     )
@@ -214,9 +214,9 @@ def get_notes_controller(context: ApiContextDep) -> NotesController:
     return context.notes_controller
 
 
-def get_bulk_controller(context: ApiContextDep) -> BulkTaskController:
-    """Get bulk task controller from context."""
-    return context.bulk_controller
+def get_bulk_service(context: ApiContextDep) -> BulkOperationService:
+    """Get bulk operation service from context."""
+    return context.bulk_service
 
 
 def get_backup_controller(context: ApiContextDep) -> BackupController:
@@ -284,7 +284,7 @@ HolidayCheckerDep = Annotated[IHolidayChecker | None, Depends(get_holiday_checke
 TimeProviderDep = Annotated[ITimeProvider, Depends(get_time_provider)]
 AuditLogControllerDep = Annotated[AuditLogController, Depends(get_audit_log_controller)]
 NotesControllerDep = Annotated[NotesController, Depends(get_notes_controller)]
-BulkTaskControllerDep = Annotated[BulkTaskController, Depends(get_bulk_controller)]
+BulkOperationServiceDep = Annotated[BulkOperationService, Depends(get_bulk_service)]
 BackupControllerDep = Annotated[BackupController, Depends(get_backup_controller)]
 ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manager)]
 ConnectionManagerWsDep = Annotated[

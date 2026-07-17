@@ -32,15 +32,16 @@ from fixtures.pytest_fixtures import (  # noqa: E402, F401
 )
 from fixtures.repositories import InMemoryTaskRepository  # noqa: E402
 
+from taskdog_core.application.services.bulk_operation_service import (  # noqa: E402
+    BulkOperationService,
+)
+
 # Import from taskdog-core
 from taskdog_core.controllers.audit_log_controller import (  # noqa: E402
     AuditLogController,
 )
 from taskdog_core.controllers.backup_controller import (  # noqa: E402
     BackupController,
-)
-from taskdog_core.controllers.bulk_task_controller import (  # noqa: E402
-    BulkTaskController,
 )
 from taskdog_core.controllers.notes_controller import NotesController  # noqa: E402
 from taskdog_core.controllers.query_controller import QueryController  # noqa: E402
@@ -224,9 +225,7 @@ def app(
         session_audit_log_repository, SystemTimeProvider()
     )
     notes_controller = NotesController(session_repository, session_notes_repository)
-    bulk_controller = BulkTaskController(
-        lifecycle_controller, crud_controller, query_controller
-    )
+    bulk_service = BulkOperationService(session_repository)
     backup_controller = BackupController(SqliteBackupStore("sqlite:///:memory:"))
 
     # Create API context once
@@ -243,7 +242,7 @@ def app(
         time_provider=SystemTimeProvider(),
         audit_log_controller=audit_log_controller,
         notes_controller=notes_controller,
-        bulk_controller=bulk_controller,
+        bulk_service=bulk_service,
         backup_controller=backup_controller,
     )
 

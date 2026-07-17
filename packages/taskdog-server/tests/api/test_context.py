@@ -2,9 +2,11 @@
 
 from unittest.mock import Mock
 
+from taskdog_core.application.services.bulk_operation_service import (
+    BulkOperationService,
+)
 from taskdog_core.controllers.audit_log_controller import AuditLogController
 from taskdog_core.controllers.backup_controller import BackupController
-from taskdog_core.controllers.bulk_task_controller import BulkTaskController
 from taskdog_core.controllers.notes_controller import NotesController
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
@@ -39,7 +41,7 @@ class TestApiContext:
         self.mock_time_provider = Mock(spec=ITimeProvider)
         self.mock_audit_log_controller = Mock(spec=AuditLogController)
         self.mock_notes_controller = Mock(spec=NotesController)
-        self.mock_bulk_controller = Mock(spec=BulkTaskController)
+        self.mock_bulk_service = Mock(spec=BulkOperationService)
         self.mock_backup_controller = Mock(spec=BackupController)
 
     def test_create_context_with_all_dependencies(self):
@@ -58,7 +60,7 @@ class TestApiContext:
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
-            bulk_controller=self.mock_bulk_controller,
+            bulk_service=self.mock_bulk_service,
             backup_controller=self.mock_backup_controller,
         )
 
@@ -91,7 +93,7 @@ class TestApiContext:
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
-            bulk_controller=self.mock_bulk_controller,
+            bulk_service=self.mock_bulk_service,
             backup_controller=self.mock_backup_controller,
         )
 
@@ -114,7 +116,7 @@ class TestApiContext:
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
-            bulk_controller=self.mock_bulk_controller,
+            bulk_service=self.mock_bulk_service,
             backup_controller=self.mock_backup_controller,
         )
 
@@ -149,7 +151,7 @@ class TestApiContext:
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
-            bulk_controller=self.mock_bulk_controller,
+            bulk_service=self.mock_bulk_service,
             backup_controller=self.mock_backup_controller,
         )
 
@@ -166,7 +168,7 @@ class TestApiContext:
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
-            bulk_controller=self.mock_bulk_controller,
+            bulk_service=self.mock_bulk_service,
             backup_controller=self.mock_backup_controller,
         )
 
@@ -192,7 +194,7 @@ class TestApiContext:
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
-            bulk_controller=self.mock_bulk_controller,
+            bulk_service=self.mock_bulk_service,
             backup_controller=self.mock_backup_controller,
         )
 
@@ -209,7 +211,7 @@ class TestApiContext:
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
-            bulk_controller=self.mock_bulk_controller,
+            bulk_service=self.mock_bulk_service,
             backup_controller=self.mock_backup_controller,
         )
 
@@ -232,7 +234,7 @@ class TestApiContext:
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
-            bulk_controller=self.mock_bulk_controller,
+            bulk_service=self.mock_bulk_service,
             backup_controller=self.mock_backup_controller,
         )
 
@@ -269,7 +271,7 @@ class TestApiContext:
             time_provider=time_provider,
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
-            bulk_controller=self.mock_bulk_controller,
+            bulk_service=self.mock_bulk_service,
             backup_controller=self.mock_backup_controller,
         )
 

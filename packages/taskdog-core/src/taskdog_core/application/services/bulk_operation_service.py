@@ -1,22 +1,33 @@
-"""Bulk task controller for batch operations.
+"""Bulk operation service for batch task operations.
 
-Moves loop + error handling logic from the server layer into core,
-keeping audit logging and WebSocket broadcasting in the server layer.
+Orchestrates per-task use cases in a loop with per-task error handling,
+returning core DTOs. The server layer is responsible for audit logging and
+WebSocket broadcasting.
 """
 
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.dto.bulk_operation_output import (
     BulkOperationOutput,
     BulkTaskResultOutput,
 )
-from taskdog_core.controllers.query_controller import QueryController
-from taskdog_core.controllers.task_crud_controller import TaskCrudController
-from taskdog_core.controllers.task_lifecycle_controller import TaskLifecycleController
+from taskdog_core.application.use_cases.archive_task import ArchiveTaskUseCase
+from taskdog_core.application.use_cases.cancel_task import CancelTaskUseCase
+from taskdog_core.application.use_cases.complete_task import CompleteTaskUseCase
+from taskdog_core.application.use_cases.pause_task import PauseTaskUseCase
+from taskdog_core.application.use_cases.remove_task import RemoveTaskUseCase
+from taskdog_core.application.use_cases.reopen_task import ReopenTaskUseCase
+from taskdog_core.application.use_cases.restore_task import RestoreTaskUseCase
+from taskdog_core.application.use_cases.start_task import StartTaskUseCase
+from taskdog_core.application.use_cases.status_change_use_case import (
+    StatusChangeUseCase,
+)
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskAlreadyFinishedError,
     TaskNotFoundException,
     TaskNotStartedError,
     TaskValidationError,
 )
+from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 _TASK_ERRORS = (
     TaskNotFoundException,
@@ -25,26 +36,25 @@ _TASK_ERRORS = (
     TaskNotStartedError,
 )
 
-_LIFECYCLE_OPERATIONS = frozenset({"start", "complete", "pause", "cancel", "reopen"})
+_LIFECYCLE_USE_CASES: dict[str, type[StatusChangeUseCase[SingleTaskInput]]] = {
+    "start": StartTaskUseCase,
+    "complete": CompleteTaskUseCase,
+    "pause": PauseTaskUseCase,
+    "cancel": CancelTaskUseCase,
+    "reopen": ReopenTaskUseCase,
+}
 
 
-class BulkTaskController:
-    """Controller for batch task operations.
+class BulkOperationService:
+    """Application service for batch task operations.
 
-    Encapsulates the loop + per-task error handling for bulk operations.
-    Returns core DTOs; the server layer is responsible for audit logging
-    and WebSocket broadcasting.
+    Encapsulates the loop + per-task error handling for bulk operations,
+    delegating each task to the appropriate use case. Returns core DTOs; the
+    server layer is responsible for audit logging and WebSocket broadcasting.
     """
 
-    def __init__(
-        self,
-        lifecycle_controller: TaskLifecycleController,
-        crud_controller: TaskCrudController,
-        query_controller: QueryController,
-    ) -> None:
-        self._lifecycle = lifecycle_controller
-        self._crud = crud_controller
-        self._query = query_controller
+    def __init__(self, repository: TaskRepository) -> None:
+        self._repository = repository
 
     def bulk_lifecycle(
         self, task_ids: list[int], operation: str
@@ -61,16 +71,16 @@ class BulkTaskController:
         Raises:
             ValueError: If operation is not a valid lifecycle operation.
         """
-        if operation not in _LIFECYCLE_OPERATIONS:
+        use_case_cls = _LIFECYCLE_USE_CASES.get(operation)
+        if use_case_cls is None:
             raise ValueError(f"Invalid lifecycle operation: {operation}")
-
-        method_name = f"{operation}_task"
-        controller_method = getattr(self._lifecycle, method_name)
 
         results: list[BulkTaskResultOutput] = []
         for task_id in task_ids:
             try:
-                result = controller_method(task_id)
+                result = use_case_cls(self._repository).execute(
+                    SingleTaskInput(task_id=task_id)
+                )
                 results.append(
                     BulkTaskResultOutput(
                         task_id=task_id,
@@ -97,7 +107,9 @@ class BulkTaskController:
         results: list[BulkTaskResultOutput] = []
         for task_id in task_ids:
             try:
-                result = self._crud.archive_task(task_id)
+                result = ArchiveTaskUseCase(self._repository).execute(
+                    SingleTaskInput(task_id=task_id)
+                )
                 results.append(
                     BulkTaskResultOutput(
                         task_id=task_id,
@@ -122,7 +134,9 @@ class BulkTaskController:
         results: list[BulkTaskResultOutput] = []
         for task_id in task_ids:
             try:
-                result = self._crud.restore_task(task_id)
+                result = RestoreTaskUseCase(self._repository).execute(
+                    SingleTaskInput(task_id=task_id)
+                )
                 results.append(
                     BulkTaskResultOutput(
                         task_id=task_id,
@@ -145,24 +159,22 @@ class BulkTaskController:
     def bulk_delete(self, task_ids: list[int]) -> BulkOperationOutput:
         """Hard delete multiple tasks.
 
-        Looks up the task name before deletion so callers can use it
-        for audit logging.
+        The removal use case captures the task info (including name) before
+        deletion, so callers can use ``task_name`` for audit logging.
         """
         results: list[BulkTaskResultOutput] = []
         for task_id in task_ids:
             try:
-                task_output = self._query.get_task_by_id(task_id)
-                if task_output is None or task_output.task is None:
-                    raise TaskNotFoundException(f"Task {task_id} not found")
-                name = task_output.task.name
-                self._crud.remove_task(task_id)
+                result = RemoveTaskUseCase(self._repository).execute(
+                    SingleTaskInput(task_id=task_id)
+                )
                 results.append(
                     BulkTaskResultOutput(
                         task_id=task_id,
                         success=True,
                         task=None,
                         error=None,
-                        task_name=name,
+                        task_name=result.name,
                     )
                 )
             except _TASK_ERRORS as e:

@@ -1,13 +1,11 @@
 """Controllers package for shared business logic orchestration."""
 
 from taskdog_core.controllers.audit_log_controller import AuditLogController
-from taskdog_core.controllers.bulk_task_controller import BulkTaskController
 from taskdog_core.controllers.notes_controller import NotesController
 from taskdog_core.controllers.query_controller import QueryController
 
 __all__ = [
     "AuditLogController",
-    "BulkTaskController",
     "NotesController",
     "QueryController",
 ]
