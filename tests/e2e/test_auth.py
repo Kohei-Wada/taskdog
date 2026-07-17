@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import subprocess
 from typing import TYPE_CHECKING
 
 import pytest
 from taskdog_client.taskdog_api_client import TaskdogApiClient
 
 from taskdog_core.domain.exceptions.task_exceptions import AuthenticationError
-from tests.e2e.harness import spawn_server
+from tests.e2e.harness import spawn_server, terminate_server
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -33,11 +32,7 @@ def auth_server(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
     try:
         yield base_url
     finally:
-        process.terminate()
-        try:
-            process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            process.kill()
+        terminate_server(process)
 
 
 def test_missing_key_is_rejected(auth_server: str) -> None:

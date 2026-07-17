@@ -6,13 +6,12 @@ drives it with the shipped TaskdogApiClient over real HTTP.
 
 from __future__ import annotations
 
-import subprocess
 from typing import TYPE_CHECKING
 
 import pytest
 from taskdog_client.taskdog_api_client import TaskdogApiClient
 
-from tests.e2e.harness import spawn_server
+from tests.e2e.harness import spawn_server, terminate_server
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -29,11 +28,7 @@ def live_server(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
     try:
         yield base_url
     finally:
-        process.terminate()
-        try:
-            process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            process.kill()
+        terminate_server(process)
 
 
 @pytest.fixture

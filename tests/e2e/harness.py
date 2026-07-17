@@ -78,13 +78,23 @@ def spawn_server(
             str(port),
         ],
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
     base_url = f"http://127.0.0.1:{port}"
     try:
         _wait_until_ready(base_url, process)
     except Exception:
-        process.terminate()
+        terminate_server(process)
         raise
     return process, base_url
+
+
+def terminate_server(process: subprocess.Popen[bytes]) -> None:
+    """Terminate a spawned server process, escalating to kill if needed."""
+    process.terminate()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
