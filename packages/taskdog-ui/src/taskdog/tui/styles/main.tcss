@@ -19,7 +19,7 @@ MainScreen {
 /* Gantt chart - main display area */
 #gantt-widget {
     width: 100%;
-    height: 3fr;
+    height: 2.5fr;
     background: transparent;
     border: round $primary;
     margin-bottom: 1;
