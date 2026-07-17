@@ -2,6 +2,7 @@
 
 from datetime import date, datetime, timedelta
 
+from taskdog_core.application.constants.optimization import SCHEDULING_EPSILON
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_result import OptimizeResult
 from taskdog_core.application.services.optimization.allocation_helpers import (
@@ -116,7 +117,7 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
         schedule_end = None
         task_daily_allocations: dict[date, float] = {}
 
-        while remaining_hours > 0:
+        while remaining_hours > SCHEDULING_EPSILON:
             if not params.include_all_days and not is_workday(
                 current_date, params.holiday_checker
             ):
@@ -137,7 +138,7 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
                 params.max_hours_per_day,
             )
 
-            if available_hours > 0:
+            if available_hours > SCHEDULING_EPSILON:
                 if schedule_start is None:
                     schedule_start = current_date
 

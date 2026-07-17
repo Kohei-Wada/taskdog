@@ -2,6 +2,7 @@
 
 from datetime import date, datetime, timedelta
 
+from taskdog_core.application.constants.optimization import SCHEDULING_EPSILON
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_result import OptimizeResult
 from taskdog_core.application.services.optimization.allocation_helpers import (
@@ -84,7 +85,7 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
         schedule_end = None
         temp_allocations: list[tuple[date, float, datetime]] = []
 
-        while remaining_hours > 0:
+        while remaining_hours > SCHEDULING_EPSILON:
             if not params.include_all_days and not is_workday(
                 current_date, params.holiday_checker
             ):
@@ -103,7 +104,7 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
                 params.max_hours_per_day,
             )
 
-            if available_hours > 0:
+            if available_hours > SCHEDULING_EPSILON:
                 allocated = min(remaining_hours, available_hours)
                 temp_allocations.append((date_obj, allocated, current_date))
                 remaining_hours -= allocated
