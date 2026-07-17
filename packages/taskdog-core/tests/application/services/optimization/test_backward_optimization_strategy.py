@@ -1,7 +1,8 @@
 """Tests for BackwardOptimizationStrategy."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
+from taskdog_core.shared.constants import DEFAULT_SCHEDULE_DAYS
 from tests.application.services.optimization.optimization_strategy_test_base import (
     BaseOptimizationStrategyTest,
 )
@@ -68,22 +69,33 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         assert updated_task.daily_allocations[date(2025, 10, 23)] == 6.0
         assert updated_task.daily_allocations[date(2025, 10, 24)] == 6.0
 
-    def test_backward_without_deadline_schedules_near_future(self):
-        """Test that tasks without deadline are scheduled in near future (1 week)."""
-        # Create task without deadline
-        self.create_task("No Deadline Task", estimated_duration=6.0)
+    def test_backward_without_deadline_uses_default_schedule_horizon(self):
+        """A deadline-less task falls back to the shared DEFAULT_SCHEDULE_DAYS horizon.
 
-        result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
+        Regression for #1096: backward previously hardcoded a 7-day fallback while
+        balanced used DEFAULT_SCHEDULE_DAYS, so identical input scheduled differently
+        by strategy.
+        """
+        # Create task without deadline
+        task = self.create_task("No Deadline Task", estimated_duration=6.0)
+
+        start_date = datetime(2025, 10, 20, 9, 0, 0)
+        result = self.optimize_schedule(start_date=start_date)
 
         # Verify
         assert len(result.successful_tasks) == 1
-        task = result.successful_tasks[0]
-
-        # Should be scheduled (using default 1-week period)
-        self.assert_task_scheduled(task)
 
         # Should be 6h total
         self.assert_total_allocated_hours(task, 6.0)
+
+        # Backward places the task at the fallback horizon; its allocation must fall
+        # on the last workday on/before start_date + DEFAULT_SCHEDULE_DAYS.
+        updated_task = self.repository.get_by_id(task.id)
+        assert updated_task is not None
+        horizon = (start_date + timedelta(days=DEFAULT_SCHEDULE_DAYS)).date()
+        latest_allocated = max(updated_task.daily_allocations)
+        assert latest_allocated <= horizon
+        assert (horizon - latest_allocated).days <= 2  # skip weekend at most
 
     def test_backward_respects_max_hours_per_day(self):
         """Test that backward strategy respects max_hours_per_day constraint."""

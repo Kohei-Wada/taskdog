@@ -15,6 +15,7 @@ from taskdog_core.application.services.optimization.optimization_strategy import
 )
 from taskdog_core.application.utils.date_helper import is_workday
 from taskdog_core.domain.entities.task import Task
+from taskdog_core.shared.constants import DEFAULT_SCHEDULE_DAYS
 
 
 class BackwardOptimizationStrategy(OptimizationStrategy):
@@ -76,7 +77,9 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
         effective_deadline = task_copy.deadline
         assert task_copy.estimated_duration is not None
 
-        target_end = effective_deadline or params.start_date + timedelta(days=7)
+        target_end = effective_deadline or params.start_date + timedelta(
+            days=DEFAULT_SCHEDULE_DAYS
+        )
 
         current_date = target_end
         remaining_hours = task_copy.estimated_duration
