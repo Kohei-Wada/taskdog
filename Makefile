@@ -1,4 +1,4 @@
-.PHONY: help test test-core test-server test-ui test-client test-mcp test-all \
+.PHONY: help test test-core test-server test-ui test-client test-mcp test-e2e test-all \
         install install-dev install-hooks install-core install-server install-ui install-client install-mcp \
         install-ui-only install-server-only reinstall \
         tool-install-ui tool-install-server check-deps \
@@ -210,6 +210,9 @@ test-client: test-taskdog-client ## Run taskdog-client tests
 test-server: test-taskdog-server ## Run taskdog-server tests
 test-ui: test-taskdog-ui ## Run taskdog-ui tests
 test-mcp: test-taskdog-mcp ## Run taskdog-mcp tests
+
+test-e2e: ## Run API end-to-end tests (spawns a real server)
+	uv run --all-packages pytest tests/e2e -v
 
 # ============================================================================
 # Code Quality Targets (recursive)

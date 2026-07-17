@@ -109,6 +109,29 @@ jobs:
       - name: Run tests
         run: make test-${{ matrix.package }}
 
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --all-packages --all-extras --dev
+
+      - name: Run E2E tests
+        run: make test-e2e
+
   security:
     name: Security Scan
     runs-on: ubuntu-latest
