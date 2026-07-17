@@ -8,7 +8,6 @@ This controller handles all task lifecycle operations (status changes with time 
 - reopen_task: Reset finished task to PENDING, clear timestamps
 """
 
-from collections.abc import Callable
 from datetime import datetime
 from types import EllipsisType
 
@@ -16,22 +15,9 @@ from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.dto.fix_actual_times_input import FixActualTimesInput
 from taskdog_core.application.dto.status_change_output import StatusChangeOutput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
-from taskdog_core.application.use_cases.cancel_task import CancelTaskUseCase
-from taskdog_core.application.use_cases.complete_task import CompleteTaskUseCase
 from taskdog_core.application.use_cases.fix_actual_times import FixActualTimesUseCase
-from taskdog_core.application.use_cases.pause_task import PauseTaskUseCase
-from taskdog_core.application.use_cases.reopen_task import ReopenTaskUseCase
-from taskdog_core.application.use_cases.start_task import StartTaskUseCase
-from taskdog_core.application.use_cases.status_change_use_case import (
-    StatusChangeUseCase,
-)
+from taskdog_core.application.use_cases.lifecycle_registry import LIFECYCLE_USE_CASES
 from taskdog_core.controllers.base_controller import BaseTaskController
-from taskdog_core.domain.repositories.task_repository import TaskRepository
-
-# Type alias for use case factory function
-type StatusChangeUseCaseFactory = Callable[
-    [TaskRepository], StatusChangeUseCase[SingleTaskInput]
-]
 
 
 class TaskLifecycleController(BaseTaskController):
@@ -51,107 +37,26 @@ class TaskLifecycleController(BaseTaskController):
         config: Application configuration (inherited from BaseTaskController)
     """
 
-    def _execute_status_change(
-        self,
-        use_case_factory: StatusChangeUseCaseFactory,
-        task_id: int,
-    ) -> StatusChangeOutput:
-        """Execute a status change use case.
+    def execute_lifecycle(self, operation: str, task_id: int) -> StatusChangeOutput:
+        """Execute a lifecycle status change on a task.
 
         Args:
-            use_case_factory: Factory function (use case class) to instantiate
-            task_id: ID of the task to modify
+            operation: One of start, complete, pause, cancel, reopen.
+            task_id: ID of the task to modify.
 
         Returns:
-            StatusChangeOutput containing the updated task and old status
+            StatusChangeOutput containing the updated task and old status.
+
+        Raises:
+            ValueError: If operation is not a valid lifecycle operation.
+            TaskNotFoundException: If task not found.
+            TaskValidationError: If the transition is not allowed.
         """
-        use_case = use_case_factory(self.repository)
+        use_case_cls = LIFECYCLE_USE_CASES.get(operation)
+        if use_case_cls is None:
+            raise ValueError(f"Invalid lifecycle operation: {operation}")
+        use_case = use_case_cls(self.repository)
         return use_case.execute(SingleTaskInput(task_id=task_id))
-
-    def start_task(self, task_id: int) -> StatusChangeOutput:
-        """Start a task.
-
-        Changes task status to IN_PROGRESS and records actual start time.
-
-        Args:
-            task_id: ID of the task to start
-
-        Returns:
-            StatusChangeOutput containing the updated task and old status
-
-        Raises:
-            TaskNotFoundException: If task not found
-            TaskValidationError: If task cannot be started
-        """
-        return self._execute_status_change(StartTaskUseCase, task_id)
-
-    def complete_task(self, task_id: int) -> StatusChangeOutput:
-        """Complete a task.
-
-        Changes task status to COMPLETED and records actual end time.
-
-        Args:
-            task_id: ID of the task to complete
-
-        Returns:
-            StatusChangeOutput containing the updated task and old status
-
-        Raises:
-            TaskNotFoundException: If task not found
-            TaskValidationError: If task cannot be completed
-        """
-        return self._execute_status_change(CompleteTaskUseCase, task_id)
-
-    def pause_task(self, task_id: int) -> StatusChangeOutput:
-        """Pause a task.
-
-        Changes task status to PENDING and clears actual start/end times.
-
-        Args:
-            task_id: ID of the task to pause
-
-        Returns:
-            StatusChangeOutput containing the updated task and old status
-
-        Raises:
-            TaskNotFoundException: If task not found
-            TaskValidationError: If task cannot be paused
-        """
-        return self._execute_status_change(PauseTaskUseCase, task_id)
-
-    def cancel_task(self, task_id: int) -> StatusChangeOutput:
-        """Cancel a task.
-
-        Changes task status to CANCELED and records actual end time.
-
-        Args:
-            task_id: ID of the task to cancel
-
-        Returns:
-            StatusChangeOutput containing the updated task and old status
-
-        Raises:
-            TaskNotFoundException: If task not found
-            TaskValidationError: If task cannot be canceled
-        """
-        return self._execute_status_change(CancelTaskUseCase, task_id)
-
-    def reopen_task(self, task_id: int) -> StatusChangeOutput:
-        """Reopen a task.
-
-        Changes task status to PENDING and clears actual start/end times.
-
-        Args:
-            task_id: ID of the task to reopen
-
-        Returns:
-            StatusChangeOutput containing the updated task and old status
-
-        Raises:
-            TaskNotFoundException: If task not found
-            TaskValidationError: If task cannot be reopened
-        """
-        return self._execute_status_change(ReopenTaskUseCase, task_id)
 
     def fix_actual_times(
         self,
