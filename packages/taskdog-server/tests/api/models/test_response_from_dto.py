@@ -1,4 +1,4 @@
-"""Tests for DTO to Pydantic response model converters."""
+"""Tests for DTO -> Pydantic response model conversion via from_dto."""
 
 from datetime import date, datetime
 
@@ -17,15 +17,15 @@ from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 from taskdog_core.domain.entities.task import Task, TaskStatus
-from taskdog_server.api.converters import (
-    convert_to_task_detail_response,
-    convert_to_task_list_response,
-    convert_to_update_task_response,
+from taskdog_server.api.models.responses import (
+    TaskDetailResponse,
+    TaskListResponse,
+    UpdateTaskResponse,
 )
 
 
 class TestConvertToUpdateTaskResponse:
-    """Test cases for convert_to_update_task_response."""
+    """Test cases for UpdateTaskResponse.from_dto."""
 
     def test_convert_with_updated_fields(self):
         """Test converting TaskUpdateOutput with updated_fields."""
@@ -53,7 +53,7 @@ class TestConvertToUpdateTaskResponse:
         dto = TaskUpdateOutput(task=task, updated_fields=["name", "priority", "status"])
 
         # Act
-        response = convert_to_update_task_response(dto)
+        response = UpdateTaskResponse.from_dto(dto)
 
         # Assert
         assert response.id == 1
@@ -87,7 +87,7 @@ class TestConvertToUpdateTaskResponse:
         dto = TaskUpdateOutput(task=task, updated_fields=[])
 
         # Act
-        response = convert_to_update_task_response(dto)
+        response = UpdateTaskResponse.from_dto(dto)
 
         # Assert
         assert response.id == 1
@@ -95,7 +95,7 @@ class TestConvertToUpdateTaskResponse:
 
 
 class TestConvertToTaskListResponse:
-    """Test cases for convert_to_task_list_response."""
+    """Test cases for TaskListResponse.from_dto."""
 
     def test_convert_empty_list(self):
         """Test converting empty task list."""
@@ -103,7 +103,7 @@ class TestConvertToTaskListResponse:
         dto = TaskListOutput(tasks=[], total_count=0, filtered_count=0, gantt_data=None)
 
         # Act
-        response = convert_to_task_list_response(dto)
+        response = TaskListResponse.from_dto(dto)
 
         # Assert
         assert response.tasks == []
@@ -132,7 +132,7 @@ class TestConvertToTaskListResponse:
         )
 
         # Act
-        response = convert_to_task_list_response(dto)
+        response = TaskListResponse.from_dto(dto)
 
         # Assert
         assert len(response.tasks) == 1
@@ -164,7 +164,7 @@ class TestConvertToTaskListResponse:
         )
 
         # Act
-        response = convert_to_task_list_response(dto)
+        response = TaskListResponse.from_dto(dto)
 
         # Assert
         assert response.tasks[0].has_notes is True
@@ -198,7 +198,7 @@ class TestConvertToTaskListResponse:
         )
 
         # Act
-        response = convert_to_task_list_response(dto)
+        response = TaskListResponse.from_dto(dto)
 
         # Assert: tasks come from the shared list; overlay holds Gantt-only data
         assert len(response.tasks) == 1
@@ -244,7 +244,7 @@ class TestConvertToTaskListResponse:
         )
 
         # Act
-        response = convert_to_task_list_response(dto)
+        response = TaskListResponse.from_dto(dto)
 
         # Assert
         assert len(response.tasks) == 2
@@ -255,7 +255,7 @@ class TestConvertToTaskListResponse:
 
 
 class TestConvertToTaskDetailResponse:
-    """Test cases for convert_to_task_detail_response."""
+    """Test cases for TaskDetailResponse.from_dto."""
 
     def test_convert_minimal_task_detail(self):
         """Test converting task detail with minimal fields."""
@@ -289,7 +289,7 @@ class TestConvertToTaskDetailResponse:
         dto = TaskDetailOutput(task=task_dto, notes_content=None, has_notes=False)
 
         # Act
-        response = convert_to_task_detail_response(dto)
+        response = TaskDetailResponse.from_dto(dto)
 
         # Assert
         assert response.id == 1
@@ -334,7 +334,7 @@ class TestConvertToTaskDetailResponse:
         )
 
         # Act
-        response = convert_to_task_detail_response(dto)
+        response = TaskDetailResponse.from_dto(dto)
 
         # Assert
         assert response.id == 1
@@ -398,7 +398,7 @@ class TestConvertToTaskDetailResponse:
         dto = TaskDetailOutput(task=task_dto, notes_content=None, has_notes=False)
 
         # Act
-        response = convert_to_task_detail_response(dto)
+        response = TaskDetailResponse.from_dto(dto)
 
         # Assert
         assert response.is_active == expected_active
@@ -436,7 +436,7 @@ class TestConvertToTaskDetailResponse:
         dto = TaskDetailOutput(task=task_dto, notes_content="", has_notes=False)
 
         # Act
-        response = convert_to_task_detail_response(dto)
+        response = TaskDetailResponse.from_dto(dto)
 
         # Assert
         assert response.has_notes is False

@@ -278,6 +278,25 @@ class TestTaskResponse:
         with pytest.raises(ValidationError):
             response.name = "Changed"
 
+    def test_daily_allocation_date_keys_converted_to_iso(self):
+        """TaskResponse converts daily_allocation date keys to ISO strings.
+
+        The validator is shared with TaskDetailResponse via TaskReadResponseBase
+        so list rows get the same key handling as the detail view.
+        """
+        now = datetime.now()
+        response = TaskResponse(
+            id=1,
+            name="Test Task",
+            priority=3,
+            status=TaskStatus.PENDING,
+            created_at=now,
+            updated_at=now,
+            daily_allocations={date(2026, 7, 18): 4.0},
+        )
+
+        assert response.daily_allocations == {"2026-07-18": 4.0}
+
 
 class TestTaskDetailResponse:
     """Test cases for TaskDetailResponse model."""

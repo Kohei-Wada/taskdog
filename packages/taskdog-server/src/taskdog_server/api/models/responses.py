@@ -8,9 +8,12 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from taskdog_core.domain.entities.task import TaskStatus
+from taskdog_core.shared.utils.datetime_parser import format_date_dict
 
 if TYPE_CHECKING:
+    from taskdog_core.application.dto.gantt_overlay import GanttOverlay
     from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
+    from taskdog_core.application.dto.task_list_output import TaskListOutput
     from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
     from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 
@@ -80,26 +83,11 @@ class TaskReadResponseBase(TaskFieldsBase):
 
     model_config = ConfigDict(frozen=True)
 
+    daily_allocations: dict[str, float] = Field(default_factory=dict)
     is_finished: bool = False
     has_notes: bool = False
     created_at: datetime
     updated_at: datetime
-
-
-class TaskResponse(TaskReadResponseBase):
-    """Response model for task row data (list views)."""
-
-    daily_allocations: dict[str, float] = Field(default_factory=dict)
-
-
-class TaskDetailResponse(TaskReadResponseBase):
-    """Response model for detailed task view."""
-
-    daily_allocations: dict[str, float] = Field(default_factory=dict)
-    is_active: bool = False
-    can_be_modified: bool = False
-    is_schedulable: bool = False
-    notes: str | None = None
 
     @field_validator("daily_allocations", mode="before")
     @classmethod
@@ -111,6 +99,19 @@ class TaskDetailResponse(TaskReadResponseBase):
                 for key, hours in value.items()
             }
         return value
+
+
+class TaskResponse(TaskReadResponseBase):
+    """Response model for task row data (list views)."""
+
+
+class TaskDetailResponse(TaskReadResponseBase):
+    """Response model for detailed task view."""
+
+    is_active: bool = False
+    can_be_modified: bool = False
+    is_schedulable: bool = False
+    notes: str | None = None
 
     @classmethod
     def from_dto(cls, dto: TaskDetailOutput) -> TaskDetailResponse:
@@ -150,6 +151,28 @@ class TaskListResponse(BaseModel):
     filtered_count: int
     gantt: GanttResponse | None = None
 
+    @classmethod
+    def from_dto(cls, dto: TaskListOutput) -> TaskListResponse:
+        """Convert TaskListOutput DTO to response model.
+
+        Populates per-row ``has_notes`` from the shared
+        ``task_ids_with_notes`` set and converts the optional Gantt overlay.
+        """
+        task_ids_with_notes = dto.task_ids_with_notes or set()
+        tasks = [
+            TaskResponse.model_validate(row).model_copy(
+                update={"has_notes": row.id in task_ids_with_notes}
+            )
+            for row in dto.tasks
+        ]
+        gantt = GanttResponse.from_dto(dto.gantt_data) if dto.gantt_data else None
+        return cls(
+            tasks=tasks,
+            total_count=dto.total_count,
+            filtered_count=dto.filtered_count,
+            gantt=gantt,
+        )
+
 
 class GanttDateRange(BaseModel):
     """Date range for Gantt chart."""
@@ -170,6 +193,27 @@ class GanttResponse(BaseModel):
     daily_workload: dict[str, float]
     holidays: list[str] = Field(default_factory=list)
     total_estimated_duration: float = 0.0
+
+    @classmethod
+    def from_dto(cls, overlay: GanttOverlay) -> GanttResponse:
+        """Convert a GanttOverlay DTO to its response model.
+
+        All date keys are converted to ISO format strings; the overlay
+        carries no task data (clients join by id with the shared task list).
+        """
+        return cls(
+            date_range=GanttDateRange(
+                start_date=overlay.date_range.start_date,
+                end_date=overlay.date_range.end_date,
+            ),
+            task_daily_hours={
+                task_id: format_date_dict(daily_hours)
+                for task_id, daily_hours in overlay.task_daily_hours.items()
+            },
+            daily_workload=format_date_dict(overlay.daily_workload),
+            holidays=[holiday.isoformat() for holiday in overlay.holidays],
+            total_estimated_duration=overlay.total_estimated_duration,
+        )
 
 
 class CompletionStatistics(BaseModel):

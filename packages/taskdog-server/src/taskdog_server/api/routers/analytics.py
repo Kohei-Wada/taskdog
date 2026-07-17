@@ -14,7 +14,6 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskValidationError,
 )
-from taskdog_server.api.converters import convert_to_task_list_response
 from taskdog_server.api.dependencies import (
     AnalyticsControllerDep,
     AuditLogControllerDep,
@@ -290,8 +289,7 @@ def get_gantt_chart(
         holiday_checker=holiday_checker,
     )
 
-    # Convert DTO to response model using shared converter
-    return convert_to_task_list_response(result)
+    return TaskListResponse.from_dto(result)
 
 
 @router.post("/optimize", response_model=OptimizationResponse)
