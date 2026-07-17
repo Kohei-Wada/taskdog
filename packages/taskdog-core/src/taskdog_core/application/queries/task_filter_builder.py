@@ -16,6 +16,7 @@ from taskdog_core.application.queries.filters.non_archived_filter import (
 from taskdog_core.application.queries.filters.status_filter import StatusFilter
 from taskdog_core.application.queries.filters.tag_filter import TagFilter
 from taskdog_core.domain.entities.task import TaskStatus
+from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 
 if TYPE_CHECKING:
     from taskdog_core.application.dto.query_inputs import ListTasksInput
@@ -58,13 +59,15 @@ class TaskFilterBuilder:
         # Status filter
         if input_dto.status:
             try:
-                status_filter = StatusFilter(
-                    status=TaskStatus[input_dto.status.upper()]
-                )
-                filter_obj = TaskFilterBuilder._compose(filter_obj, status_filter)
+                status = TaskStatus[input_dto.status.upper()]
             except KeyError:
-                # Invalid status value - skip status filter
-                pass
+                valid = ", ".join(s.name for s in TaskStatus)
+                raise TaskValidationError(
+                    f"Invalid status filter '{input_dto.status}'. "
+                    f"Valid values are: {valid}"
+                ) from None
+            status_filter = StatusFilter(status=status)
+            filter_obj = TaskFilterBuilder._compose(filter_obj, status_filter)
 
         # Tag filter
         if input_dto.tags:

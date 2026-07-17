@@ -2,9 +2,12 @@
 
 from datetime import date, datetime, timedelta
 
+import pytest
+
 from taskdog_core.application.dto.query_inputs import ListTasksInput
 from taskdog_core.application.queries.task_filter_builder import TaskFilterBuilder
 from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 
 
 class TestTaskFilterBuilder:
@@ -44,6 +47,23 @@ class TestTaskFilterBuilder:
 
         assert self._matches(result, pending_task) is True
         assert self._matches(result, completed_task) is False
+
+    def test_build_raises_on_invalid_status(self):
+        """An unrecognized status value raises instead of being silently dropped.
+
+        Regression for #1097: a typo such as ``IN_PROGERSS`` must not fall through
+        to returning all tasks with no status filter applied.
+        """
+        input_dto = ListTasksInput(include_archived=True, status="IN_PROGERSS")
+
+        with pytest.raises(TaskValidationError) as exc_info:
+            TaskFilterBuilder.build(input_dto)
+
+        message = str(exc_info.value)
+        assert "IN_PROGERSS" in message
+        # The error lists the valid values so clients/agents can self-correct.
+        for valid in ("PENDING", "IN_PROGRESS", "COMPLETED", "CANCELED"):
+            assert valid in message
 
     def test_build_creates_tag_filter(self):
         """Test build creates TagFilter when tags are specified."""
