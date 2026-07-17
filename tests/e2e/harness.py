@@ -67,26 +67,35 @@ def spawn_server(
     }
     if auth:
         env["TASKDOG_AUTH_ENABLED"] = "true"
-    process = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "taskdog_server.main",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            str(port),
-        ],
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    # Redirect server output to a file rather than a PIPE: an unread PIPE
+    # deadlocks the server once the OS buffer fills with access logs, while
+    # DEVNULL would discard the diagnostics we need when startup fails.
+    log_path = db_path.parent / "server.log"
+    with log_path.open("w") as log_file:
+        process = subprocess.Popen(
+            [
+                sys.executable,
+                "-m",
+                "taskdog_server.main",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(port),
+            ],
+            env=env,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+        )
     base_url = f"http://127.0.0.1:{port}"
     try:
         _wait_until_ready(base_url, process)
-    except Exception:
-        terminate_server(process)
-        raise
+    except Exception as exc:
+        if process.poll() is None:
+            terminate_server(process)
+        raise RuntimeError(
+            f"taskdog-server failed to start (log at {log_path}):\n"
+            f"{log_path.read_text()[-2000:]}"
+        ) from exc
     return process, base_url
 
 
