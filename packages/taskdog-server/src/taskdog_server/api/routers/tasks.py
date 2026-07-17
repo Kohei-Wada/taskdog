@@ -10,11 +10,6 @@ from taskdog_server.api.audit_helpers import (
     diff_task_fields,
     log_task_operation,
 )
-from taskdog_server.api.converters import (
-    convert_to_task_detail_response,
-    convert_to_task_list_response,
-    convert_to_update_task_response,
-)
 from taskdog_server.api.dependencies import (
     AuditLogControllerDep,
     AuthenticatedClientDep,
@@ -161,7 +156,7 @@ def list_tasks(
         gantt_end_date=gantt_end,
         holiday_checker=holiday_checker if include_gantt else None,
     )
-    return convert_to_task_list_response(result)
+    return TaskListResponse.from_dto(result)
 
 
 @router.get("/by-ids", response_model=TaskListResponse)
@@ -186,7 +181,7 @@ def get_tasks_by_ids(
         List of the found tasks with metadata
     """
     result = controller.get_tasks_by_ids(ids)
-    return convert_to_task_list_response(result)
+    return TaskListResponse.from_dto(result)
 
 
 @router.get("/{task_id}", response_model=TaskDetailResponse)
@@ -208,7 +203,7 @@ def get_task(
         HTTPException: 404 if task not found
     """
     result = controller.get_task_detail(task_id)
-    return convert_to_task_detail_response(result)
+    return TaskDetailResponse.from_dto(result)
 
 
 @router.patch("/{task_id}", response_model=UpdateTaskResponse)
@@ -270,7 +265,7 @@ def update_task(
         new_values=new_values,
     )
 
-    return convert_to_update_task_response(result)
+    return UpdateTaskResponse.from_dto(result)
 
 
 @router.post("/{task_id}/archive", response_model=TaskOperationResponse)
