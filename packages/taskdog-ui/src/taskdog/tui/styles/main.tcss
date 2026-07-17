@@ -71,4 +71,5 @@ MainScreen {
 
 #task-table:focus {
     border: round $accent;
+    background: $surface;
 }
