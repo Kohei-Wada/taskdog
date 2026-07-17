@@ -11,16 +11,9 @@ from taskdog_core.application.dto.bulk_operation_output import (
     BulkTaskResultOutput,
 )
 from taskdog_core.application.use_cases.archive_task import ArchiveTaskUseCase
-from taskdog_core.application.use_cases.cancel_task import CancelTaskUseCase
-from taskdog_core.application.use_cases.complete_task import CompleteTaskUseCase
-from taskdog_core.application.use_cases.pause_task import PauseTaskUseCase
+from taskdog_core.application.use_cases.lifecycle_registry import LIFECYCLE_USE_CASES
 from taskdog_core.application.use_cases.remove_task import RemoveTaskUseCase
-from taskdog_core.application.use_cases.reopen_task import ReopenTaskUseCase
 from taskdog_core.application.use_cases.restore_task import RestoreTaskUseCase
-from taskdog_core.application.use_cases.start_task import StartTaskUseCase
-from taskdog_core.application.use_cases.status_change_use_case import (
-    StatusChangeUseCase,
-)
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskAlreadyFinishedError,
     TaskNotFoundException,
@@ -35,14 +28,6 @@ _TASK_ERRORS = (
     TaskAlreadyFinishedError,
     TaskNotStartedError,
 )
-
-_LIFECYCLE_USE_CASES: dict[str, type[StatusChangeUseCase[SingleTaskInput]]] = {
-    "start": StartTaskUseCase,
-    "complete": CompleteTaskUseCase,
-    "pause": PauseTaskUseCase,
-    "cancel": CancelTaskUseCase,
-    "reopen": ReopenTaskUseCase,
-}
 
 
 class BulkOperationService:
@@ -71,7 +56,7 @@ class BulkOperationService:
         Raises:
             ValueError: If operation is not a valid lifecycle operation.
         """
-        use_case_cls = _LIFECYCLE_USE_CASES.get(operation)
+        use_case_cls = LIFECYCLE_USE_CASES.get(operation)
         if use_case_cls is None:
             raise ValueError(f"Invalid lifecycle operation: {operation}")
 

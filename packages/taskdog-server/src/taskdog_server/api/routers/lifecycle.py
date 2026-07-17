@@ -55,8 +55,7 @@ def _create_lifecycle_endpoint(op: LifecycleOperation) -> None:
         audit_controller: AuditLogControllerDep,
         client_name: AuthenticatedClientDep,
     ) -> TaskOperationResponse:
-        controller_method = getattr(controller, f"{op.name}_task")
-        result = controller_method(task_id)
+        result = controller.execute_lifecycle(op.name, task_id)
         broadcaster.task_status_changed(
             result.task, result.old_status.value, client_name
         )
