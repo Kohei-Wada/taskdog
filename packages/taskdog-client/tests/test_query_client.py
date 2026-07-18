@@ -6,6 +6,8 @@ from unittest.mock import Mock, patch
 import pytest
 from taskdog_client.query_client import QueryClient
 
+from taskdog_core.application.dto.task_dto import TaskRowDto
+
 
 class TestQueryClient:
     """Test cases for QueryClient."""
@@ -149,17 +151,41 @@ class TestQueryClient:
         )
         assert result == mock_output
 
-    @patch("taskdog_client.query_client.convert_to_next_tasks_output")
-    def test_get_executable_tasks(self, mock_convert):
-        """Test get_executable_tasks makes correct API call."""
+    def test_get_executable_tasks(self):
+        """Test get_executable_tasks makes correct API call and parses the response."""
         mock_json = {
-            "tasks": [{"id": 1}],
-            "ranking_basis": ["in_progress_first", "deadline_asc"],
+            "tasks": [
+                {
+                    "id": 1,
+                    "name": "Task 1",
+                    "priority": 50,
+                    "status": "PENDING",
+                    "planned_start": None,
+                    "planned_end": None,
+                    "deadline": "2025-12-31T23:59:00",
+                    "actual_start": None,
+                    "actual_end": None,
+                    "estimated_duration": 5.0,
+                    "actual_duration_hours": None,
+                    "is_fixed": False,
+                    "depends_on": [],
+                    "tags": [],
+                    "is_archived": False,
+                    "is_finished": False,
+                    "created_at": "2025-01-01T00:00:00",
+                    "updated_at": "2025-01-01T00:00:00",
+                    "has_notes": False,
+                }
+            ],
+            "ranking_basis": [
+                "in_progress_first",
+                "deadline_asc",
+                "priority_desc",
+                "estimate_asc",
+                "id_asc",
+            ],
         }
         self.mock_base._request_json.return_value = mock_json
-
-        mock_output = Mock()
-        mock_convert.return_value = mock_output
 
         result = self.client.get_executable_tasks(tags=["urgent"], limit=5)
 
@@ -168,5 +194,6 @@ class TestQueryClient:
             "/api/v1/tasks/executable",
             params={"limit": 5, "tags": ["urgent"]},
         )
-        assert result == mock_output
-        mock_convert.assert_called_once_with(mock_json)
+        assert result.ranking_basis[0] == "in_progress_first"
+        assert isinstance(result.tasks[0], TaskRowDto)
+        assert result.tasks[0].id == 1
