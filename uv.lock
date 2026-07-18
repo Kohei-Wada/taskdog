@@ -1376,7 +1376,7 @@ wheels = [
 
 [[package]]
 name = "taskdog-client"
-version = "0.25.0"
+version = "0.26.0"
 source = { editable = "packages/taskdog-client" }
 dependencies = [
     { name = "httpx" },
@@ -1408,7 +1408,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "taskdog-core"
-version = "0.25.0"
+version = "0.26.0"
 source = { editable = "packages/taskdog-core" }
 dependencies = [
     { name = "alembic" },
@@ -1440,7 +1440,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "taskdog-mcp"
-version = "0.25.0"
+version = "0.26.0"
 source = { editable = "packages/taskdog-mcp" }
 dependencies = [
     { name = "mcp" },
@@ -1472,7 +1472,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "taskdog-server"
-version = "0.25.0"
+version = "0.26.0"
 source = { editable = "packages/taskdog-server" }
 dependencies = [
     { name = "fastapi" },
@@ -1510,7 +1510,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "taskdog-ui"
-version = "0.25.0"
+version = "0.26.0"
 source = { editable = "packages/taskdog-ui" }
 dependencies = [
     { name = "click" },
@@ -1556,7 +1556,7 @@ provides-extras = ["dev", "server"]
 
 [[package]]
 name = "taskdog-workspace"
-version = "0.25.0"
+version = "0.26.0"
 source = { editable = "." }
 
 [package.optional-dependencies]

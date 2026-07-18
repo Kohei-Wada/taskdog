@@ -1,6 +1,6 @@
 [project]
 name = "taskdog-server"
-version = "0.25.0"
+version = "0.26.0"
 description = "FastAPI server for Taskdog task management system"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -18,7 +18,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "taskdog-core==0.25.0",
+    "taskdog-core==0.26.0",
     "fastapi>=0.139.0",
     "uvicorn[standard]>=0.51.0",
     "pydantic>=2.10.0",
