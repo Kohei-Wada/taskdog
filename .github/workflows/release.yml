@@ -65,6 +65,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
+          skip-existing: true
 
   docker-server:
     name: Build and Push Server Image
