@@ -148,3 +148,25 @@ class TestQueryClient:
             "get", "/api/v1/tags/statistics"
         )
         assert result == mock_output
+
+    @patch("taskdog_client.query_client.convert_to_next_tasks_output")
+    def test_get_executable_tasks(self, mock_convert):
+        """Test get_executable_tasks makes correct API call."""
+        mock_json = {
+            "tasks": [{"id": 1}],
+            "ranking_basis": ["in_progress_first", "deadline_asc"],
+        }
+        self.mock_base._request_json.return_value = mock_json
+
+        mock_output = Mock()
+        mock_convert.return_value = mock_output
+
+        result = self.client.get_executable_tasks(tags=["urgent"], limit=5)
+
+        self.mock_base._request_json.assert_called_once_with(
+            "get",
+            "/api/v1/tasks/executable",
+            params={"limit": 5, "tags": ["urgent"]},
+        )
+        assert result == mock_output
+        mock_convert.assert_called_once_with(mock_json)

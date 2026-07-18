@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
+from taskdog_core.application.dto.next_tasks_output import NextTasksOutput
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto, TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
@@ -111,6 +112,21 @@ def convert_to_task_list_output(data: dict[str, Any]) -> TaskListOutput:
         total_count=require_key(data, "total_count"),
         filtered_count=require_key(data, "filtered_count"),
         gantt_data=gantt_data,
+    )
+
+
+def convert_to_next_tasks_output(data: dict[str, Any]) -> NextTasksOutput:
+    """Convert API response to NextTasksOutput.
+
+    Args:
+        data: API response data
+
+    Returns:
+        NextTasksOutput with ranked executable tasks
+    """
+    tasks = [_model_validate(TaskRowDto, task) for task in require_key(data, "tasks")]
+    return NextTasksOutput(
+        tasks=tasks, ranking_basis=require_key(data, "ranking_basis")
     )
 
 

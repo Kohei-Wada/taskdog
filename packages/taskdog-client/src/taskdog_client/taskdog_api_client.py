@@ -26,6 +26,7 @@ from taskdog_core.application.dto.audit_log_dto import (
 )
 from taskdog_core.application.dto.bulk_operation_output import BulkOperationOutput
 from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
+from taskdog_core.application.dto.next_tasks_output import NextTasksOutput
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
 from taskdog_core.application.dto.restore_result import RestoreResultDTO
 from taskdog_core.application.dto.statistics_output import StatisticsOutput
@@ -363,6 +364,12 @@ class TaskdogApiClient:
     def get_tag_statistics(self) -> TagStatisticsOutput:
         """Get tag statistics."""
         return self._queries.get_tag_statistics()
+
+    def get_executable_tasks(
+        self, tags: list[str] | None = None, limit: int = 10
+    ) -> NextTasksOutput:
+        """Get executable tasks ranked by what to work on next."""
+        return self._queries.get_executable_tasks(tags, limit)
 
     # Notes methods - delegate to NotesClient
 
