@@ -7,55 +7,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_mcp.tools.serializers import iso, str_list
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
     from taskdog_client import TaskdogApiClient
-
-
-def _fetch_dependency_statuses(
-    pending_tasks: list[Any],
-    client: TaskdogApiClient,
-) -> dict[int, TaskStatus]:
-    """Fetch the status of every distinct dependency in one batched call.
-
-    Collapses what used to be one get_task_by_id request per dependency id
-    into a single get_tasks_by_ids round trip. A dependency absent from the
-    result (e.g. its task was deleted) is simply not in the map, which
-    callers treat as unmet.
-    """
-    distinct_dep_ids = {
-        dep_id for t in pending_tasks for dep_id in (t.depends_on or [])
-    }
-    if not distinct_dep_ids:
-        return {}
-    result = client.get_tasks_by_ids(list(distinct_dep_ids))
-    return {t.id: t.status for t in result.tasks}
-
-
-def _select_executable_pending(
-    pending_tasks: list[Any],
-    client: TaskdogApiClient,
-    max_count: int,
-) -> list[Any]:
-    """Filter pending tasks down to those whose dependencies are met.
-
-    A dependency is met only when its status is COMPLETED; a missing
-    dependency counts as unmet, matching
-    DependencyValidator.validate_dependencies_met semantics.
-    """
-    status_by_id = _fetch_dependency_statuses(pending_tasks, client)
-    executable_pending: list[Any] = []
-    for t in pending_tasks:
-        if len(executable_pending) >= max_count:
-            break
-        if not t.depends_on or all(
-            status_by_id.get(dep_id) == TaskStatus.COMPLETED for dep_id in t.depends_on
-        ):
-            executable_pending.append(t)
-    return executable_pending
 
 
 def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
@@ -127,31 +83,8 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         Returns:
             List of executable tasks with details
         """
-        # Get pending and in-progress tasks
-        pending = client.list_tasks(
-            status="pending",
-            tags=tags,
-            sort_by="priority",
-            reverse=True,  # Higher priority first
-        )
-
-        in_progress = client.list_tasks(
-            status="in_progress",
-            tags=tags,
-            sort_by="priority",
-            reverse=True,
-        )
-
-        # Filter out pending tasks with unmet dependencies, stopping once
-        # enough executable tasks are found to fill the remaining limit.
-        remaining_slots = max(limit - len(in_progress.tasks), 0)
-        executable_pending = _select_executable_pending(
-            pending.tasks, client, remaining_slots
-        )
-
-        # Combine and limit
-        all_tasks = list(in_progress.tasks) + executable_pending
-        limited_tasks = all_tasks[:limit]
+        result = client.get_executable_tasks(tags=tags, limit=limit)
+        tasks = result.tasks
 
         return {
             "tasks": [
@@ -165,8 +98,8 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
                     "tags": str_list(t.tags),
                     "depends_on": str_list(t.depends_on),
                 }
-                for t in limited_tasks
+                for t in tasks
             ],
-            "total": len(limited_tasks),
-            "message": f"Found {len(limited_tasks)} executable tasks (IN_PROGRESS tasks shown first)",
+            "total": len(tasks),
+            "message": f"Found {len(tasks)} executable tasks (IN_PROGRESS tasks shown first)",
         }
