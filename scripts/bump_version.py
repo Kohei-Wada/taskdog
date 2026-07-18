@@ -107,6 +107,44 @@ def verify_no_old_versions(old_version: str) -> list[str]:
     return problems
 
 
+def check_git_sync() -> int:
+    """Ensure the local branch is in sync with its remote before tagging.
+
+    Releasing from a branch that is behind or diverged from origin creates a
+    tag on a commit that later moves (rebase), which breaks the release CI.
+    """
+
+    def run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(cmd, cwd=ROOT_DIR, capture_output=True, text=True)
+
+    branch = run(["git", "rev-parse", "--abbrev-ref", "HEAD"]).stdout.strip()
+    if branch == "HEAD":
+        print("ERROR: detached HEAD; check out a branch before releasing.")
+        return 1
+
+    fetch = run(["git", "fetch", "origin", branch])
+    if fetch.returncode != 0:
+        print(f"ERROR: git fetch failed:\n{fetch.stderr}")
+        return 1
+
+    counts = run(
+        ["git", "rev-list", "--left-right", "--count", f"HEAD...origin/{branch}"]
+    )
+    if counts.returncode != 0:
+        print(f"ERROR: could not compare with origin/{branch}:\n{counts.stderr}")
+        return 1
+
+    _ahead, behind = (int(n) for n in counts.stdout.split())
+    if behind:
+        print(
+            f"ERROR: local {branch} is behind origin/{branch} by {behind} commit(s).\n"
+            f"Run 'git pull --rebase' and re-run the bump so the tag lands on the "
+            f"pushed commit."
+        )
+        return 1
+    return 0
+
+
 def git_commit_and_tag(new_version: str, pyproject_files: list[Path]) -> int:
     """Commit version changes and create a release tag."""
     tag = f"v{new_version}"
@@ -143,6 +181,11 @@ def bump_version(new_version: str, dry_run: bool, no_git: bool) -> int:
     if not validate_version(new_version):
         print(f"Error: Invalid version format '{new_version}'. Expected X.Y.Z")
         return 1
+
+    if not no_git and not dry_run:
+        rc = check_git_sync()
+        if rc != 0:
+            return rc
 
     current = get_current_version()
     print(f"Current version: {current}")
