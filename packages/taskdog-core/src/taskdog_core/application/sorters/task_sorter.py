@@ -103,10 +103,10 @@ class TaskSorter:
             return lambda task: self._parse_numeric_for_sort(task.estimated_duration)
 
         if sort_by == "created_at":
-            return lambda task: task.created_at
+            return lambda task: self._parse_date_for_sort(task.created_at)
 
         if sort_by == "updated_at":
-            return lambda task: task.updated_at
+            return lambda task: self._parse_date_for_sort(task.updated_at)
 
         # This should never happen due to validation in sort(), but required for type checking
         raise ValueError(f"Unsupported sort_by value: {sort_by}")
