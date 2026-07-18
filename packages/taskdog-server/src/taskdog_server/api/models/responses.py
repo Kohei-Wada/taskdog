@@ -143,6 +143,13 @@ class BulkOperationResponse(BaseModel):
     results: list[BulkTaskResult]
 
 
+class NextTasksResponse(BaseModel):
+    """Response model for the ranked executable-tasks query."""
+
+    tasks: list[TaskResponse]
+    ranking_basis: list[str]
+
+
 class TaskListResponse(BaseModel):
     """Response model for task list queries."""
 
