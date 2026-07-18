@@ -7,9 +7,6 @@ from typing import TYPE_CHECKING, Any
 
 from taskdog_core.application.dto.gantt_overlay import GanttDateRange, GanttOverlay
 from taskdog_core.application.queries.base import QueryService
-from taskdog_core.application.queries.filters.non_archived_filter import (
-    NonArchivedFilter,
-)
 from taskdog_core.application.sorters.task_sorter import TaskSorter
 from taskdog_core.domain.entities.task import TaskStatus
 
@@ -99,7 +96,7 @@ class TaskQueryService(QueryService):
         Order: IN_PROGRESS before PENDING; then deadline asc (None last);
         then priority desc; then estimated_duration asc (None last); then id asc.
         """
-        all_tasks = self.get_filtered_tasks(NonArchivedFilter())
+        all_tasks = self.get_filtered_tasks()
         status_by_id = {t.id: t.status for t in all_tasks}
 
         def deps_met(task: Task) -> bool:
@@ -111,6 +108,7 @@ class TaskQueryService(QueryService):
             t
             for t in all_tasks
             if t.status in (TaskStatus.PENDING, TaskStatus.IN_PROGRESS)
+            and not t.is_archived
             and (not tags or any(tag in t.tags for tag in tags))
             and deps_met(t)
         ]

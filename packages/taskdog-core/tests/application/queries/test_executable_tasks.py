@@ -19,7 +19,16 @@ class _FixedTime:
         return datetime(2026, 7, 18, 9, 0, 0)
 
 
-def _task(task_id, status, deadline=None, priority=1, est=None, deps=None):
+def _task(
+    task_id,
+    status,
+    deadline=None,
+    priority=1,
+    est=None,
+    deps=None,
+    is_archived=False,
+    tags=None,
+):
     return Task(
         id=task_id,
         name=f"t{task_id}",
@@ -28,6 +37,8 @@ def _task(task_id, status, deadline=None, priority=1, est=None, deps=None):
         deadline=deadline,
         estimated_duration=est,
         depends_on=deps or [],
+        is_archived=is_archived,
+        tags=tags or [],
     )
 
 
@@ -80,3 +91,50 @@ def test_ranking_precedence_within_tier():
 def test_limit_caps_results():
     tasks = [_task(i, TaskStatus.PENDING) for i in range(1, 6)]
     assert len(_svc(tasks).get_executable_tasks(limit=2)) == 2
+
+
+def test_archived_completed_dependency_stays_executable():
+    tasks = [
+        _task(1, TaskStatus.COMPLETED, is_archived=True),
+        _task(2, TaskStatus.PENDING, deps=[1]),
+    ]
+    ids = [t.id for t in _svc(tasks).get_executable_tasks()]
+    assert ids == [2]  # archived-but-completed dep still satisfies the dependent
+
+
+def test_archived_task_is_not_returned():
+    tasks = [
+        _task(1, TaskStatus.PENDING, is_archived=True),
+        _task(2, TaskStatus.PENDING),
+    ]
+    ids = [t.id for t in _svc(tasks).get_executable_tasks()]
+    assert ids == [2]
+
+
+def test_tags_filter_restricts_candidates():
+    tasks = [
+        _task(1, TaskStatus.PENDING, tags=["work"]),
+        _task(2, TaskStatus.PENDING, tags=["home"]),
+    ]
+    ids = [t.id for t in _svc(tasks).get_executable_tasks(tags=["work"])]
+    assert ids == [1]
+
+
+def test_estimate_tie_break():
+    tasks = [
+        _task(1, TaskStatus.PENDING, est=None),
+        _task(2, TaskStatus.PENDING, est=3.0),
+        _task(3, TaskStatus.PENDING, est=1.0),
+    ]
+    ids = [t.id for t in _svc(tasks).get_executable_tasks()]
+    assert ids == [3, 2, 1]  # shorter estimate first; None-estimate last
+
+
+def test_id_tie_break():
+    tasks = [
+        _task(3, TaskStatus.PENDING),
+        _task(1, TaskStatus.PENDING),
+        _task(2, TaskStatus.PENDING),
+    ]
+    ids = [t.id for t in _svc(tasks).get_executable_tasks()]
+    assert ids == [1, 2, 3]
