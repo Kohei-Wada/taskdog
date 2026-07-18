@@ -213,3 +213,55 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None
         assert date(2025, 10, 20) in updated_task.daily_allocations
+
+    def test_backward_exact_multiple_of_fractional_max_hours(self):
+        """Fractional hours that divide evenly must not spill onto an extra day.
+
+        20.1h at 6.7h/day is exactly 3 days, but the subtraction leaves ~1.8e-15
+        rather than 0.0, so a bare `remaining_hours > 0` check walks back one day
+        too far and allocates the residue there.
+        """
+        task = self.create_task(
+            "Fractional Task",
+            estimated_duration=20.1,
+            deadline=datetime(2025, 10, 22, 18, 0, 0),
+        )
+
+        result = self.optimize_schedule(
+            start_date=datetime(2025, 10, 20, 9, 0, 0),
+            max_hours_per_day=6.7,
+        )
+
+        assert len(result.successful_tasks) == 1
+        assert len(result.failed_tasks) == 0
+
+        # Mon-Wed, working back from the Wednesday deadline
+        self.assert_task_scheduled(
+            task, expected_end=datetime(2025, 10, 22, 23, 59, 59)
+        )
+
+        updated_task = self.repository.get_by_id(task.id)
+        assert updated_task is not None
+        assert len(updated_task.daily_allocations) == 3
+        assert date(2025, 10, 17) not in updated_task.daily_allocations
+
+    def test_backward_exact_fit_against_start_date_is_schedulable(self):
+        """A task that exactly fills the days from start_date to deadline must schedule.
+
+        20.1h at 6.7h/day needs Mon-Wed and start_date is Monday. The float residue
+        makes the loop reach back to the previous Friday, before start_date, so the
+        task is wrongly reported unschedulable.
+        """
+        self.create_task(
+            "Exact Fit Task",
+            estimated_duration=20.1,
+            deadline=datetime(2025, 10, 22, 18, 0, 0),
+        )
+
+        result = self.optimize_schedule(
+            start_date=datetime(2025, 10, 20, 9, 0, 0),
+            max_hours_per_day=6.7,
+        )
+
+        assert len(result.failed_tasks) == 0
+        assert len(result.successful_tasks) == 1
