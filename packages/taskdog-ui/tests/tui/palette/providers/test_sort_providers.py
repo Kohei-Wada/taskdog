@@ -20,10 +20,10 @@ class TestSortOptionsProvider:
         self.provider = SortOptionsProvider(screen=self.mock_screen, match_style=None)
 
     def test_get_options_returns_all_sort_options(self):
-        """Test that get_options returns all 7 sort options."""
+        """Test that get_options returns all 9 sort options."""
         options = self.provider.get_options(self.mock_app)
 
-        assert len(options) == 7
+        assert len(options) == 9
 
         # Verify option names
         option_names = [opt[0] for opt in options]
@@ -32,6 +32,8 @@ class TestSortOptionsProvider:
         assert "Priority" in option_names
         assert "Duration" in option_names
         assert "ID" in option_names
+        assert "Created" in option_names
+        assert "Updated" in option_names
         assert "Name" in option_names
         assert "Status" in option_names
 
@@ -43,6 +45,8 @@ class TestSortOptionsProvider:
             ("priority", "Priority"),
             ("estimated_duration", "Duration"),
             ("id", "ID"),
+            ("created_at", "Created"),
+            ("updated_at", "Updated"),
             ("name", "Name"),
             ("status", "Status"),
         ],
@@ -52,6 +56,8 @@ class TestSortOptionsProvider:
             "priority",
             "estimated_duration",
             "id",
+            "created_at",
+            "updated_at",
             "name",
             "status",
         ],

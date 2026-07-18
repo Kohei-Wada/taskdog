@@ -68,7 +68,16 @@ def sort_options(
         @click.option(
             "--sort",
             type=click.Choice(
-                ["id", "priority", "deadline", "name", "status", "planned_start"]
+                [
+                    "id",
+                    "priority",
+                    "deadline",
+                    "name",
+                    "status",
+                    "planned_start",
+                    "created_at",
+                    "updated_at",
+                ]
             ),
             default=default_sort,
             help=f"Sort tasks by specified field (default: {default_sort})",
