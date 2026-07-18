@@ -20,3 +20,4 @@ _.show_header  # Rich Table attribute set to suppress repeated period headers
 reschedule  # StatisticsPayload / StatisticsResponse field (used by API serialization)
 first_deadline  # ChronicSlipperTask DTO field (API-only; not yet in the TUI)
 latest_deadline  # ChronicSlipperTask DTO field (API-only; not yet in the TUI)
+ranking_basis  # NextTasksOutput / NextTasksResponse field (used by API serialization)
