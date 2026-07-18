@@ -6,9 +6,11 @@ from typing import Any
 from taskdog_client.base_client import BaseApiClient
 from taskdog_client.converters import (
     convert_to_get_task_detail_output,
+    convert_to_next_tasks_output,
     convert_to_tag_statistics_output,
     convert_to_task_list_output,
 )
+from taskdog_core.application.dto.next_tasks_output import NextTasksOutput
 from taskdog_core.application.dto.tag_statistics_output import TagStatisticsOutput
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_list_output import TaskListOutput
@@ -215,3 +217,23 @@ class QueryClient:
         """
         data = self._base._request_json("get", "/api/v1/tags/statistics")
         return convert_to_tag_statistics_output(data)
+
+    def get_executable_tasks(
+        self, tags: list[str] | None = None, limit: int = 10
+    ) -> NextTasksOutput:
+        """Get executable tasks ranked by what to work on next.
+
+        Args:
+            tags: Filter by tags (OR logic)
+            limit: Maximum number of tasks to return
+
+        Returns:
+            NextTasksOutput with ranked executable tasks
+        """
+        params: dict[str, Any] = {"limit": limit}
+        if tags:
+            params["tags"] = tags
+        data = self._base._request_json(
+            "get", "/api/v1/tasks/executable", params=params
+        )
+        return convert_to_next_tasks_output(data)

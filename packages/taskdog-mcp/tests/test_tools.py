@@ -148,6 +148,7 @@ def create_mock_client() -> MagicMock:
     # Query methods
     client.get_tag_statistics = MagicMock()
     client.calculate_statistics = MagicMock()
+    client.get_executable_tasks = MagicMock()
     # Optimization methods
     client.optimize_schedule = MagicMock()
     client.get_algorithm_metadata = MagicMock()
@@ -972,21 +973,23 @@ class TestTaskQueryTools:
         assert "personal" in tag_names
 
     def test_get_executable_tasks(self) -> None:
-        """Test get_executable_tasks returns pending and in_progress tasks."""
+        """Test get_executable_tasks delegates to the client and shapes the result."""
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_query
 
+        from taskdog_core.application.dto.next_tasks_output import NextTasksOutput
+
         client = create_mock_client()
+        client.get_executable_tasks = MagicMock()
         in_progress_task = create_mock_task_row(
             task_id=1, name="In Progress", status=TaskStatus.IN_PROGRESS
         )
         pending_task = create_mock_task_row(
             task_id=2, name="Pending", status=TaskStatus.PENDING
         )
-        client.list_tasks.side_effect = [
-            TaskListOutput(tasks=[pending_task], total_count=1, filtered_count=1),
-            TaskListOutput(tasks=[in_progress_task], total_count=1, filtered_count=1),
-        ]
+        client.get_executable_tasks.return_value = NextTasksOutput(
+            tasks=[in_progress_task, pending_task]
+        )
 
         mcp = FastMCP("test")
         task_query.register_tools(mcp, client)
@@ -994,161 +997,48 @@ class TestTaskQueryTools:
         get_executable_fn = mcp._tool_manager._tools["get_executable_tasks"].fn
         result = get_executable_fn(tags=["coding"], limit=5)
 
-        assert client.list_tasks.call_count == 2
+        client.get_executable_tasks.assert_called_once_with(tags=["coding"], limit=5)
         assert len(result["tasks"]) == 2
         assert result["total"] == 2
-        # IN_PROGRESS should be first
+        # Ordering from the client is preserved (IN_PROGRESS first).
+        assert result["tasks"][0]["id"] == 1
         assert result["tasks"][0]["status"] == "IN_PROGRESS"
+        assert result["tasks"][1]["id"] == 2
         assert result["tasks"][1]["status"] == "PENDING"
         assert "executable tasks" in result["message"]
 
-    def test_get_executable_tasks_with_limit(self) -> None:
-        """Test get_executable_tasks respects limit parameter."""
+    def test_get_executable_tasks_with_default_args(self) -> None:
+        """Test get_executable_tasks passes through default tags/limit."""
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_query
 
+        from taskdog_core.application.dto.next_tasks_output import NextTasksOutput
+
         client = create_mock_client()
-        tasks = [create_mock_task_row(task_id=i, name=f"Task {i}") for i in range(1, 6)]
-        client.list_tasks.side_effect = [
-            TaskListOutput(tasks=tasks, total_count=5, filtered_count=5),
-            TaskListOutput(tasks=[], total_count=0, filtered_count=0),
-        ]
+        client.get_executable_tasks = MagicMock()
+        tasks = [create_mock_task_row(task_id=i, name=f"Task {i}") for i in range(1, 4)]
+        client.get_executable_tasks.return_value = NextTasksOutput(tasks=tasks)
 
         mcp = FastMCP("test")
         task_query.register_tools(mcp, client)
 
         get_executable_fn = mcp._tool_manager._tools["get_executable_tasks"].fn
-        result = get_executable_fn(limit=3)
+        result = get_executable_fn()
 
+        client.get_executable_tasks.assert_called_once_with(tags=None, limit=10)
         assert len(result["tasks"]) == 3
         assert result["total"] == 3
 
-    def test_get_executable_tasks_excludes_pending_with_unmet_dependency(
-        self,
-    ) -> None:
-        """Pending task depending on a non-completed task must be excluded."""
+    def test_get_executable_tasks_empty_result(self) -> None:
+        """Test get_executable_tasks handles an empty ranked list."""
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_query
 
-        client = create_mock_client()
-        pending_task = create_mock_task_row(
-            task_id=2, name="Pending", status=TaskStatus.PENDING, depends_on=[99]
-        )
-        client.list_tasks.side_effect = [
-            TaskListOutput(tasks=[pending_task], total_count=1, filtered_count=1),
-            TaskListOutput(tasks=[], total_count=0, filtered_count=0),
-        ]
-        client.get_tasks_by_ids.return_value = TaskListOutput(
-            tasks=[
-                create_mock_task_row(task_id=99, name="Dep", status=TaskStatus.PENDING)
-            ],
-            total_count=1,
-            filtered_count=1,
-        )
-
-        mcp = FastMCP("test")
-        task_query.register_tools(mcp, client)
-
-        get_executable_fn = mcp._tool_manager._tools["get_executable_tasks"].fn
-        result = get_executable_fn(limit=5)
-
-        assert result["tasks"] == []
-        assert result["total"] == 0
-        # Dependency statuses are fetched in a single batched call.
-        client.get_tasks_by_ids.assert_called_once()
-
-    def test_get_executable_tasks_includes_pending_with_met_dependency(
-        self,
-    ) -> None:
-        """Pending task depending on a completed task must be included."""
-        from mcp.server.fastmcp import FastMCP
-        from taskdog_mcp.tools import task_query
+        from taskdog_core.application.dto.next_tasks_output import NextTasksOutput
 
         client = create_mock_client()
-        pending_task = create_mock_task_row(
-            task_id=2, name="Pending", status=TaskStatus.PENDING, depends_on=[99]
-        )
-        client.list_tasks.side_effect = [
-            TaskListOutput(tasks=[pending_task], total_count=1, filtered_count=1),
-            TaskListOutput(tasks=[], total_count=0, filtered_count=0),
-        ]
-        client.get_tasks_by_ids.return_value = TaskListOutput(
-            tasks=[
-                create_mock_task_row(
-                    task_id=99, name="Dep", status=TaskStatus.COMPLETED
-                )
-            ],
-            total_count=1,
-            filtered_count=1,
-        )
-
-        mcp = FastMCP("test")
-        task_query.register_tools(mcp, client)
-
-        get_executable_fn = mcp._tool_manager._tools["get_executable_tasks"].fn
-        result = get_executable_fn(limit=5)
-
-        assert len(result["tasks"]) == 1
-        assert result["tasks"][0]["id"] == 2
-        assert result["total"] == 1
-
-    def test_get_executable_tasks_excludes_pending_with_missing_dependency(
-        self,
-    ) -> None:
-        """Pending task depending on a deleted/missing task must be excluded, not raise."""
-        from mcp.server.fastmcp import FastMCP
-        from taskdog_mcp.tools import task_query
-
-        client = create_mock_client()
-        pending_task = create_mock_task_row(
-            task_id=2, name="Pending", status=TaskStatus.PENDING, depends_on=[99]
-        )
-        client.list_tasks.side_effect = [
-            TaskListOutput(tasks=[pending_task], total_count=1, filtered_count=1),
-            TaskListOutput(tasks=[], total_count=0, filtered_count=0),
-        ]
-        # A missing dependency is simply absent from the batched result.
-        client.get_tasks_by_ids.return_value = TaskListOutput(
-            tasks=[], total_count=0, filtered_count=0
-        )
-
-        mcp = FastMCP("test")
-        task_query.register_tools(mcp, client)
-
-        get_executable_fn = mcp._tool_manager._tools["get_executable_tasks"].fn
-        result = get_executable_fn(limit=5)
-
-        assert result["tasks"] == []
-        assert result["total"] == 0
-
-    def test_get_executable_tasks_excludes_pending_with_mixed_dependencies(
-        self,
-    ) -> None:
-        """Pending task with one completed and one pending dep must be excluded."""
-        from mcp.server.fastmcp import FastMCP
-        from taskdog_mcp.tools import task_query
-
-        client = create_mock_client()
-        pending_task = create_mock_task_row(
-            task_id=2, name="Pending", status=TaskStatus.PENDING, depends_on=[97, 98]
-        )
-        client.list_tasks.side_effect = [
-            TaskListOutput(tasks=[pending_task], total_count=1, filtered_count=1),
-            TaskListOutput(tasks=[], total_count=0, filtered_count=0),
-        ]
-
-        client.get_tasks_by_ids.return_value = TaskListOutput(
-            tasks=[
-                create_mock_task_row(
-                    task_id=97, name="Dep 97", status=TaskStatus.COMPLETED
-                ),
-                create_mock_task_row(
-                    task_id=98, name="Dep 98", status=TaskStatus.PENDING
-                ),
-            ],
-            total_count=2,
-            filtered_count=2,
-        )
+        client.get_executable_tasks = MagicMock()
+        client.get_executable_tasks.return_value = NextTasksOutput(tasks=[])
 
         mcp = FastMCP("test")
         task_query.register_tools(mcp, client)

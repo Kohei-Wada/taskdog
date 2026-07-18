@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from taskdog_core.application.dto.gantt_overlay import GanttDateRange, GanttOverlay
 from taskdog_core.application.queries.base import QueryService
 from taskdog_core.application.sorters.task_sorter import TaskSorter
+from taskdog_core.domain.entities.task import TaskStatus
 
 if TYPE_CHECKING:
     from datetime import date
@@ -85,6 +87,52 @@ class TaskQueryService(QueryService):
 
         # Sort tasks
         return self.sorter.sort(tasks, sort_by, reverse)
+
+    def get_executable_tasks(
+        self, tags: list[str] | None = None, limit: int = 10
+    ) -> list[Task]:
+        """Return dependency-resolved executable tasks in canonical order.
+
+        Executable = PENDING/IN_PROGRESS, not archived, every dependency COMPLETED.
+        Order: IN_PROGRESS before PENDING; then deadline asc (None last);
+        then priority desc; then estimated_duration asc (None last); then id asc.
+        """
+        # Load the full task universe (incl. archived/completed) so a dependency's
+        # status can be resolved even after it was archived post-completion.
+        all_tasks = self.get_filtered_tasks()
+        status_by_id = {t.id: t.status for t in all_tasks}
+
+        def deps_met(task: Task) -> bool:
+            return all(
+                status_by_id.get(dep) == TaskStatus.COMPLETED for dep in task.depends_on
+            )
+
+        candidates = [
+            t
+            for t in all_tasks
+            if t.status in (TaskStatus.PENDING, TaskStatus.IN_PROGRESS)
+            and not t.is_archived
+            and (not tags or any(tag in t.tags for tag in tags))
+            and deps_met(t)
+        ]
+        candidates.sort(key=self._executable_sort_key)
+        return candidates[:limit]
+
+    @staticmethod
+    def _executable_sort_key(
+        task: Task,
+    ) -> tuple[int, bool, datetime, int, bool, float, int | None]:
+        status_tier = 0 if task.status == TaskStatus.IN_PROGRESS else 1
+        has_deadline = task.deadline is None  # False (0) sorts before True (1)
+        deadline = task.deadline or datetime.max
+        priority = -(task.priority or 0)  # higher priority first
+        has_est = task.estimated_duration is None
+        est = (
+            task.estimated_duration
+            if task.estimated_duration is not None
+            else float("inf")
+        )
+        return (status_tier, has_deadline, deadline, priority, has_est, est, task.id)
 
     def _extract_sql_params(self, filter_obj: TaskFilter | None) -> dict[str, Any]:
         """Extract SQL-compatible filter parameters from filter object.

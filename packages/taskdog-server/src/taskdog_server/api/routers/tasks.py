@@ -20,6 +20,7 @@ from taskdog_server.api.dependencies import (
 )
 from taskdog_server.api.models.requests import CreateTaskRequest, UpdateTaskRequest
 from taskdog_server.api.models.responses import (
+    NextTasksResponse,
     TaskDetailResponse,
     TaskListResponse,
     TaskOperationResponse,
@@ -182,6 +183,29 @@ def get_tasks_by_ids(
     """
     result = controller.get_tasks_by_ids(ids)
     return TaskListResponse.from_dto(result)
+
+
+@router.get("/executable", response_model=NextTasksResponse)
+def get_executable_tasks(
+    controller: QueryControllerDep,
+    _client_name: AuthenticatedClientDep,
+    tags: Annotated[
+        list[str] | None, Query(description="Filter by tags (OR logic)")
+    ] = None,
+    limit: Annotated[int, Query(ge=1, description="Maximum tasks to return")] = 10,
+) -> NextTasksResponse:
+    """List executable tasks ranked by what to work on next.
+
+    Args:
+        controller: Query controller dependency
+        tags: Optional tag filter
+        limit: Maximum number of tasks to return
+
+    Returns:
+        Ranked tasks with the ranking basis used
+    """
+    result = controller.get_executable_tasks(tags=tags, limit=limit)
+    return NextTasksResponse.model_validate(result, from_attributes=True)
 
 
 @router.get("/{task_id}", response_model=TaskDetailResponse)
