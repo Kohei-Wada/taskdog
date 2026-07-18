@@ -22,3 +22,21 @@ def test_executable_ranking_end_to_end(client: TaskdogApiClient) -> None:
     assert ids[0] == started.id
     assert ids.index(pending_soon.id) < ids.index(pending_later.id)
     assert out.ranking_basis[0] == "in_progress_first"
+
+
+def test_archived_completed_dependency_keeps_dependent_executable(
+    client: TaskdogApiClient,
+) -> None:
+    task_a = client.create_task(name="dependency task")
+    task_b = client.create_task(name="dependent task")
+    client.add_dependency(task_b.id, task_a.id)
+
+    blocked = client.get_executable_tasks(limit=10)
+    assert task_b.id not in [t.id for t in blocked.tasks]
+
+    client.start_task(task_a.id)
+    client.complete_task(task_a.id)
+    client.archive_task(task_a.id)
+
+    unblocked = client.get_executable_tasks(limit=10)
+    assert task_b.id in [t.id for t in unblocked.tasks]

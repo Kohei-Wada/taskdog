@@ -130,6 +130,16 @@ def test_estimate_tie_break():
     assert ids == [3, 2, 1]  # shorter estimate first; None-estimate last
 
 
+def test_tags_filter_is_or_across_multiple_tags():
+    tasks = [
+        _task(1, TaskStatus.PENDING, tags=["a"]),
+        _task(2, TaskStatus.PENDING, tags=["b"]),
+        _task(3, TaskStatus.PENDING, tags=["c"]),
+    ]
+    ids = [t.id for t in _svc(tasks).get_executable_tasks(tags=["a", "b"])]
+    assert ids == [1, 2]
+
+
 def test_id_tie_break():
     tasks = [
         _task(3, TaskStatus.PENDING),

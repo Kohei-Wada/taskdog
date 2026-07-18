@@ -96,6 +96,8 @@ class TaskQueryService(QueryService):
         Order: IN_PROGRESS before PENDING; then deadline asc (None last);
         then priority desc; then estimated_duration asc (None last); then id asc.
         """
+        # Load the full task universe (incl. archived/completed) so a dependency's
+        # status can be resolved even after it was archived post-completion.
         all_tasks = self.get_filtered_tasks()
         status_by_id = {t.id: t.status for t in all_tasks}
 
