@@ -129,6 +129,28 @@ class TestTaskSorter:
         for i, expected_name in enumerate(expected_names):
             assert sorted_tasks[i].name == expected_name
 
+    @pytest.mark.parametrize(
+        "field",
+        ["created_at", "updated_at"],
+        ids=["created_at", "updated_at"],
+    )
+    def test_sort_by_timestamp_fields(self, field):
+        """Test sorting by timestamp fields (created_at, updated_at), oldest first."""
+        task_old = Task(name="Old", priority=1)
+        task_old.id = 1
+        setattr(task_old, field, self.yesterday_str)
+        task_mid = Task(name="Mid", priority=1)
+        task_mid.id = 2
+        setattr(task_mid, field, self.today_str)
+        task_new = Task(name="New", priority=1)
+        task_new.id = 3
+        setattr(task_new, field, self.tomorrow_str)
+
+        tasks = [task_new, task_old, task_mid]
+        sorted_tasks = self.sorter.sort(tasks, sort_by=field)
+
+        assert [t.name for t in sorted_tasks] == ["Old", "Mid", "New"]
+
     def test_sort_by_status(self):
         """Test sorting by status."""
         task1 = Task(name="Task 1", priority=1, status=TaskStatus.PENDING)

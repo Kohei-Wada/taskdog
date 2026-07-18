@@ -19,6 +19,8 @@ class TaskSorter:
     - status: Task status (alphabetical, ascending by default)
     - planned_start: Planned start date (ascending by default)
     - estimated_duration: Estimated duration in hours (ascending by default - shorter tasks first)
+    - created_at: Creation timestamp (ascending by default - oldest first)
+    - updated_at: Last update timestamp (ascending by default - oldest first)
 
     Tasks with None values are sorted last for date/time/numeric fields.
     """
@@ -47,6 +49,8 @@ class TaskSorter:
             "status",
             "planned_start",
             "estimated_duration",
+            "created_at",
+            "updated_at",
         ]
         if sort_by not in valid_keys:
             raise ValueError(f"Invalid sort_by: {sort_by}. Must be one of {valid_keys}")
@@ -97,6 +101,12 @@ class TaskSorter:
 
         if sort_by == "estimated_duration":
             return lambda task: self._parse_numeric_for_sort(task.estimated_duration)
+
+        if sort_by == "created_at":
+            return lambda task: task.created_at
+
+        if sort_by == "updated_at":
+            return lambda task: task.updated_at
 
         # This should never happen due to validation in sort(), but required for type checking
         raise ValueError(f"Unsupported sort_by value: {sort_by}")

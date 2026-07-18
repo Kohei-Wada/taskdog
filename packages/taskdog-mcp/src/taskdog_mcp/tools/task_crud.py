@@ -41,7 +41,8 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             include_archived: Include archived tasks (default: False)
             status: Filter by status (PENDING, IN_PROGRESS, COMPLETED, CANCELED)
             tags: Filter by tags (OR logic)
-            sort_by: Sort field (id, name, priority, deadline, status)
+            sort_by: Sort field (id, name, priority, deadline, status,
+                planned_start, estimated_duration, created_at, updated_at)
             reverse: Reverse sort order
 
         Returns:

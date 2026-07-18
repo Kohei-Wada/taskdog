@@ -34,6 +34,8 @@ class SortOptionsProvider(BaseListProvider):
         ("priority", "Priority", "Importance-based (higher priority first)"),
         ("estimated_duration", "Duration", "Effort-based (shorter tasks first)"),
         ("id", "ID", "Creation order (lower ID first)"),
+        ("created_at", "Created", "Staleness-based (oldest capture first)"),
+        ("updated_at", "Updated", "Recency-based (least recently updated first)"),
         ("name", "Name", "Alphabetically (A-Z)"),
         (
             "status",

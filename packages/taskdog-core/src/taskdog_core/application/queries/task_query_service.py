@@ -62,7 +62,8 @@ class TaskQueryService(QueryService):
 
         Args:
             filter_obj: Optional filter object to apply. If None, returns all tasks.
-            sort_by: Sort key (id, priority, deadline, name, status, planned_start)
+            sort_by: Sort key (id, priority, deadline, name, status, planned_start,
+                estimated_duration, created_at, updated_at)
             reverse: Reverse sort order (default: False)
 
         Returns:
