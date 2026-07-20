@@ -46,6 +46,12 @@ class TaskModel(Base):
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
 
+    # Optimistic-lock version. Bumped on every update; a stale version at save
+    # time means another writer modified the row first (see #961).
+    version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
+
     # Schedule fields (nullable)
     planned_start: Mapped[datetime | None] = mapped_column(nullable=True)
     planned_end: Mapped[datetime | None] = mapped_column(nullable=True)

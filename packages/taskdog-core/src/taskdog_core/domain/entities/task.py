@@ -75,6 +75,9 @@ class Task:
     tags: list[str] = field(default_factory=list)
     # Archive flag: True = soft deleted, preserves original status
     is_archived: bool = False
+    # Optimistic-lock version, carried from the read so a concurrent write can
+    # be detected on save (see #961).
+    version: int = 1
 
     def __post_init__(self) -> None:
         """Validate entity invariants after initialization.

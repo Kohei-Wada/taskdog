@@ -5,6 +5,27 @@ class TaskError(Exception):
     """Base exception for all task-related errors."""
 
 
+class ConcurrencyConflictError(TaskError):
+    """Raised when a task is saved against a stale version.
+
+    Signals that another writer modified the same task between the read and the
+    save (optimistic-lock conflict). Not a validation error: the caller should
+    re-read and retry rather than fix its input, so this maps to HTTP 409.
+    """
+
+    def __init__(
+        self, task_id: int, expected_version: int, actual_version: int
+    ) -> None:
+        self.task_id = task_id
+        self.expected_version = expected_version
+        self.actual_version = actual_version
+        super().__init__(
+            f"Cannot save task {task_id}: it was modified by another operation "
+            f"(expected version {expected_version}, found {actual_version}). "
+            "Re-read the task and try again."
+        )
+
+
 class TaskNotFoundException(TaskError):
     """Raised when a task with given ID is not found."""
 

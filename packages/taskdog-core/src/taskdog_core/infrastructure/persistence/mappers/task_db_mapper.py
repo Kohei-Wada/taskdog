@@ -151,6 +151,7 @@ class TaskDbMapper:
             depends_on=depends_on,
             tags=tags,
             is_archived=model.is_archived,
+            version=model.version,
         )
 
     def update_model(self, model: TaskModel, task: Task) -> None:

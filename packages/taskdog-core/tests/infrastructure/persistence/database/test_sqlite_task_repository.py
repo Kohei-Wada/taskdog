@@ -7,6 +7,7 @@ import pytest
 
 from taskdog_core.domain.constants import MAX_TAGS_PER_TASK
 from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.exceptions.task_exceptions import ConcurrencyConflictError
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
 )
@@ -66,6 +67,35 @@ class TestSqliteTaskRepository:
         retrieved = self.repository.get_by_id(1)
         assert retrieved.name == "Updated"
         assert retrieved.priority == 5
+
+    def test_save_rejects_concurrent_stale_update(self):
+        """Two readers of the same task: the second save must not clobber the first.
+
+        Regression for #961. Both flows read the task, then each saves its own
+        change. Without optimistic locking the later save silently overwrites
+        the earlier one (lost update); now the stale save raises a conflict.
+        """
+        self.repository.save(Task(id=1, name="Original", priority=1))
+
+        # Two independent reads of the same task (both at version 1).
+        reader_a = self.repository.get_by_id(1)
+        reader_b = self.repository.get_by_id(1)
+        assert reader_a.version == reader_b.version == 1
+
+        # Reader A commits its change first.
+        reader_a.priority = 5
+        self.repository.save(reader_a)
+
+        # Reader B, still holding the stale version, must be rejected.
+        reader_b.name = "Clobbered"
+        with pytest.raises(ConcurrencyConflictError):
+            self.repository.save(reader_b)
+
+        # A's change survived; B's did not.
+        persisted = self.repository.get_by_id(1)
+        assert persisted.name == "Original"
+        assert persisted.priority == 5
+        assert persisted.version == 2
 
     def test_get_all_returns_all_tasks(self):
         """Test get_all() retrieves all tasks from database."""

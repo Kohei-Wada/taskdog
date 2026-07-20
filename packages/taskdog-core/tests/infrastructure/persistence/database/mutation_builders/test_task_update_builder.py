@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.exceptions.task_exceptions import ConcurrencyConflictError
 from taskdog_core.infrastructure.persistence.database.models import TaskModel
 from taskdog_core.infrastructure.persistence.database.models.task_model import Base
 from taskdog_core.infrastructure.persistence.database.mutation_builders import (
@@ -161,3 +162,68 @@ class TestTaskUpdateBuilder:
             assert initial_model.status == "IN_PROGRESS"
             assert initial_model.estimated_duration == 15.0
             assert initial_model.is_fixed is True
+
+    def test_update_task_bumps_version(self):
+        """A successful update increments the optimistic-lock version."""
+        initial_model = TaskModel(
+            id=1,
+            name="Task",
+            priority=5,
+            status="PENDING",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
+        updated_task = Task(
+            id=1, name="Task v2", priority=5, status=TaskStatus.PENDING, tags=[]
+        )
+
+        with self.Session() as session:
+            session.add(initial_model)
+            session.flush()
+            assert initial_model.version == 1
+
+            builder = TaskUpdateBuilder(session, self.mapper)
+            builder.update_task(initial_model, updated_task)
+
+            assert initial_model.version == 2
+
+    def test_update_task_rejects_stale_version(self):
+        """A save whose read-time version is behind the row raises a conflict.
+
+        Reproduces the lost-update scenario in #961: the row in the database is
+        already at version 2 (another writer committed first), but the entity
+        being saved was read at version 1. The stale write must be rejected, not
+        silently applied.
+        """
+        current_model = TaskModel(
+            id=1,
+            name="Original",
+            priority=5,
+            status="PENDING",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            version=2,
+        )
+        stale_task = Task(
+            id=1,
+            name="Stale overwrite",
+            priority=9,
+            status=TaskStatus.PENDING,
+            tags=[],
+            version=1,
+        )
+
+        with self.Session() as session:
+            session.add(current_model)
+            session.flush()
+
+            builder = TaskUpdateBuilder(session, self.mapper)
+            with pytest.raises(ConcurrencyConflictError) as exc_info:
+                builder.update_task(current_model, stale_task)
+
+            assert exc_info.value.expected_version == 1
+            assert exc_info.value.actual_version == 2
+            # The stale write must not have touched the row.
+            assert current_model.name == "Original"
+            assert current_model.priority == 5
+            assert current_model.version == 2

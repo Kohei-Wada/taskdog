@@ -14,6 +14,7 @@ from taskdog_core.domain.exceptions.backup_exceptions import (
 )
 from taskdog_core.domain.exceptions.tag_exceptions import TagNotFoundException
 from taskdog_core.domain.exceptions.task_exceptions import (
+    ConcurrencyConflictError,
     TaskNotFoundException,
     TaskValidationError,
 )
@@ -40,11 +41,19 @@ async def _not_implemented_handler(_request: Request, exc: Exception) -> JSONRes
     )
 
 
+async def _conflict_handler(_request: Request, exc: Exception) -> JSONResponse:
+    """Map concurrent-modification domain exceptions to 409 CONFLICT."""
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT, content={"detail": str(exc)}
+    )
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Register domain exception handlers on the FastAPI app.
 
     - TaskNotFoundException, TagNotFoundException -> 404 NOT_FOUND
     - TaskValidationError (and subclasses), BackupValidationError -> 400 BAD_REQUEST
+    - ConcurrencyConflictError -> 409 CONFLICT
     - BackupNotSupportedError -> 501 NOT_IMPLEMENTED
 
     Starlette resolves handlers by walking the exception's MRO, so registering
@@ -57,5 +66,6 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(TaskNotFoundException, _not_found_handler)
     app.add_exception_handler(TagNotFoundException, _not_found_handler)
     app.add_exception_handler(TaskValidationError, _bad_request_handler)
+    app.add_exception_handler(ConcurrencyConflictError, _conflict_handler)
     app.add_exception_handler(BackupValidationError, _bad_request_handler)
     app.add_exception_handler(BackupNotSupportedError, _not_implemented_handler)
