@@ -20,7 +20,7 @@ classifiers = [
 dependencies = [
     "taskdog-core==0.26.0",
     "httpx>=0.27.0",
-    "websockets>=16.1",
+    "websockets>=16.1.1",
 ]
 
 [project.optional-dependencies]
