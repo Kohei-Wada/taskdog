@@ -163,7 +163,7 @@ jobs:
           sed -i "s/^pkgver=.*/pkgver=${version}/" contrib/aur/PKGBUILD
 
       - name: Publish taskdog to the AUR
-        uses: KSXGitHub/github-actions-deploy-aur@v4.1.3
+        uses: KSXGitHub/github-actions-deploy-aur@v4.2.0
         with:
           pkgname: taskdog
           pkgbuild: contrib/aur/PKGBUILD
