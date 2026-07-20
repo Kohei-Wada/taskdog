@@ -17,7 +17,7 @@ dev = [
   "pre-commit>=4.6.0",
   "ruff>=0.15.22",
   "mypy>=2.3.0",
-  "types-python-dateutil>=2.9.0.20260518",
+  "types-python-dateutil>=2.9.0.20260716",
   "pytest>=9.1.1",
   "pytest-cov>=4.0.0",
 ]
