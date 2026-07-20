@@ -4,7 +4,7 @@
 repos:
   # Ruff - fast Python linter and formatter
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.21
+    rev: v0.15.22
     hooks:
       # Run the linter
       - id: ruff
@@ -15,7 +15,7 @@ repos:
   # mypy - static type checker
   # Phase 2: mypy enabled with permissive settings
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.2.0
+    rev: v2.3.0
     hooks:
       - id: mypy
         additional_dependencies: [click>=8.3.0, rich>=14.2.0, fastapi>=0.115.0, pydantic>=2.10.0, httpx>=0.27.0, "uvicorn[standard]>=0.32.0", textual-plotext>=1.0.0]
@@ -24,7 +24,7 @@ repos:
 
   # Markdown linter
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.23.0
+    rev: v0.23.1
     hooks:
       - id: markdownlint-cli2
         args: [--fix]
@@ -38,7 +38,7 @@ repos:
 
   # Spell checker
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
+    rev: v2.4.3
     hooks:
       - id: codespell
         additional_dependencies: [tomli]
