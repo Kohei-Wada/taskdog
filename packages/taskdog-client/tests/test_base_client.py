@@ -8,6 +8,7 @@ from taskdog_client.base_client import BaseApiClient
 
 from taskdog_core.domain.exceptions.task_exceptions import (
     AuthenticationError,
+    ConcurrencyConflictError,
     ServerConnectionError,
     ServerError,
     TaskNotFoundException,
@@ -85,6 +86,18 @@ class TestBaseApiClient:
             client._handle_error(response)
 
         assert "Authentication failed" in str(exc_info.value)
+
+    def test_handle_error_409_conflict(self):
+        """Test _handle_error raises ConcurrencyConflictError for 409."""
+        client = BaseApiClient(self.base_url, self.timeout)
+        response = Mock()
+        response.status_code = 409
+        response.json.return_value = {"detail": "Task 1 was modified by another op"}
+
+        with pytest.raises(ConcurrencyConflictError) as exc_info:
+            client._handle_error(response)
+
+        assert "Task 1 was modified by another op" in str(exc_info.value)
 
     def test_handle_error_5xx_status(self):
         """Test _handle_error raises ServerError for 5xx errors."""

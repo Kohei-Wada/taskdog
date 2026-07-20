@@ -14,16 +14,25 @@ class ConcurrencyConflictError(TaskError):
     """
 
     def __init__(
-        self, task_id: int, expected_version: int, actual_version: int
+        self,
+        task_id: int | str,
+        expected_version: int | None = None,
+        actual_version: int | None = None,
     ) -> None:
-        self.task_id = task_id
         self.expected_version = expected_version
         self.actual_version = actual_version
-        super().__init__(
-            f"Cannot save task {task_id}: it was modified by another operation "
-            f"(expected version {expected_version}, found {actual_version}). "
-            "Re-read the task and try again."
-        )
+        if isinstance(task_id, str):
+            # Pre-formatted detail message (e.g. surfaced from an HTTP 409 body
+            # on the client side, where the version numbers aren't available).
+            self.task_id = None
+            super().__init__(task_id)
+        else:
+            self.task_id = task_id
+            super().__init__(
+                f"Cannot save task {task_id}: it was modified by another operation "
+                f"(expected version {expected_version}, found {actual_version}). "
+                "Re-read the task and try again."
+            )
 
 
 class TaskNotFoundException(TaskError):

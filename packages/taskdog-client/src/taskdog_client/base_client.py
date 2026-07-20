@@ -14,6 +14,7 @@ import httpx  # type: ignore[import-not-found]
 
 from taskdog_core.domain.exceptions.task_exceptions import (
     AuthenticationError,
+    ConcurrencyConflictError,
     ServerConnectionError,
     ServerError,
     TaskNotFoundException,
@@ -117,6 +118,7 @@ class BaseApiClient:
         Raises:
             TaskNotFoundException: If status is 404
             TaskValidationError: If status is 400 or 422
+            ConcurrencyConflictError: If status is 409
             Exception: For other errors
         """
         if response.status_code == 404:
@@ -127,6 +129,11 @@ class BaseApiClient:
             raise TaskValidationError(detail)
         if response.status_code == 401:
             raise AuthenticationError("Authentication failed. Check your API key.")
+        if response.status_code == 409:
+            detail = "Task was modified by another operation. Re-read and retry."
+            with contextlib.suppress(Exception):
+                detail = response.json().get("detail", detail)
+            raise ConcurrencyConflictError(detail)
         if response.status_code >= 500:
             detail = "Server error occurred"
             with contextlib.suppress(Exception):
