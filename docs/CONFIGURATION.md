@@ -55,7 +55,7 @@ The `[auth]` section configures API key authentication for the server.
 
 ```toml
 [auth]
-enabled = true  # Enable/disable authentication (default: true)
+enabled = true  # Enable/disable authentication (default: false)
 
 # Define API keys (can have multiple)
 [[auth.api_keys]]
@@ -69,7 +69,7 @@ name = "my-desktop"
 
 **Fields:**
 
-- `enabled` (boolean) - Enable or disable authentication. Default: `true`
+- `enabled` (boolean) - Enable or disable authentication. Default: `false`
 - `api_keys` (array) - List of valid API keys
   - `key` (string) - The secret API key value
   - `name` (string) - Friendly name for identifying the client
