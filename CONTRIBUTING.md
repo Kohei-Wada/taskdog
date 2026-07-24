@@ -23,7 +23,7 @@ This guide will help you get started with contributing to the project.
 1. **Clone the repository:**
 
 ```bash
-git clone https://github.com/Kohei-Wada/taskdog.git
+git clone https://github.com/<your-username>/taskdog.git
 cd taskdog
 ```
 
