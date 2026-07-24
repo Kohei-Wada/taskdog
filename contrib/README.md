@@ -95,7 +95,7 @@ This will:
 
 After installing the service, follow these steps to use the CLI/TUI:
 
-**1. Start the server**
+**1. Start the server:**
 
 ```bash
 systemctl --user start taskdog-server

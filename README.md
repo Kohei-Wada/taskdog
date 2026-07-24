@@ -9,7 +9,7 @@
 
 <p align="center">
   A task management system with CLI/TUI interfaces and REST API server, featuring time tracking, schedule optimization, and beautiful terminal output.<br>
-  Designed for individual use. Stores tasks locally in SQLite database.
+  Designed for individual use. Stores tasks locally in an SQLite database.
 </p>
 
 https://github.com/user-attachments/assets/2c0de3ec-fa3d-4f41-ae01-acbff04931e3
@@ -84,7 +84,7 @@ pip install taskdog-ui[server]
 
 You'll need to manage the server process yourself (e.g., `taskdog-server &`).
 
-### Windows users
+### Windows Users
 
 - WSL2 is recommended and follows the same setup flow as Linux.
 - Native Windows support is experimental. By default, data is stored under
