@@ -1,4 +1,6 @@
-<h1 align="center">Taskdog</h1>
+<p align="center">
+  <img src="docs/images/logo.png" alt="Taskdog" width="300">
+</p>
 
 <p align="center">
   <a href="https://github.com/Kohei-Wada/taskdog/actions/workflows/ci.yml"><img src="https://github.com/Kohei-Wada/taskdog/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
