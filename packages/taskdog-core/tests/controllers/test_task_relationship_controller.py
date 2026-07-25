@@ -45,15 +45,11 @@ class TestTaskRelationshipController:
             status=TaskStatus.PENDING,
         )
 
-        # Return appropriate task based on ID (cycle detection calls get_by_id multiple times)
-        def get_by_id_side_effect(task_id_arg):
-            if task_id_arg == task_id:
-                return task
-            if task_id_arg == depends_on_id:
-                return dependency_task
-            return None
-
-        self.repository.get_by_id.side_effect = get_by_id_side_effect
+        tasks_by_id = {task_id: task, depends_on_id: dependency_task}
+        self.repository.get_by_id.side_effect = tasks_by_id.get
+        self.repository.get_by_ids.side_effect = lambda ids: {
+            tid: tasks_by_id[tid] for tid in ids if tid in tasks_by_id
+        }
         self.repository.save.return_value = None
 
         # Act

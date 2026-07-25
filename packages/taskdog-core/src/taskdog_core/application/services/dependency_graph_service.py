@@ -33,6 +33,8 @@ class DependencyGraphService:
             List of task IDs forming the cycle if detected, None otherwise.
             Example: [1, 2, 3, 1] means task1→task2→task3→task1
         """
+        adjacency = self._load_reachable_adjacency(target_task_id)
+
         visited: set[int] = set()
         rec_stack: list[int] = []
 
@@ -57,12 +59,9 @@ class DependencyGraphService:
             visited.add(current_id)
             rec_stack.append(current_id)
 
-            # Get current task's dependencies
-            current_task = self.repository.get_by_id(current_id)
-            if current_task and current_task.depends_on:
-                for dep_id in current_task.depends_on:
-                    if dfs(dep_id):
-                        return True
+            for dep_id in adjacency.get(current_id, []):
+                if dfs(dep_id):
+                    return True
 
             rec_stack.pop()
             return False
@@ -73,3 +72,30 @@ class DependencyGraphService:
             return rec_stack.copy()
 
         return None
+
+    def _load_reachable_adjacency(self, root_id: int) -> dict[int, list[int]]:
+        """Load the depends_on adjacency of the subgraph reachable from root_id.
+
+        Fetches tasks level by level with get_by_ids, so repository round trips
+        scale with graph depth instead of node count (avoids N+1 reads).
+
+        Args:
+            root_id: Task ID to start traversal from
+
+        Returns:
+            Mapping of task ID to its depends_on list. Missing tasks map to [].
+        """
+        adjacency: dict[int, list[int]] = {}
+        frontier = [root_id]
+        while frontier:
+            tasks = self.repository.get_by_ids(frontier)
+            next_frontier: dict[int, None] = {}
+            for task_id in frontier:
+                task = tasks.get(task_id)
+                deps = list(task.depends_on) if task and task.depends_on else []
+                adjacency[task_id] = deps
+                for dep_id in deps:
+                    if dep_id not in adjacency:
+                        next_frontier[dep_id] = None
+            frontier = list(next_frontier)
+        return adjacency
