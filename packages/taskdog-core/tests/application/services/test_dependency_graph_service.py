@@ -1,5 +1,8 @@
 """Tests for DependencyGraphService."""
 
+from itertools import pairwise
+from unittest.mock import patch
+
 import pytest
 
 from taskdog_core.application.services.dependency_graph_service import (
@@ -220,6 +223,36 @@ class TestDependencyGraphService:
         result = self.service.detect_cycle(task2.id, task1.id)
 
         assert result is None
+
+    def test_detect_cycle_does_not_call_get_by_id_per_node(self):
+        """detect_cycle must batch-fetch tasks, not issue get_by_id per node (N+1)."""
+        tasks = [self.repository.create(name=f"Task {i}", priority=1) for i in range(5)]
+        for upstream, downstream in pairwise(tasks):
+            upstream.depends_on = [downstream.id]
+            self.repository.save(upstream)
+
+        with patch.object(
+            self.repository, "get_by_id", wraps=self.repository.get_by_id
+        ) as get_by_id_spy:
+            result = self.service.detect_cycle(tasks[-1].id, tasks[0].id)
+
+        assert result is not None
+        assert get_by_id_spy.call_count == 0
+
+    def test_detect_cycle_batches_fetches_per_depth_level(self):
+        """A linear chain of depth N must use O(N) get_by_ids calls, not N get_by_id."""
+        tasks = [self.repository.create(name=f"Task {i}", priority=1) for i in range(4)]
+        for upstream, downstream in pairwise(tasks):
+            upstream.depends_on = [downstream.id]
+            self.repository.save(upstream)
+
+        with patch.object(
+            self.repository, "get_by_ids", wraps=self.repository.get_by_ids
+        ) as get_by_ids_spy:
+            result = self.service.detect_cycle(tasks[-1].id, tasks[0].id)
+
+        assert result is not None
+        assert get_by_ids_spy.call_count <= len(tasks)
 
     def test_detect_cycle_complex_graph_with_cycle(self):
         """Test detect_cycle in complex graph with multiple branches."""
