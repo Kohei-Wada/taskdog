@@ -1,0 +1,64 @@
+site_name: Taskdog
+site_description: Task management system with CLI/TUI interfaces and REST API server
+site_url: https://kohei-wada.github.io/taskdog/
+repo_url: https://github.com/Kohei-Wada/taskdog
+repo_name: Kohei-Wada/taskdog
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  logo: images/logo.png
+  favicon: images/logo.png
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - content.code.copy
+    - content.action.edit
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets:
+      base_path: [.]
+      check_paths: true
+  - mkdocs_click
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Configuration: configuration.md
+  - Reference:
+      - CLI Reference: reference/cli.md
+      - CLI Guide: reference/cli-guide.md
+      - API Reference: reference/api.md
+      - API Guide: reference/api-guide.md
+  - Optimization:
+      - Architecture: optimization/architecture.md
+  - Design Philosophy: design-philosophy.md
+  - Contributing: contributing.md
+
+exclude_docs: |
+  requirements.txt

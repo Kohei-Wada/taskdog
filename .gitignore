@@ -228,3 +228,7 @@ __marimo__/
 
 # Generated demo media (uploaded to GitHub, not committed)
 assets/
+
+# MkDocs
+site/
+docs/reference/api.md

@@ -572,4 +572,4 @@ If this philosophy resonates with you, welcome to Taskdog! If you need team feat
 
 **Questions or feedback?** Open an issue or discussion on GitHub. We'd love to hear your thoughts on this design philosophy.
 
-**Want to understand the technical architecture?** See [CLAUDE.md](CLAUDE.md) for detailed implementation notes.
+**Want to understand the technical architecture?** See [CLAUDE.md](https://github.com/Kohei-Wada/taskdog/blob/main/CLAUDE.md) for detailed implementation notes.

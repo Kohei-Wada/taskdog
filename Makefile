@@ -1,4 +1,4 @@
-.PHONY: help test test-core test-server test-ui test-client test-mcp test-e2e test-all \
+.PHONY: help docs docs-api docs-serve docs-build test test-core test-server test-ui test-client test-mcp test-e2e test-all \
         install install-dev install-hooks install-core install-server install-ui install-client install-mcp \
         install-ui-only install-server-only reinstall \
         tool-install-ui tool-install-server check-deps \
@@ -301,3 +301,19 @@ endif
 
 show-version: ## Show current version
 	@python scripts/bump_version.py --current
+
+# ============================================================================
+# Documentation Targets
+# ============================================================================
+
+docs-api: ## Generate API reference from OpenAPI schema
+	uv sync --all-packages --extra docs
+	uv run --no-sync python scripts/generate_openapi_docs.py
+
+docs-serve: docs-api ## Serve docs locally with hot-reload
+	uv run --no-sync mkdocs serve
+
+docs-build: docs-api ## Build docs for deployment (strict)
+	uv run --no-sync mkdocs build --strict
+
+docs: docs-serve ## Generate docs and serve locally

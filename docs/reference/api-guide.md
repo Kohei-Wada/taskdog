@@ -2,21 +2,6 @@
 
 Complete reference for the Taskdog REST API.
 
-## Table of Contents
-
-- [Getting Started](#getting-started)
-- [Authentication](#authentication)
-- [Base URL](#base-url)
-- [Response Format](#response-format)
-- [Endpoints](#endpoints)
-  - [Documentation](#documentation)
-  - [Task Management](#task-management)
-  - [Lifecycle Operations](#lifecycle-operations)
-  - [Relationships](#relationships)
-  - [Notes](#notes)
-  - [Analytics](#analytics)
-  - [Optimization](#optimization)
-  - [Real-time Updates](#real-time-updates)
 
 ## Getting Started
 
@@ -56,7 +41,7 @@ key = "your-secret-key"
 name = "my-tui"  # Friendly name (shown in WebSocket broadcasts)
 ```
 
-See [examples/server.toml](../examples/server.toml) for a complete example.
+See [examples/server.toml](https://github.com/Kohei-Wada/taskdog/blob/main/examples/server.toml) for a complete example.
 
 ### HTTP Authentication
 
