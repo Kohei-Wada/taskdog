@@ -41,7 +41,9 @@ class GetTaskDetailUseCase(UseCase[SingleTaskInput, TaskDetailOutput]):
 
         # Read notes in a single query (read_notes returns None if no notes exist)
         notes_content = self.notes_repository.read_notes(input_dto.task_id)
-        has_notes = notes_content is not None
+        # Deleting notes leaves an empty row behind, so an empty string means
+        # "no notes" here too - matching NotesRepository.has_notes().
+        has_notes = bool(notes_content)
 
         # Convert Task entity to DTO
         task_dto = TaskDetailDto.from_entity(task)
