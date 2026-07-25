@@ -172,7 +172,7 @@ class TestTaskQueryBuilder:
         assert "deadline" in result_str
 
     def test_with_date_filter_both_dates(self):
-        """Test that with_date_filter adds BETWEEN clause for date range."""
+        """Test that with_date_filter adds a half-open range for a date range."""
         base_stmt = select(TaskModel)
         builder = TaskQueryBuilder(base_stmt)
 
@@ -180,10 +180,11 @@ class TestTaskQueryBuilder:
             start_date=date(2025, 1, 1), end_date=date(2025, 12, 31)
         ).build()
 
-        # Should add WHERE clause with BETWEEN for date range
+        # Should add WHERE clause with an inclusive lower and exclusive upper bound
         result_str = str(result).lower()
         assert "where" in result_str
-        assert "between" in result_str
+        assert "deadline >=" in result_str
+        assert "deadline <" in result_str
         assert "deadline" in result_str
 
     def test_method_chaining_fluent_interface(self):

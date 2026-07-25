@@ -4,6 +4,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 import pytest
+from fixtures.repositories import InMemoryTaskRepository
 
 from taskdog_core.domain.constants import MAX_TAGS_PER_TASK
 from taskdog_core.domain.entities.task import Task, TaskStatus
@@ -536,6 +537,38 @@ class TestSqliteTaskRepository:
         # Count tasks before Feb 28
         before_feb_count = self.repository.count_tasks(end_date=date(2025, 2, 28))
         assert before_feb_count == 3  # task1, task2, task4
+
+    def test_date_filter_end_date_includes_same_day_time(self):
+        """Test end_date is whole-day inclusive for time-bearing values.
+
+        The columns store datetimes, so a bare ``end_date`` bound is coerced to
+        midnight and used to drop same-day values that carry a time. That
+        disagrees with the default ``TaskRepository.get_filtered()``, which
+        compares dates only.
+        """
+        task = Task(
+            id=1, name="Boundary", priority=1, deadline=datetime(2025, 2, 28, 10, 0)
+        )
+        self.repository.save(task)
+
+        end_date = date(2025, 2, 28)
+        in_memory = InMemoryTaskRepository()
+        in_memory.save(task)
+
+        assert len(self.repository.get_filtered(end_date=end_date)) == 1
+        assert (
+            len(
+                self.repository.get_filtered(
+                    start_date=date(2025, 2, 1), end_date=end_date
+                )
+            )
+            == 1
+        )
+        assert self.repository.count_tasks(end_date=end_date) == 1
+        # Both repository implementations must agree on the boundary.
+        assert len(in_memory.get_filtered(end_date=end_date)) == 1
+        # The day after the deadline is still excluded.
+        assert len(self.repository.get_filtered(end_date=date(2025, 2, 27))) == 0
 
     def test_count_tasks_with_combined_filters(self):
         """Test count_tasks() with multiple filters combined."""

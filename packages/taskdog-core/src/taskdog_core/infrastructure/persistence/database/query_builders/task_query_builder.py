@@ -8,7 +8,7 @@ The builder supports the hybrid filtering architecture where simple filters
 (archived, status, tags, dates) are translated to SQL for optimal performance.
 """
 
-from datetime import date
+from datetime import date, timedelta
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.sql.expression import ColumnElement
@@ -188,9 +188,14 @@ class TaskQueryBuilder:
         This helper method creates SQLAlchemy filter conditions for date range
         filtering across all date fields (deadline, planned_start, planned_end,
         actual_start, actual_end). It handles three cases for each field:
-        - Both start and end dates: field.between(start_date, end_date)
+        - Both start and end dates: field >= start_date AND field < end_date + 1 day
         - Only start date: field >= start_date
-        - Only end date: field <= end_date
+        - Only end date: field < end_date + 1 day
+
+        The columns store datetimes, so ``end_date`` is turned into an exclusive
+        next-day bound. Comparing against the bare date would coerce it to
+        midnight and drop same-day values that carry a time, which disagrees
+        with ``TaskRepository._matches_date_filter``.
 
         Args:
             start_date: Minimum date for filtering (inclusive), or None
@@ -216,11 +221,14 @@ class TaskQueryBuilder:
 
         # Build conditions for each date field
         for field in date_fields:
+            end_bound = end_date + timedelta(days=1) if end_date else None
             if start_date and end_date:
-                date_conditions.append(field.between(start_date, end_date))  # type: ignore[attr-defined]
+                date_conditions.append(
+                    (field >= start_date) & (field < end_bound)  # type: ignore[operator]
+                )
             elif start_date:
                 date_conditions.append(field >= start_date)  # type: ignore[arg-type,operator]
             elif end_date:
-                date_conditions.append(field <= end_date)  # type: ignore[arg-type,operator]
+                date_conditions.append(field < end_bound)  # type: ignore[arg-type,operator]
 
         return date_conditions

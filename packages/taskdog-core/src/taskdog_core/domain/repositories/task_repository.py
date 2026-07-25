@@ -101,8 +101,11 @@ class TaskRepository(ABC):
     ) -> bool:
         """Check whether any of the task's date fields fall within the range.
 
-        Mirrors the SQL date filtering logic: deadline, planned_start,
-        planned_end, actual_start and actual_end are combined with OR logic.
+        Mirrors the SQL date filtering logic in
+        ``TaskQueryBuilder._build_date_filter_conditions``: deadline,
+        planned_start, planned_end, actual_start and actual_end are combined
+        with OR logic, and ``end_date`` is whole-day inclusive so a value that
+        carries a time on the boundary day still matches.
 
         Args:
             task: Task whose date fields are inspected
