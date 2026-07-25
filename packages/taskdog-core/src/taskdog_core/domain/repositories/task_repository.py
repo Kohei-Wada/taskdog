@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
@@ -70,13 +70,64 @@ class TaskRepository(ABC):
             List of tasks matching the filter criteria
 
         Notes:
-            - Default implementation falls back to get_all() (no optimization)
+            - Default implementation filters get_all() in Python (no optimization)
             - Repositories should override this for SQL-level filtering
             - Date filtering typically checks multiple date fields (deadline, planned dates, etc.)
         """
-        # Default implementation: fallback to get_all() without optimization
-        # Subclasses should override this method to provide SQL-level filtering
-        return self.get_all()
+        # Default implementation: filter get_all() in Python (no optimization).
+        # Subclasses should override this method to provide SQL-level filtering.
+        result: list[Task] = []
+        for task in self.get_all():
+            if not include_archived and task.is_archived:
+                continue
+            if status is not None and task.status != status:
+                continue
+            if tags:
+                if match_all_tags:
+                    if not all(tag in task.tags for tag in tags):
+                        continue
+                elif not any(tag in task.tags for tag in tags):
+                    continue
+            if (
+                start_date is not None or end_date is not None
+            ) and not self._matches_date_filter(task, start_date, end_date):
+                continue
+            result.append(task)
+        return result
+
+    @staticmethod
+    def _matches_date_filter(
+        task: Task, start_date: date | None, end_date: date | None
+    ) -> bool:
+        """Check whether any of the task's date fields fall within the range.
+
+        Mirrors the SQL date filtering logic: deadline, planned_start,
+        planned_end, actual_start and actual_end are combined with OR logic.
+
+        Args:
+            task: Task whose date fields are inspected
+            start_date: Minimum date (inclusive), or None
+            end_date: Maximum date (inclusive), or None
+
+        Returns:
+            True if any date field falls within the requested range
+        """
+        for value in (
+            task.deadline,
+            task.planned_start,
+            task.planned_end,
+            task.actual_start,
+            task.actual_end,
+        ):
+            if value is None:
+                continue
+            value_date = value.date() if isinstance(value, datetime) else value
+            if start_date is not None and value_date < start_date:
+                continue
+            if end_date is not None and value_date > end_date:
+                continue
+            return True
+        return False
 
     def count_tasks(
         self,
