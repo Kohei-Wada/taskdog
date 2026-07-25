@@ -46,6 +46,20 @@ class TestGetTaskDetailUseCase:
         assert result.has_notes is True
         assert result.notes_content == notes_content
 
+    def test_execute_after_notes_deleted(self):
+        """Test has_notes is False once notes are deleted (empty content)."""
+        task = self.repository.create(name="Test Task", priority=1)
+
+        self.notes_repository.write_notes(task.id, "# Test Notes")
+        # delete_notes writes an empty string, leaving an empty row behind
+        self.notes_repository.write_notes(task.id, "")
+
+        input_dto = SingleTaskInput(task.id)
+        result = self.use_case.execute(input_dto)
+
+        assert self.notes_repository.has_notes(task.id) is False
+        assert result.has_notes is False
+
     def test_execute_without_notes(self):
         """Test execute handles missing notes gracefully."""
         task = self.repository.create(name="Test Task", priority=1)
