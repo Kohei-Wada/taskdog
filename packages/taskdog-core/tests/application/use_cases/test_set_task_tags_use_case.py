@@ -6,6 +6,7 @@ from taskdog_core.application.dto.create_task_input import CreateTaskInput
 from taskdog_core.application.dto.set_task_tags_input import SetTaskTagsInput
 from taskdog_core.application.use_cases.create_task import CreateTaskUseCase
 from taskdog_core.application.use_cases.set_task_tags import SetTaskTagsUseCase
+from taskdog_core.domain.entities.task import MAX_TAG_LENGTH, MAX_TAGS_PER_TASK
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskValidationError,
@@ -107,3 +108,26 @@ class TestSetTaskTagsUseCase:
         result = self.use_case.execute(input_dto)
 
         assert result.tags == ["project-2024", "client_a", "v1.0"]
+
+    def test_execute_with_too_many_tags_raises_error(self):
+        """Test execute enforces the Task entity's maximum tag count."""
+        input_dto = SetTaskTagsInput(
+            task_id=self.task.id,
+            tags=[f"tag{i}" for i in range(MAX_TAGS_PER_TASK + 1)],
+        )
+
+        with pytest.raises(TaskValidationError) as exc_info:
+            self.use_case.execute(input_dto)
+
+        assert f"more than {MAX_TAGS_PER_TASK} tags" in str(exc_info.value)
+
+    def test_execute_with_too_long_tag_raises_error(self):
+        """Test execute enforces the Task entity's maximum tag length."""
+        input_dto = SetTaskTagsInput(
+            task_id=self.task.id, tags=["x" * (MAX_TAG_LENGTH + 1)]
+        )
+
+        with pytest.raises(TaskValidationError) as exc_info:
+            self.use_case.execute(input_dto)
+
+        assert f"exceed {MAX_TAG_LENGTH} characters" in str(exc_info.value)

@@ -1,9 +1,10 @@
 """Use case for setting task tags."""
 
+from dataclasses import replace
+
 from taskdog_core.application.dto.set_task_tags_input import SetTaskTagsInput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.use_cases.base import UseCase
-from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 
@@ -32,19 +33,15 @@ class SetTaskTagsUseCase(UseCase[SetTaskTagsInput, TaskOperationOutput]):
 
         Raises:
             TaskNotFoundException: If task doesn't exist
-            TaskValidationError: If tags are invalid (empty strings or duplicates)
+            TaskValidationError: If tags violate the Task entity's tag invariants
+                (empty strings, duplicates, too many tags, or a tag that is too long)
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
-        # Validate tags before setting
-        for tag in input_dto.tags:
-            if not tag or not tag.strip():
-                raise TaskValidationError("Tag cannot be empty")
-        if len(input_dto.tags) != len(set(input_dto.tags)):
-            raise TaskValidationError("Tags must be unique")
-
-        # Replace tags
-        task.tags = input_dto.tags
+        # Rebuild task to trigger __post_init__ validation (Always-Valid Entity).
+        # Direct attribute assignment would skip Task._validate_tags, which also
+        # enforces the maximum tag count and tag length.
+        task = replace(task, tags=input_dto.tags)
 
         # Save changes
         self.repository.save(task)
