@@ -288,12 +288,12 @@ Ask Claude Desktop:
 - "Create a task to review the PR"
 - "Start task 42"
 
-See [taskdog-mcp README](../packages/taskdog-mcp/README.md) for more details.
+See [taskdog-mcp README](https://github.com/Kohei-Wada/taskdog/blob/main/packages/taskdog-mcp/README.md) for more details.
 
 ## Next Steps
 
-- Read the [full README](../README.md) for all features
-- Check [CLAUDE.md](../CLAUDE.md) for architecture details
+- Read the [full README](index.md) for all features
+- Check [CLAUDE.md](https://github.com/Kohei-Wada/taskdog/blob/main/CLAUDE.md) for architecture details
 - Explore optimization algorithms: `taskdog optimize --help`
 - Try the Gantt chart: `taskdog gantt`
 - Add dependencies: `taskdog dep add TASK_ID DEPENDS_ON_ID`
@@ -337,6 +337,6 @@ rm -rf ~/.config/taskdog
 ## Getting Help
 
 - Issues: https://github.com/Kohei-Wada/taskdog/issues
-- Documentation: See [README.md](../README.md)
+- Documentation: See [README.md](index.md)
 - CLI help: `taskdog --help`
 - Command help: `taskdog <command> --help`

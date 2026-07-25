@@ -2,16 +2,6 @@
 
 This document describes the architecture of taskdog's task scheduling optimization system.
 
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Architecture Patterns](#architecture-patterns)
-3. [Core Components](#core-components)
-4. [Optimization Strategies](#optimization-strategies)
-5. [Data Flow](#data-flow)
-6. [Helper Methods](#helper-methods)
-7. [Extension Guide](#extension-guide)
-8. [Recent Refactorings](#recent-refactorings)
 
 ## Overview
 

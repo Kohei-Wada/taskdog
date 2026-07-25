@@ -105,7 +105,7 @@ CLI/TUI (taskdog-ui) → HTTP API → FastAPI (taskdog-server) → Controllers/R
 
 ### Architecture
 
-Taskdog follows **Clean Architecture** principles. For detailed architecture documentation, see [CLAUDE.md](CLAUDE.md).
+Taskdog follows **Clean Architecture** principles. For detailed architecture documentation, see [CLAUDE.md](https://github.com/Kohei-Wada/taskdog/blob/main/CLAUDE.md).
 
 ## Coding Standards
 
@@ -340,7 +340,7 @@ PYTHONPATH=src uv run python -m taskdog_server.main --help
 
 ## Design Philosophy
 
-Before adding new features, please review [DESIGN_PHILOSOPHY.md](docs/DESIGN_PHILOSOPHY.md). This document explains why Taskdog focuses on individual task management with flat task structures, and includes guidelines for evaluating new feature proposals.
+Before adding new features, please review [DESIGN_PHILOSOPHY.md](https://github.com/Kohei-Wada/taskdog/blob/main/docs/design-philosophy.md). This document explains why Taskdog focuses on individual task management with flat task structures, and includes guidelines for evaluating new feature proposals.
 
 ## Questions and Support
 
@@ -353,7 +353,7 @@ Before adding new features, please review [DESIGN_PHILOSOPHY.md](docs/DESIGN_PHI
 ### Before Opening an Issue
 
 - Search existing issues to avoid duplicates
-- Check the documentation ([README.md](README.md), [CLAUDE.md](CLAUDE.md))
+- Check the documentation ([README.md](https://github.com/Kohei-Wada/taskdog/blob/main/README.md), [CLAUDE.md](https://github.com/Kohei-Wada/taskdog/blob/main/CLAUDE.md))
 - Try reproducing the issue with the latest version
 
 ### Issue Templates
@@ -379,9 +379,9 @@ By contributing to Taskdog, you agree that your contributions will be licensed u
 
 ## Additional Resources
 
-- [CLAUDE.md](CLAUDE.md) - Detailed architecture and development guide
-- [DESIGN_PHILOSOPHY.md](docs/DESIGN_PHILOSOPHY.md) - Design principles and rationale
-- [README.md](README.md) - User documentation and features
+- [CLAUDE.md](https://github.com/Kohei-Wada/taskdog/blob/main/CLAUDE.md) - Detailed architecture and development guide
+- [DESIGN_PHILOSOPHY.md](https://github.com/Kohei-Wada/taskdog/blob/main/docs/design-philosophy.md) - Design principles and rationale
+- [README.md](https://github.com/Kohei-Wada/taskdog/blob/main/README.md) - User documentation and features
 - [Conventional Commits](https://www.conventionalcommits.org/) - Commit message format
 - [UV Documentation](https://github.com/astral-sh/uv) - Package manager guide
 

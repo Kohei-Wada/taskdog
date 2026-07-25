@@ -2,22 +2,6 @@
 
 Complete guide to configuring Taskdog.
 
-## Table of Contents
-
-- [Configuration File Location](#configuration-file-location)
-- [Configuration Priority](#configuration-priority)
-- [Server Configuration](#server-configuration)
-  - [Authentication](#authentication)
-- [Configuration Sections](#configuration-sections)
-  - [API Settings](#api-settings-required)
-  - [UI Settings](#ui-settings)
-  - [Region Settings](#region-settings)
-  - [Storage Settings](#storage-settings)
-- [Data Storage](#data-storage)
-- [Environment Variables](#environment-variables)
-- [Examples](#examples)
-  - [Remote API Server](#remote-api-server)
-  - [Server Authentication](#server-authentication)
 
 ## Configuration File Location
 
@@ -47,7 +31,7 @@ The API server has its own configuration file: `server.toml`
 
 **Location:** `$XDG_CONFIG_HOME/taskdog/server.toml` (fallback: `~/.config/taskdog/server.toml`)
 
-See [examples/server.toml](../examples/server.toml) for a complete example.
+See [examples/server.toml](https://github.com/Kohei-Wada/taskdog/blob/main/examples/server.toml) for a complete example.
 
 ### Authentication
 
@@ -445,6 +429,6 @@ backend = "sqlite"
 
 ## See Also
 
-- [CLI Commands Reference](COMMANDS.md) - Complete command reference
-- [API Reference](API.md) - REST API documentation
-- [README](../README.md) - Main documentation
+- [CLI Commands Reference](reference/cli-guide.md) - Complete command reference
+- [API Reference](reference/api-guide.md) - REST API documentation
+- [README](index.md) - Main documentation

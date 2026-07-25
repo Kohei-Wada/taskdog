@@ -2,19 +2,6 @@
 
 Complete reference for all Taskdog CLI commands.
 
-## Table of Contents
-
-- [Task Creation & Updates](#task-creation--updates)
-- [Task Management](#task-management)
-- [Dependencies](#dependencies)
-- [Tags Management](#tags-management)
-- [Time Tracking](#time-tracking)
-- [Optimization](#optimization)
-- [Visualization](#visualization)
-- [Analytics](#analytics)
-- [Notes & TUI](#notes--tui)
-- [Task States](#task-states)
-- [Tags](#tags)
 
 ## Task Creation & Updates
 
@@ -396,7 +383,7 @@ Launch full-screen interactive terminal user interface.
 - Visual status indicators with colors
 - Task details panel with dependencies
 
-See [Interactive TUI](../README.md#interactive-tui) section in README for full keyboard shortcuts.
+See [Interactive TUI](../index.md) section in README for full keyboard shortcuts.
 
 ## Task States
 

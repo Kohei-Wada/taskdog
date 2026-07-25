@@ -13,6 +13,10 @@ license = { text = "MIT" }
 dependencies = []
 
 [project.optional-dependencies]
+docs = [
+  "mkdocs-material>=9.5",
+  "mkdocs-click>=0.8",
+]
 dev = [
   "pre-commit>=4.6.0",
   "ruff>=0.15.22",
