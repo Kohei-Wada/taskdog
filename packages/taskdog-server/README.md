@@ -54,7 +54,7 @@ Once the server is running, visit:
 - Alternative docs: http://localhost:8000/redoc
 - Health check: http://localhost:8000/health
 
-For complete API reference, see [docs/API.md](../../docs/API.md).
+For complete API reference, see [API Guide](https://kohei-wada.github.io/taskdog/reference/api-guide/).
 
 ## Authentication
 
@@ -75,7 +75,7 @@ Clients authenticate via `X-Api-Key` header:
 curl -H "X-Api-Key: your-secret-key" http://localhost:8000/api/v1/tasks/
 ```
 
-See [Authentication Documentation](../../docs/API.md#authentication) for details.
+See [Authentication Documentation](https://kohei-wada.github.io/taskdog/reference/api-guide/#authentication) for details.
 
 ## WebSocket Real-time Updates
 
@@ -123,7 +123,7 @@ Core configuration: `~/.config/taskdog/core.toml`
 country = "JP"
 ```
 
-See [Configuration Guide](../../docs/CONFIGURATION.md) for all options.
+See [Configuration Guide](https://kohei-wada.github.io/taskdog/configuration/) for all options.
 
 ## Architecture
 

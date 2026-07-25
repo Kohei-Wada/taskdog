@@ -118,7 +118,7 @@ Controllers instantiate use cases, build request DTOs, and apply config defaults
 
 ## Design Philosophy
 
-Taskdog is for **individual** task management following GTD. See [DESIGN_PHILOSOPHY.md](docs/DESIGN_PHILOSOPHY.md).
+Taskdog is for **individual** task management following GTD. See [DESIGN_PHILOSOPHY.md](docs/design-philosophy.md).
 
 Key decisions:
 
