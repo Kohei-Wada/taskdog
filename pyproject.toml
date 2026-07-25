@@ -18,7 +18,7 @@ docs = [
   "mkdocs-click>=0.8",
 ]
 dev = [
-  "pre-commit>=4.6.0",
+  "pre-commit>=4.6.1",
   "ruff>=0.15.22",
   "mypy>=2.3.0",
   "types-python-dateutil>=2.9.0.20260716",
