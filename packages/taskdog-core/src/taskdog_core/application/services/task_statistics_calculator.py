@@ -1,6 +1,6 @@
 """Service for calculating task statistics."""
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime, timedelta
 
 from taskdog_core.application.dto.statistics_output import (
@@ -105,10 +105,11 @@ class TaskStatisticsCalculator:
         Returns:
             TaskStatistics with basic counts and completion rate
         """
-        pending = sum(1 for t in tasks if t.status == TaskStatus.PENDING)
-        in_progress = sum(1 for t in tasks if t.status == TaskStatus.IN_PROGRESS)
-        completed = sum(1 for t in tasks if t.status == TaskStatus.COMPLETED)
-        canceled = sum(1 for t in tasks if t.status == TaskStatus.CANCELED)
+        status_counts = Counter(t.status for t in tasks)
+        pending = status_counts[TaskStatus.PENDING]
+        in_progress = status_counts[TaskStatus.IN_PROGRESS]
+        completed = status_counts[TaskStatus.COMPLETED]
+        canceled = status_counts[TaskStatus.CANCELED]
 
         # Calculate completion rate
         finished_tasks = completed + canceled
@@ -187,29 +188,23 @@ class TaskStatisticsCalculator:
         Returns:
             EstimationAccuracyStatistics or None if no estimation data
         """
-        # Get tasks with both estimation and actual duration
-        estimated_tasks = [
-            t
-            for t in tasks
-            if t.estimated_duration is not None and t.actual_duration_hours is not None
-        ]
-
-        if not estimated_tasks:
-            return None
-
-        # Calculate accuracy rates
-        accuracy_rates = []
+        total_rate = 0.0
         over_estimated = 0
         under_estimated = 0
         exact = 0
+        tasks_with_accuracy: list[tuple[Task, float]] = []
+        pairs: list[tuple[float, float]] = []
 
-        for task in estimated_tasks:
-            # Type guard: both are guaranteed to be non-None due to filter
-            if task.actual_duration_hours is None or task.estimated_duration is None:
+        for task in tasks:
+            estimated = task.estimated_duration
+            actual = task.actual_duration_hours
+            if estimated is None or actual is None:
                 continue
 
-            rate = task.actual_duration_hours / task.estimated_duration
-            accuracy_rates.append(rate)
+            rate = actual / estimated
+            total_rate += rate
+            pairs.append((estimated, actual))
+            tasks_with_accuracy.append((task, abs(rate - 1.0)))
 
             # Classify estimation accuracy
             if rate < (1 - self.ESTIMATION_TOLERANCE):
@@ -222,24 +217,14 @@ class TaskStatisticsCalculator:
                 # Within tolerance (±10%)
                 exact += 1
 
-        avg_accuracy = sum(accuracy_rates) / len(accuracy_rates)
+        if not tasks_with_accuracy:
+            return None
+
+        avg_accuracy = total_rate / len(tasks_with_accuracy)
 
         # Find best and worst estimated tasks
         # Best = closest to 1.0 (actual ≈ estimated)
         # Worst = farthest from 1.0
-        tasks_with_accuracy = [
-            (
-                task,
-                abs(
-                    (task.actual_duration_hours or 0.0)
-                    / (task.estimated_duration or 1.0)
-                    - 1.0
-                ),
-            )
-            for task in estimated_tasks
-            if task.actual_duration_hours is not None
-            and task.estimated_duration is not None
-        ]
         tasks_with_accuracy.sort(key=lambda x: x[1])
 
         best_tasks = [t[0] for t in tasks_with_accuracy[:3]]
@@ -249,14 +234,8 @@ class TaskStatisticsCalculator:
         best_tasks_dto = [self._to_summary_dto(t) for t in best_tasks]
         worst_tasks_dto = [self._to_summary_dto(t) for t in worst_tasks]
 
-        pairs = [
-            (t.estimated_duration, t.actual_duration_hours)
-            for t in estimated_tasks
-            if t.estimated_duration is not None and t.actual_duration_hours is not None
-        ]
-
         return EstimationAccuracyStatistics(
-            total_tasks_with_estimation=len(estimated_tasks),
+            total_tasks_with_estimation=len(tasks_with_accuracy),
             accuracy_rate=round(avg_accuracy, 2),
             over_estimated_count=over_estimated,
             under_estimated_count=under_estimated,
