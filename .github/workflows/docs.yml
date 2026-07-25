@@ -31,8 +31,9 @@ jobs:
 
       - name: Build docs
         run: |
-          uv run --extra docs python scripts/generate_openapi_docs.py
-          uv run --extra docs mkdocs build --strict
+          uv sync --all-packages --extra docs
+          uv run --no-sync python scripts/generate_openapi_docs.py
+          uv run --no-sync mkdocs build --strict
 
       - name: Upload Pages artifact
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'

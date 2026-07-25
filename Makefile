@@ -307,12 +307,13 @@ show-version: ## Show current version
 # ============================================================================
 
 docs-api: ## Generate API reference from OpenAPI schema
-	uv run --extra docs python scripts/generate_openapi_docs.py
+	uv sync --all-packages --extra docs
+	uv run --no-sync python scripts/generate_openapi_docs.py
 
 docs-serve: docs-api ## Serve docs locally with hot-reload
-	uv run --extra docs mkdocs serve
+	uv run --no-sync mkdocs serve
 
 docs-build: docs-api ## Build docs for deployment (strict)
-	uv run --extra docs mkdocs build --strict
+	uv run --no-sync mkdocs build --strict
 
 docs: docs-serve ## Generate docs and serve locally
