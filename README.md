@@ -103,7 +103,7 @@ taskdog gantt
 taskdog tui
 ```
 
-For complete setup including API key configuration, see **[Quick Start Guide](docs/QUICKSTART.md)**.
+For complete setup including API key configuration, see **[Quick Start Guide](https://kohei-wada.github.io/taskdog/getting-started/)**.
 
 ## Features
 
@@ -125,11 +125,11 @@ https://github.com/user-attachments/assets/dcb44390-7b10-49a0-bdfc-01a03d7751f9
 
 ## Documentation
 
-- **[Quick Start Guide](docs/QUICKSTART.md)** - Step-by-step setup
-- **[CLI Commands Reference](docs/COMMANDS.md)** - Complete command documentation
-- **[API Reference](docs/API.md)** - REST API endpoints and examples
-- **[Configuration Guide](docs/CONFIGURATION.md)** - All configuration options
-- **[Design Philosophy](docs/DESIGN_PHILOSOPHY.md)** - Why Taskdog works this way
+- **[Quick Start Guide](https://kohei-wada.github.io/taskdog/getting-started/)** - Step-by-step setup
+- **[CLI Commands Reference](https://kohei-wada.github.io/taskdog/reference/cli-guide/)** - Complete command documentation
+- **[API Reference](https://kohei-wada.github.io/taskdog/reference/api-guide/)** - REST API endpoints and examples
+- **[Configuration Guide](https://kohei-wada.github.io/taskdog/configuration/)** - All configuration options
+- **[Design Philosophy](https://kohei-wada.github.io/taskdog/design-philosophy/)** - Why Taskdog works this way
 - **[Deployment Guide](contrib/README.md)** - Docker, systemd, launchd
 
 ## Architecture
