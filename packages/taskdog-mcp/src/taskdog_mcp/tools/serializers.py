@@ -11,6 +11,11 @@ def iso(dt: datetime | None) -> str | None:
     return dt.isoformat() if dt else None
 
 
+def model_dump(model: Any | None) -> dict[str, Any] | None:
+    """Serialize a pydantic statistics section, or None when absent."""
+    return model.model_dump(mode="json") if model is not None else None
+
+
 def parse_iso_datetime(
     value: str | None, field_name: str | None = None
 ) -> datetime | None:
