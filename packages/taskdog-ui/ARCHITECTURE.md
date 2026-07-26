@@ -140,7 +140,7 @@ class MyWidget(Widget):
 ## Decision Matrix: Which Pattern to Use?
 
 | Question | Answer | Pattern |
-|----------|--------|---------|
+| ---------- | -------- | --------- |
 | Does multiple widgets need this state? | Yes | **TUIState** |
 | Is this an event notification? | Yes | **Messages** |
 | Is this widget-internal UI state? | Yes | **Reactive** |

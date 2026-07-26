@@ -2,7 +2,6 @@
 
 This document describes the architecture of taskdog's task scheduling optimization system.
 
-
 ## Overview
 
 The optimization system schedules tasks by allocating work hours across calendar days while respecting constraints like deadlines, work hour limits, and dependencies.
@@ -156,7 +155,7 @@ def _sort_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
 **Functions:**
 
 | Function | Purpose |
-|----------|---------|
+| ---------- | --------- |
 | `prepare_task_for_allocation()` | Validates task and creates deep copy |
 | `calculate_available_hours()` | Computes available hours for a date |
 | `set_planned_times()` | Sets planned_start, planned_end, daily_allocations |
@@ -211,7 +210,7 @@ Entry point that:
 ### Strategy Comparison
 
 | Strategy | Sort Key | Allocation | Use Case |
-|----------|----------|------------|----------|
+| ---------- | ---------- | ------------ | ---------- |
 | **Greedy** | Deadline, Priority | Front-loads | Fast completion, default |
 | **Balanced** | Deadline, Priority | Even distribution | Work-life balance |
 | **Backward** | Deadline (furthest first) | Backward from deadline | Just-in-time, flexibility |
