@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from taskdog_core.application.dto.statistics_output import (
+    DeadlineComplianceStatistics,
     PriorityDistributionStatistics,
     StatisticsOutput,
     TaskStatistics,
@@ -907,7 +908,6 @@ class TestTaskQueryTools:
         assert result["completed"] == 2
         assert result["canceled"] == 1
         assert result["completion_rate"] == 0.2
-        assert result["overdue_count"] == 0
         assert result["average_completion_time_hours"] == 2.0
 
     def test_get_statistics_without_time_stats(self) -> None:
@@ -945,6 +945,62 @@ class TestTaskQueryTools:
         result = get_statistics_fn(period="all")
 
         assert result["average_completion_time_hours"] is None
+
+    def test_get_statistics_reports_all_sections(self) -> None:
+        """Test get_statistics exposes every StatisticsOutput section."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_query
+
+        client = create_mock_client()
+        client.calculate_statistics.return_value = StatisticsOutput(
+            task_stats=TaskStatistics(
+                total_tasks=5,
+                pending_count=2,
+                in_progress_count=1,
+                completed_count=2,
+                canceled_count=0,
+                completion_rate=0.4,
+            ),
+            time_stats=None,
+            estimation_stats=None,
+            deadline_stats=DeadlineComplianceStatistics(
+                total_tasks_with_deadline=3,
+                met_deadline_count=1,
+                missed_deadline_count=2,
+                compliance_rate=1 / 3,
+                average_delay_days=1.5,
+            ),
+            priority_stats=PriorityDistributionStatistics(
+                high_priority_count=1,
+                medium_priority_count=2,
+                low_priority_count=2,
+                high_priority_completion_rate=0.5,
+                priority_completion_map={},
+            ),
+            trend_stats=None,
+        )
+
+        mcp = FastMCP("test")
+        task_query.register_tools(mcp, client)
+
+        get_statistics_fn = mcp._tool_manager._tools["get_statistics"].fn
+        result = get_statistics_fn()
+
+        # The hardcoded overdue_count must not be reported as ground truth.
+        assert "overdue_count" not in result
+        for section in (
+            "time_stats",
+            "estimation_stats",
+            "deadline_stats",
+            "priority_stats",
+            "trend_stats",
+            "activity_stats",
+            "reschedule_stats",
+        ):
+            assert section in result
+        assert result["deadline_stats"]["missed_deadline_count"] == 2
+        assert result["priority_stats"]["high_priority_count"] == 1
+        assert result["time_stats"] is None
 
     def test_get_tag_statistics_returns_formatted_data(self) -> None:
         """Test get_tag_statistics returns properly formatted tag stats."""

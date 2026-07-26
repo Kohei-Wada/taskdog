@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from taskdog_mcp.tools.serializers import iso, str_list
+from taskdog_mcp.tools.serializers import iso, model_dump, str_list
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
@@ -33,7 +33,6 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             Statistics including counts by status, completion rates, etc.
         """
         result = client.calculate_statistics(period)
-        # StatisticsOutput has .task_stats, .time_stats, etc.
         task_stats = result.task_stats
         time_stats = result.time_stats
         return {
@@ -44,10 +43,17 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             "completed": task_stats.completed_count,
             "canceled": task_stats.canceled_count,
             "completion_rate": task_stats.completion_rate,
-            "overdue_count": 0,  # Not directly available
             "average_completion_time_hours": time_stats.average_work_hours
             if time_stats
             else None,
+            # Every remaining StatisticsOutput section, serialized as-is.
+            "time_stats": model_dump(time_stats),
+            "estimation_stats": model_dump(result.estimation_stats),
+            "deadline_stats": model_dump(result.deadline_stats),
+            "priority_stats": model_dump(result.priority_stats),
+            "trend_stats": model_dump(result.trend_stats),
+            "activity_stats": model_dump(result.activity_stats),
+            "reschedule_stats": model_dump(result.reschedule_stats),
         }
 
     @mcp.tool()
