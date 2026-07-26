@@ -28,7 +28,7 @@ pip install -e ".[dev]"
 ## Client Classes
 
 | Client | Purpose |
-|--------|---------|
+| -------- | --------- |
 | `TaskClient` | Task CRUD operations (create, update, delete, archive) |
 | `LifecycleClient` | Status changes (start, complete, pause, cancel, reopen) |
 | `RelationshipClient` | Dependencies and tags |

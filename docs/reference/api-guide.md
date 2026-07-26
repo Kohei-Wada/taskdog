@@ -2,7 +2,6 @@
 
 Complete reference for the Taskdog REST API.
 
-
 ## Getting Started
 
 The Taskdog API server provides a comprehensive REST API built with FastAPI. All endpoints return JSON and follow REST conventions.

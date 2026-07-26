@@ -2,7 +2,6 @@
 
 Complete reference for all Taskdog CLI commands.
 
-
 ## Task Creation & Updates
 
 ### add - Create a new task

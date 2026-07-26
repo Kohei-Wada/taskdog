@@ -2,7 +2,6 @@
 
 Complete guide to configuring Taskdog.
 
-
 ## Configuration File Location
 
 Taskdog looks for configuration in the following locations (in order):
