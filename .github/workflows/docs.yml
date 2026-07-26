@@ -45,6 +45,10 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest
+    # Pages allows one deployment at a time; queue instead of failing with 400.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     permissions:
       pages: write
       id-token: write
