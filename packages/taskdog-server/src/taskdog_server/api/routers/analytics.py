@@ -237,11 +237,17 @@ def get_gantt_chart(
     tags: Annotated[
         list[str] | None, Query(description="Filter by tags (OR logic)")
     ] = None,
+    filter_start_date: Annotated[
+        str | None, Query(description="Filter tasks by start date (ISO format)")
+    ] = None,
+    filter_end_date: Annotated[
+        str | None, Query(description="Filter tasks by end date (ISO format)")
+    ] = None,
     start_date: Annotated[
-        str | None, Query(description="Chart start date (ISO format)")
+        str | None, Query(description="Chart display start date (ISO format)")
     ] = None,
     end_date: Annotated[
-        str | None, Query(description="Chart end date (ISO format)")
+        str | None, Query(description="Chart display end date (ISO format)")
     ] = None,
     sort: Annotated[str, Query(description="Sort field")] = "deadline",
     reverse: Annotated[bool, Query(description="Reverse sort order")] = False,
@@ -257,8 +263,10 @@ def get_gantt_chart(
         include_archived: Include archived tasks
         status_filter: Filter by task status
         tags: Filter by tags (OR logic)
-        start_date: Chart start date
-        end_date: Chart end date
+        filter_start_date: Filter tasks starting from date
+        filter_end_date: Filter tasks ending by date
+        start_date: Chart display start date
+        end_date: Chart display end date
         sort: Sort field name
         reverse: Reverse sort order
 
@@ -266,16 +274,18 @@ def get_gantt_chart(
         Task list with the Gantt overlay populated
     """
     # Parse date strings to date objects
-    start = parse_iso_date(start_date)
-    end = parse_iso_date(end_date)
+    chart_start = parse_iso_date(start_date)
+    chart_end = parse_iso_date(end_date)
+    task_filter_start = parse_iso_date(filter_start_date) if filter_start_date else chart_start
+    task_filter_end = parse_iso_date(filter_end_date) if filter_end_date else chart_end
 
     # Create Input DTO (filter building is done in Use Case)
     input_dto = ListTasksInput(
         include_archived=include_archived,
         status=status_filter,
         tags=tags or [],
-        start_date=start,
-        end_date=end,
+        start_date=task_filter_start,
+        end_date=task_filter_end,
         sort_by=sort,
         reverse=reverse,
     )
@@ -284,8 +294,8 @@ def get_gantt_chart(
     result = controller.list_tasks(
         input_dto=input_dto,
         include_gantt=True,
-        gantt_start_date=start,
-        gantt_end_date=end,
+        gantt_start_date=chart_start,
+        gantt_end_date=chart_end,
         holiday_checker=holiday_checker,
     )
 
