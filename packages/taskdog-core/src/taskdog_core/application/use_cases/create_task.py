@@ -7,6 +7,9 @@ from taskdog_core.application.dto.create_task_input import CreateTaskInput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.queries.workload._strategies import ActualScheduleStrategy
 from taskdog_core.application.use_cases.base import UseCase
+from taskdog_core.application.validators.validator_registry import (
+    TaskFieldValidatorRegistry,
+)
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 if TYPE_CHECKING:
@@ -29,6 +32,7 @@ class CreateTaskUseCase(UseCase[CreateTaskInput, TaskOperationOutput]):
                            from daily allocation calculations
         """
         self.repository = repository
+        self.validator_registry = TaskFieldValidatorRegistry(repository)
         self._strategy = ActualScheduleStrategy(holiday_checker=holiday_checker)
 
     def execute(self, input_dto: CreateTaskInput) -> TaskOperationOutput:
@@ -45,6 +49,19 @@ class CreateTaskUseCase(UseCase[CreateTaskInput, TaskOperationOutput]):
             daily_allocations is automatically calculated using ActualScheduleStrategy.
             This enables SQL aggregation for workload calculations.
         """
+        # Validate fields using field validator registry
+        field_mapping = {
+            "name": input_dto.name,
+            "priority": input_dto.priority,
+            "planned_start": input_dto.planned_start,
+            "planned_end": input_dto.planned_end,
+            "deadline": input_dto.deadline,
+            "estimated_duration": input_dto.estimated_duration,
+        }
+        for field_name, value in field_mapping.items():
+            if value is not None:
+                self.validator_registry.validate_field(field_name, value)
+
         # Calculate daily_allocations if all required fields are present
         daily_allocations = self._calculate_daily_allocations(input_dto)
 

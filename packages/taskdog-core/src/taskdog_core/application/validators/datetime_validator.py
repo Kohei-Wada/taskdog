@@ -27,12 +27,12 @@ class DateTimeValidator(FieldValidator):
         """
         self.field_name = field_name
 
-    def validate(self, value: Any, task: Task, repository: TaskRepository) -> None:
+    def validate(self, value: Any, task: Task | None, repository: TaskRepository) -> None:
         """Validate datetime field value.
 
         Args:
             value: The datetime object to validate
-            task: The task being updated
+            task: The task being updated (or None if creating a new task)
             repository: Repository for data access (unused)
 
         Raises:
@@ -53,7 +53,7 @@ class DateTimeValidator(FieldValidator):
         now = datetime.now()
 
         # Allow past dates if task has already started
-        if task.actual_start is not None:
+        if task is not None and task.actual_start is not None:
             return
 
         # Reject past dates for tasks that haven't started

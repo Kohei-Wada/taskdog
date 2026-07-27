@@ -15,12 +15,12 @@ class FieldValidator(ABC):
     """
 
     @abstractmethod
-    def validate(self, value: Any, task: Task, repository: TaskRepository) -> None:
+    def validate(self, value: Any, task: Task | None, repository: TaskRepository) -> None:
         """Validate a field value for the given task.
 
         Args:
             value: The new value to validate
-            task: The task being updated
+            task: The task being updated (or None if creating a new task)
             repository: Repository for data access (if needed)
 
         Raises:

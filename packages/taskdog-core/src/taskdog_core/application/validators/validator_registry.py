@@ -44,13 +44,13 @@ class TaskFieldValidatorRegistry:
         )
         self._validators["priority"] = NumericFieldValidator("priority")
 
-    def validate_field(self, field_name: str, value: Any, task: Task) -> None:
+    def validate_field(self, field_name: str, value: Any, task: Task | None = None) -> None:
         """Validate a field value if a validator exists for that field.
 
         Args:
             field_name: Name of the field being updated
             value: New value for the field
-            task: Task being updated
+            task: Task being updated (or None if creating a task)
 
         Raises:
             TaskValidationError: If validation fails
