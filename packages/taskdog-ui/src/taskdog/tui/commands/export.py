@@ -50,8 +50,13 @@ class ExportCommand(TUICommandBase):
     def execute(self) -> None:
         """Execute the export command."""
         try:
+            status = getattr(self.context.state, "status_filter", None)
+            raw_tag = getattr(self.context.state, "tag_filter", None)
+            tags = [raw_tag] if raw_tag else None
             result = self.context.api_client.list_tasks(
                 include_archived=self.context.state.show_archived,
+                status=status,
+                tags=tags,
             )
             tasks = result.tasks
 
