@@ -120,19 +120,23 @@ class BaseApiClient:
             Exception: For other errors
         """
         if response.status_code == 404:
-            detail = response.json().get("detail", "Task not found")
+            detail = "Task not found"
+            with contextlib.suppress(Exception):
+                detail = response.json().get("detail", detail)
             raise TaskNotFoundException(detail)
         if response.status_code in (400, 422):
             detail = self._extract_validation_error_detail(response)
             raise TaskValidationError(detail)
         if response.status_code == 401:
-            raise AuthenticationError("Authentication failed. Check your API key.")
-        if response.status_code >= 500:
-            detail = "Server error occurred"
+            detail = "Authentication failed. Check your API key."
+            with contextlib.suppress(Exception):
+                detail = response.json().get("detail", detail)
+            raise AuthenticationError(detail)
+        if response.status_code >= 400:
+            detail = f"HTTP error {response.status_code}"
             with contextlib.suppress(Exception):
                 detail = response.json().get("detail", detail)
             raise ServerError(response.status_code, detail)
-        response.raise_for_status()
 
     def lifecycle_operation(self, task_id: int, operation: str) -> TaskOperationOutput:
         """Execute a lifecycle operation on a task.
