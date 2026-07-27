@@ -47,9 +47,12 @@ def _parse_date_filter(date_str: str, end_of_day: bool = False) -> datetime:
         Parsed datetime object
     """
     try:
-        return datetime.fromisoformat(date_str)
+        dt = datetime.fromisoformat(date_str)
+        if end_of_day and len(date_str.strip()) <= 10 and dt.time() == datetime.min.time():
+            return dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+        return dt
     except ValueError:
-        suffix = "T23:59:59" if end_of_day else "T00:00:00"
+        suffix = "T23:59:59.999999" if end_of_day else "T00:00:00"
         return datetime.fromisoformat(f"{date_str}{suffix}")
 
 
