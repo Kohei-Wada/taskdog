@@ -53,19 +53,15 @@ class WebSocketClient:
             ws_url: WebSocket URL (e.g., "ws://127.0.0.1:8000/ws")
             on_message: Callback function called when a message is received (optional,
                 can be set later via set_callback)
-            api_key: Optional API key for authentication (sent as query parameter)
+            api_key: Optional API key for authentication (sent in X-Api-Key header)
         """
         if not WEBSOCKETS_AVAILABLE:
             logger.warning("websockets library not available, real-time sync disabled")
 
-        # Append API key as query parameter if provided
-        if api_key:
-            separator = "&" if "?" in ws_url else "?"
-            self.ws_url = f"{ws_url}{separator}token={api_key}"
-        else:
-            self.ws_url = ws_url
+        self.ws_url = ws_url
         self.on_message = on_message
         self.api_key = api_key
+        self._extra_headers = {"X-Api-Key": api_key} if api_key else {}
         self._websocket: Any = None
         self._state = ConnectionState.DISCONNECTED
         self._lock = asyncio.Lock()
@@ -173,7 +169,10 @@ class WebSocketClient:
 
         while self._state != ConnectionState.DISCONNECTED:
             try:
-                async with websockets.connect(self.ws_url) as websocket:  # type: ignore[attr-defined]
+                connect_kwargs = {}
+                if self._extra_headers:
+                    connect_kwargs["extra_headers"] = self._extra_headers
+                async with websockets.connect(self.ws_url, **connect_kwargs) as websocket:  # type: ignore[attr-defined]
                     self._websocket = websocket
                     async with self._lock:
                         # State may have changed to DISCONNECTED during connection

@@ -22,7 +22,7 @@ async def websocket_endpoint(
     websocket: WebSocket,
     manager: ConnectionManagerWsDep,
     server_config: ServerConfigWsDep,
-    token: str | None = Query(None, description="API key for authentication"),
+    token: str | None = Query(None, description="API key for authentication (deprecated: use X-Api-Key header)"),
 ) -> None:
     """WebSocket endpoint for real-time task updates.
 
@@ -30,13 +30,14 @@ async def websocket_endpoint(
     when tasks are created, updated, or deleted.
 
     Authentication:
-        Pass API key as query parameter: /ws?token=sk-xxx
+        Pass API key as HTTP header: X-Api-Key: sk-xxx (preferred)
+        or query parameter: /ws?token=sk-xxx (deprecated fallback)
 
     Args:
         websocket: The WebSocket connection
         manager: Connection manager dependency
         server_config: Server configuration dependency
-        token: API key for authentication (query parameter)
+        token: API key for authentication (query parameter fallback)
 
     Message Format:
         {
@@ -46,9 +47,12 @@ async def websocket_endpoint(
             "data": {...}  # Full task data or relevant fields
         }
     """
+    # Accept API key from X-Api-Key header or query parameter fallback
+    api_key = websocket.headers.get("x-api-key") or token
+
     # Validate API key before accepting connection
     try:
-        client_name = validate_api_key_for_websocket(token, server_config)
+        client_name = validate_api_key_for_websocket(api_key, server_config)
     except ValueError as e:
         # Use standard WebSocket close code 1008 (Policy Violation) for auth failures
         await websocket.close(code=1008, reason=str(e))
