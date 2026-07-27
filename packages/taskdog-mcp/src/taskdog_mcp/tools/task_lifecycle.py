@@ -135,6 +135,9 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         start_dt = parse_iso_datetime(actual_start, "actual_start")
         end_dt = parse_iso_datetime(actual_end, "actual_end")
 
+        if start_dt and end_dt and end_dt < start_dt:
+            raise ValueError("actual_end cannot be before actual_start")
+
         if actual_duration is not None and actual_duration <= 0:
             raise ValueError("actual_duration must be greater than 0")
 
