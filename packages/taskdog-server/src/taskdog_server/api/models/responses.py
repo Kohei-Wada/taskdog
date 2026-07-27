@@ -38,6 +38,7 @@ class TaskFieldsBase(BaseModel):
     tags: list[str] = Field(default_factory=list)
     is_fixed: bool = False
     is_archived: bool = False
+    daily_allocations: dict[str, float] = Field(default_factory=dict)
 
 
 class TaskOperationResponse(TaskFieldsBase):
