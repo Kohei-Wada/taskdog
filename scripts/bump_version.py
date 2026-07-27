@@ -83,6 +83,26 @@ def update_pyproject_file(filepath: Path, new_version: str, dry_run: bool) -> li
     return changes
 
 
+def update_pkgbuild_file(new_version: str, dry_run: bool) -> list[str]:
+    """Update version in PKGBUILD file.
+
+    Returns list of changes made.
+    """
+    pkgbuild = ROOT_DIR / "contrib" / "aur" / "PKGBUILD"
+    if not pkgbuild.exists():
+        return []
+    changes = []
+    content = pkgbuild.read_text()
+    original_content = content
+    match = re.search(r"^pkgver=(\d+\.\d+\.\d+)", content, re.MULTILINE)
+    if match and match.group(1) != new_version:
+        changes.append(f"  pkgver: {match.group(1)} -> {new_version}")
+        content = re.sub(r"^pkgver=\d+\.\d+\.\d+", f"pkgver={new_version}", content, flags=re.MULTILINE)
+    if not dry_run and content != original_content:
+        pkgbuild.write_text(content)
+    return changes
+
+
 def verify_no_old_versions(old_version: str) -> list[str]:
     """Verify no old version references remain after update.
 
@@ -103,6 +123,10 @@ def verify_no_old_versions(old_version: str) -> list[str]:
         problems.extend(
             f"{relative_path}: {match} still present" for match in old_dep_matches
         )
+
+    pkgbuild = ROOT_DIR / "contrib" / "aur" / "PKGBUILD"
+    if pkgbuild.exists() and f"pkgver={old_version}" in pkgbuild.read_text():
+        problems.append(f"contrib/aur/PKGBUILD: pkgver={old_version} still present")
 
     return problems
 
@@ -150,6 +174,7 @@ def git_commit_and_tag(new_version: str, pyproject_files: list[Path]) -> int:
     tag = f"v{new_version}"
     paths = [str(f.relative_to(ROOT_DIR)) for f in pyproject_files]
     paths.append("uv.lock")
+    paths.append("contrib/aur/PKGBUILD")
 
     def run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
         return subprocess.run(cmd, cwd=ROOT_DIR, capture_output=True, text=True)
@@ -217,6 +242,14 @@ def bump_version(new_version: str, dry_run: bool, no_git: bool) -> int:
                 print(change)
             print()
             total_changes += len(changes)
+
+    pkgbuild_changes = update_pkgbuild_file(new_version, dry_run)
+    if pkgbuild_changes:
+        print("contrib/aur/PKGBUILD:")
+        for change in pkgbuild_changes:
+            print(change)
+        print()
+        total_changes += len(pkgbuild_changes)
 
     if total_changes == 0:
         print("No changes needed - already at target version.")
