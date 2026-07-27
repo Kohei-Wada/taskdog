@@ -352,9 +352,9 @@ class Task:
 
     def fix_actual_times(
         self,
-        actual_start: datetime | None | EllipsisType = ...,
-        actual_end: datetime | None | EllipsisType = ...,
-        actual_duration: float | None | EllipsisType = ...,
+        actual_start: datetime | EllipsisType | None = ...,
+        actual_end: datetime | EllipsisType | None = ...,
+        actual_duration: float | EllipsisType | None = ...,
     ) -> None:
         """Fix actual start/end timestamps and/or duration.
 

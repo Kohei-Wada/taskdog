@@ -12,12 +12,16 @@ class RmCommand(BatchCommandBase):
         """Return confirmation config for archive operation."""
         return (
             "Archive Tasks",
-            "Archive this task?\n\n"
-            "The task will be soft-deleted and can be restored later.\n"
-            "(Use Shift+X for permanent deletion)",
-            "Archive {count} tasks?\n\n"
-            "Tasks will be soft-deleted and can be restored later.\n"
-            "(Use Shift+X for permanent deletion)",
+            (
+                "Archive this task?\n\n"
+                "The task will be soft-deleted and can be restored later.\n"
+                "(Use Shift+X for permanent deletion)"
+            ),
+            (
+                "Archive {count} tasks?\n\n"
+                "Tasks will be soft-deleted and can be restored later.\n"
+                "(Use Shift+X for permanent deletion)"
+            ),
         )
 
     def execute_single(self, task_id: int) -> TaskOperationOutput:

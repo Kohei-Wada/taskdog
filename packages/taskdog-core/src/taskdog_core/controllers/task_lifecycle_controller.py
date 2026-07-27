@@ -61,9 +61,9 @@ class TaskLifecycleController(BaseTaskController):
     def fix_actual_times(
         self,
         task_id: int,
-        actual_start: datetime | None | EllipsisType = ...,
-        actual_end: datetime | None | EllipsisType = ...,
-        actual_duration: float | None | EllipsisType = ...,
+        actual_start: datetime | EllipsisType | None = ...,
+        actual_end: datetime | EllipsisType | None = ...,
+        actual_duration: float | EllipsisType | None = ...,
     ) -> TaskOperationOutput:
         """Fix actual start/end timestamps and/or duration for a task.
 

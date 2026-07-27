@@ -12,12 +12,16 @@ class HardDeleteCommand(BatchCommandBase):
         """Return confirmation config for permanent deletion."""
         return (
             "WARNING: PERMANENT DELETION",
-            "Are you sure you want to PERMANENTLY delete this task?\n\n"
-            "[!] This action CANNOT be undone!\n"
-            "[!] The task will be completely removed from the database.",
-            "Are you sure you want to PERMANENTLY delete {count} tasks?\n\n"
-            "[!] This action CANNOT be undone!\n"
-            "[!] All tasks will be completely removed from the database.",
+            (
+                "Are you sure you want to PERMANENTLY delete this task?\n\n"
+                "[!] This action CANNOT be undone!\n"
+                "[!] The task will be completely removed from the database."
+            ),
+            (
+                "Are you sure you want to PERMANENTLY delete {count} tasks?\n\n"
+                "[!] This action CANNOT be undone!\n"
+                "[!] All tasks will be completely removed from the database."
+            ),
         )
 
     def execute_single(self, task_id: int) -> TaskOperationOutput:
