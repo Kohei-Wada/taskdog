@@ -1,3 +1,5 @@
+[![MCP Toplist](https://mcptoplist.com/badge/glama%2FKohei-Wada%2Ftaskdog.svg)](https://mcptoplist.com/server/glama%2FKohei-Wada%2Ftaskdog)
+
 <p align="center">
   <img src="docs/images/logo.png" alt="Taskdog" width="300">
 </p>
