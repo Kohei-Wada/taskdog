@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 from taskdog_mcp.tools.serializers import str_list
 
 if TYPE_CHECKING:
-    from mcp.server.fastmcp import FastMCP
+    from mcp.server import MCPServer
     from taskdog_client import TaskdogApiClient
 
 
@@ -74,7 +74,7 @@ def _update_decomposition_notes(
         pass  # Notes update is optional
 
 
-def register_decomposition_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
+def register_decomposition_tools(mcp: MCPServer, client: TaskdogApiClient) -> None:
     """Register decompose_task tool with the MCP server."""
 
     @mcp.tool()
@@ -183,7 +183,7 @@ def register_decomposition_tools(mcp: FastMCP, client: TaskdogApiClient) -> None
         }
 
 
-def register_relationship_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
+def register_relationship_tools(mcp: MCPServer, client: TaskdogApiClient) -> None:
     """Register relationship management tools with the MCP server."""
 
     @mcp.tool()
@@ -247,7 +247,7 @@ def register_relationship_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         }
 
 
-def register_notes_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
+def register_notes_tools(mcp: MCPServer, client: TaskdogApiClient) -> None:
     """Register notes management tools with the MCP server."""
 
     @mcp.tool()
@@ -285,11 +285,11 @@ def register_notes_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         }
 
 
-def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
+def register_tools(mcp: MCPServer, client: TaskdogApiClient) -> None:
     """Register all task decomposition and relationship tools.
 
     Args:
-        mcp: FastMCP server instance
+        mcp: MCPServer instance
         client: Taskdog API client
     """
     register_decomposition_tools(mcp, client)

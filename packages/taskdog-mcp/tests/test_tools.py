@@ -172,7 +172,7 @@ class TestTaskCrudTools:
 
     def test_list_tasks_returns_formatted_response(self) -> None:
         """Test list_tasks tool formats the response with default args."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_crud
 
         client = create_mock_client()
@@ -182,7 +182,7 @@ class TestTaskCrudTools:
             filtered_count=1,
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_crud.register_tools(mcp, client)
 
         list_tasks_fn = mcp._tool_manager._tools["list_tasks"].fn
@@ -209,7 +209,7 @@ class TestTaskCrudTools:
 
     def test_create_task_formats_response(self) -> None:
         """Test create_task tool formats the created-task response."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_crud
 
         client = create_mock_client()
@@ -217,7 +217,7 @@ class TestTaskCrudTools:
             name="New Task"
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_crud.register_tools(mcp, client)
 
         create_task_fn = mcp._tool_manager._tools["create_task"].fn
@@ -264,13 +264,13 @@ class TestTaskCrudTools:
         expected_kwargs: dict[str, Any],
     ) -> None:
         """Test create_task tool converts datetime strings correctly."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_crud
 
         client = create_mock_client()
         client.create_task.return_value = create_mock_task_operation_output()
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_crud.register_tools(mcp, client)
 
         create_task_fn = mcp._tool_manager._tools["create_task"].fn
@@ -315,7 +315,7 @@ class TestTaskCrudTools:
         expected_kwargs: dict[str, Any],
     ) -> None:
         """Test update_task tool converts datetime strings correctly."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_crud
 
         from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
@@ -326,7 +326,7 @@ class TestTaskCrudTools:
             updated_fields=list(expected_kwargs.keys()),
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_crud.register_tools(mcp, client)
 
         update_task_fn = mcp._tool_manager._tools["update_task"].fn
@@ -351,11 +351,11 @@ class TestTaskCrudTools:
         self, invalid_datetime: str
     ) -> None:
         """Test create_task raises ValueError for invalid datetime strings."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_crud
 
         client = create_mock_client()
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_crud.register_tools(mcp, client)
 
         create_task_fn = mcp._tool_manager._tools["create_task"].fn
@@ -375,11 +375,11 @@ class TestTaskCrudTools:
         self, invalid_datetime: str
     ) -> None:
         """Test update_task raises ValueError for invalid datetime strings."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_crud
 
         client = create_mock_client()
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_crud.register_tools(mcp, client)
 
         update_task_fn = mcp._tool_manager._tools["update_task"].fn
@@ -389,7 +389,7 @@ class TestTaskCrudTools:
 
     def test_list_tasks_with_filters(self) -> None:
         """Test list_tasks tool with various filters."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_crud
 
         client = create_mock_client()
@@ -401,7 +401,7 @@ class TestTaskCrudTools:
             filtered_count=2,
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_crud.register_tools(mcp, client)
 
         list_tasks_fn = mcp._tool_manager._tools["list_tasks"].fn
@@ -429,7 +429,7 @@ class TestTaskCrudTools:
 
     def test_get_task_returns_full_details(self) -> None:
         """Test get_task tool returns full task details including notes."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_crud
 
         client = create_mock_client()
@@ -439,7 +439,7 @@ class TestTaskCrudTools:
             notes_content="# Notes\nSome notes here",
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_crud.register_tools(mcp, client)
 
         get_task_fn = mcp._tool_manager._tools["get_task"].fn
@@ -455,7 +455,7 @@ class TestTaskCrudTools:
 
     def test_delete_task_soft(self) -> None:
         """Test delete_task tool with soft delete (archive)."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_crud
 
         client = create_mock_client()
@@ -463,7 +463,7 @@ class TestTaskCrudTools:
             task_id=1, name="Archived Task"
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_crud.register_tools(mcp, client)
 
         delete_task_fn = mcp._tool_manager._tools["delete_task"].fn
@@ -476,12 +476,12 @@ class TestTaskCrudTools:
 
     def test_delete_task_hard(self) -> None:
         """Test delete_task tool with hard delete (permanent)."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_crud
 
         client = create_mock_client()
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_crud.register_tools(mcp, client)
 
         delete_task_fn = mcp._tool_manager._tools["delete_task"].fn
@@ -493,7 +493,7 @@ class TestTaskCrudTools:
 
     def test_restore_task_returns_restored_data(self) -> None:
         """Test restore_task tool returns restored task data."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_crud
 
         client = create_mock_client()
@@ -501,7 +501,7 @@ class TestTaskCrudTools:
             task_id=1, name="Restored Task"
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_crud.register_tools(mcp, client)
 
         restore_task_fn = mcp._tool_manager._tools["restore_task"].fn
@@ -519,7 +519,7 @@ class TestTaskLifecycleTools:
 
     def test_start_task_formats_response(self) -> None:
         """Test start_task tool formats response correctly."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_lifecycle
 
         client = create_mock_client()
@@ -527,14 +527,14 @@ class TestTaskLifecycleTools:
         started_task.actual_start = datetime.now()
         client.start_task.return_value = started_task
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_lifecycle.register_tools(mcp, client)
 
         assert mcp is not None
 
     def test_start_task_returns_actual_start(self) -> None:
         """Test start_task returns actual_start in ISO format."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_lifecycle
 
         client = create_mock_client()
@@ -545,7 +545,7 @@ class TestTaskLifecycleTools:
         started_task.actual_start = start_time
         client.start_task.return_value = started_task
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_lifecycle.register_tools(mcp, client)
 
         start_task_fn = mcp._tool_manager._tools["start_task"].fn
@@ -560,7 +560,7 @@ class TestTaskLifecycleTools:
 
     def test_complete_task_returns_duration(self) -> None:
         """Test complete_task returns actual_end and actual_duration_hours."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_lifecycle
 
         client = create_mock_client()
@@ -572,7 +572,7 @@ class TestTaskLifecycleTools:
         completed_task.actual_duration_hours = 8.0
         client.complete_task.return_value = completed_task
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_lifecycle.register_tools(mcp, client)
 
         complete_task_fn = mcp._tool_manager._tools["complete_task"].fn
@@ -605,7 +605,7 @@ class TestTaskLifecycleTools:
         message_keyword: str,
     ) -> None:
         """Test lifecycle tools that change task status."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_lifecycle
 
         client = create_mock_client()
@@ -615,7 +615,7 @@ class TestTaskLifecycleTools:
         )
         getattr(client, client_method).return_value = task
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_lifecycle.register_tools(mcp, client)
 
         tool_fn = mcp._tool_manager._tools[tool_name].fn
@@ -628,7 +628,7 @@ class TestTaskLifecycleTools:
 
     def test_fix_actual_times_valid_datetime(self) -> None:
         """Test fix_actual_times with valid ISO format datetimes."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_lifecycle
 
         client = create_mock_client()
@@ -642,7 +642,7 @@ class TestTaskLifecycleTools:
         fixed_task.actual_duration_hours = 8.0
         client.fix_actual_times.return_value = fixed_task
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_lifecycle.register_tools(mcp, client)
 
         fix_fn = mcp._tool_manager._tools["fix_actual_times"].fn
@@ -669,7 +669,7 @@ class TestTaskLifecycleTools:
 
     def test_fix_actual_times_with_clear_flags(self) -> None:
         """Test fix_actual_times with clear_start and clear_end flags."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_lifecycle
 
         client = create_mock_client()
@@ -681,7 +681,7 @@ class TestTaskLifecycleTools:
         cleared_task.actual_duration_hours = None
         client.fix_actual_times.return_value = cleared_task
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_lifecycle.register_tools(mcp, client)
 
         fix_fn = mcp._tool_manager._tools["fix_actual_times"].fn
@@ -702,11 +702,11 @@ class TestTaskLifecycleTools:
 
     def test_fix_actual_times_invalid_datetime(self) -> None:
         """Test fix_actual_times raises ValueError for invalid datetime."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_lifecycle
 
         client = create_mock_client()
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_lifecycle.register_tools(mcp, client)
 
         fix_fn = mcp._tool_manager._tools["fix_actual_times"].fn
@@ -716,7 +716,7 @@ class TestTaskLifecycleTools:
 
     def test_fix_actual_times_with_duration(self) -> None:
         """Test fix_actual_times with actual_duration parameter."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_lifecycle
 
         client = create_mock_client()
@@ -728,7 +728,7 @@ class TestTaskLifecycleTools:
         fixed_task.actual_duration_hours = 2.5
         client.fix_actual_times.return_value = fixed_task
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_lifecycle.register_tools(mcp, client)
 
         fix_fn = mcp._tool_manager._tools["fix_actual_times"].fn
@@ -747,7 +747,7 @@ class TestTaskLifecycleTools:
 
     def test_fix_actual_times_with_clear_duration(self) -> None:
         """Test fix_actual_times with clear_duration flag."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_lifecycle
 
         client = create_mock_client()
@@ -759,7 +759,7 @@ class TestTaskLifecycleTools:
         fixed_task.actual_duration_hours = None
         client.fix_actual_times.return_value = fixed_task
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_lifecycle.register_tools(mcp, client)
 
         fix_fn = mcp._tool_manager._tools["fix_actual_times"].fn
@@ -786,11 +786,11 @@ class TestTaskLifecycleTools:
     )
     def test_fix_actual_times_invalid_duration(self, invalid_duration: float) -> None:
         """Test fix_actual_times raises ValueError for invalid duration."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_lifecycle
 
         client = create_mock_client()
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_lifecycle.register_tools(mcp, client)
 
         fix_fn = mcp._tool_manager._tools["fix_actual_times"].fn
@@ -804,7 +804,7 @@ class TestTaskQueryTools:
 
     def test_get_statistics_formats_response(self) -> None:
         """Test get_statistics tool formats response correctly."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_query
 
         client = create_mock_client()
@@ -837,14 +837,14 @@ class TestTaskQueryTools:
             trend_stats=None,
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_query.register_tools(mcp, client)
 
         assert mcp is not None
 
     def test_get_tag_statistics_formats_response(self) -> None:
         """Test get_tag_statistics tool formats response correctly."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_query
 
         client = create_mock_client()
@@ -854,14 +854,14 @@ class TestTaskQueryTools:
             total_tagged_tasks=8,
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_query.register_tools(mcp, client)
 
         assert mcp is not None
 
     def test_get_statistics_returns_formatted_data(self) -> None:
         """Test get_statistics returns properly formatted statistics."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_query
 
         client = create_mock_client()
@@ -894,7 +894,7 @@ class TestTaskQueryTools:
             trend_stats=None,
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_query.register_tools(mcp, client)
 
         get_statistics_fn = mcp._tool_manager._tools["get_statistics"].fn
@@ -912,7 +912,7 @@ class TestTaskQueryTools:
 
     def test_get_statistics_without_time_stats(self) -> None:
         """Test get_statistics when time_stats is None."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_query
 
         client = create_mock_client()
@@ -938,7 +938,7 @@ class TestTaskQueryTools:
             trend_stats=None,
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_query.register_tools(mcp, client)
 
         get_statistics_fn = mcp._tool_manager._tools["get_statistics"].fn
@@ -948,7 +948,7 @@ class TestTaskQueryTools:
 
     def test_get_statistics_reports_all_sections(self) -> None:
         """Test get_statistics exposes every StatisticsOutput section."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_query
 
         client = create_mock_client()
@@ -980,7 +980,7 @@ class TestTaskQueryTools:
             trend_stats=None,
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_query.register_tools(mcp, client)
 
         get_statistics_fn = mcp._tool_manager._tools["get_statistics"].fn
@@ -1004,7 +1004,7 @@ class TestTaskQueryTools:
 
     def test_get_tag_statistics_returns_formatted_data(self) -> None:
         """Test get_tag_statistics returns properly formatted tag stats."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_query
 
         client = create_mock_client()
@@ -1014,7 +1014,7 @@ class TestTaskQueryTools:
             total_tagged_tasks=10,
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_query.register_tools(mcp, client)
 
         get_tag_stats_fn = mcp._tool_manager._tools["get_tag_statistics"].fn
@@ -1030,7 +1030,7 @@ class TestTaskQueryTools:
 
     def test_get_executable_tasks(self) -> None:
         """Test get_executable_tasks delegates to the client and shapes the result."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_query
 
         from taskdog_core.application.dto.next_tasks_output import NextTasksOutput
@@ -1047,7 +1047,7 @@ class TestTaskQueryTools:
             tasks=[in_progress_task, pending_task]
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_query.register_tools(mcp, client)
 
         get_executable_fn = mcp._tool_manager._tools["get_executable_tasks"].fn
@@ -1065,7 +1065,7 @@ class TestTaskQueryTools:
 
     def test_get_executable_tasks_with_default_args(self) -> None:
         """Test get_executable_tasks passes through default tags/limit."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_query
 
         from taskdog_core.application.dto.next_tasks_output import NextTasksOutput
@@ -1075,7 +1075,7 @@ class TestTaskQueryTools:
         tasks = [create_mock_task_row(task_id=i, name=f"Task {i}") for i in range(1, 4)]
         client.get_executable_tasks.return_value = NextTasksOutput(tasks=tasks)
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_query.register_tools(mcp, client)
 
         get_executable_fn = mcp._tool_manager._tools["get_executable_tasks"].fn
@@ -1087,7 +1087,7 @@ class TestTaskQueryTools:
 
     def test_get_executable_tasks_empty_result(self) -> None:
         """Test get_executable_tasks handles an empty ranked list."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_query
 
         from taskdog_core.application.dto.next_tasks_output import NextTasksOutput
@@ -1096,7 +1096,7 @@ class TestTaskQueryTools:
         client.get_executable_tasks = MagicMock()
         client.get_executable_tasks.return_value = NextTasksOutput(tasks=[])
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_query.register_tools(mcp, client)
 
         get_executable_fn = mcp._tool_manager._tools["get_executable_tasks"].fn
@@ -1111,12 +1111,12 @@ class TestTaskDecompositionTools:
 
     def test_decompose_task_registers_without_error(self) -> None:
         """Test decompose_task tool registration."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         assert mcp is not None
@@ -1147,7 +1147,7 @@ class TestTaskDecompositionTools:
 
     def test_decompose_task_single_subtask(self) -> None:
         """Test decompose_task with a single subtask."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
@@ -1158,7 +1158,7 @@ class TestTaskDecompositionTools:
         client.create_task.return_value = created_subtask
         client.get_task_notes.return_value = ("", False)
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         decompose_fn = mcp._tool_manager._tools["decompose_task"].fn
@@ -1176,7 +1176,7 @@ class TestTaskDecompositionTools:
 
     def test_decompose_task_with_dependencies(self) -> None:
         """Test decompose_task creates dependencies between subtasks."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
@@ -1189,7 +1189,7 @@ class TestTaskDecompositionTools:
         ]
         client.get_task_notes.return_value = ("", False)
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         decompose_fn = mcp._tool_manager._tools["decompose_task"].fn
@@ -1210,7 +1210,7 @@ class TestTaskDecompositionTools:
 
     def test_decompose_task_with_group_tag(self) -> None:
         """Test decompose_task adds group_tag to all subtasks."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
@@ -1222,7 +1222,7 @@ class TestTaskDecompositionTools:
         )
         client.get_task_notes.return_value = ("", False)
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         decompose_fn = mcp._tool_manager._tools["decompose_task"].fn
@@ -1239,7 +1239,7 @@ class TestTaskDecompositionTools:
 
     def test_decompose_task_archive_original(self) -> None:
         """Test decompose_task archives original task when requested."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
@@ -1251,7 +1251,7 @@ class TestTaskDecompositionTools:
         )
         client.get_task_notes.return_value = ("", False)
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         decompose_fn = mcp._tool_manager._tools["decompose_task"].fn
@@ -1266,7 +1266,7 @@ class TestTaskDecompositionTools:
 
     def test_add_dependency_returns_formatted_response(self) -> None:
         """Test add_dependency returns properly formatted response."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
@@ -1276,7 +1276,7 @@ class TestTaskDecompositionTools:
         result_task.depends_on = [2]
         client.add_dependency.return_value = result_task
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         add_dep_fn = mcp._tool_manager._tools["add_dependency"].fn
@@ -1290,7 +1290,7 @@ class TestTaskDecompositionTools:
 
     def test_remove_dependency_returns_formatted_response(self) -> None:
         """Test remove_dependency returns properly formatted response."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
@@ -1300,7 +1300,7 @@ class TestTaskDecompositionTools:
         result_task.depends_on = []
         client.remove_dependency.return_value = result_task
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         remove_dep_fn = mcp._tool_manager._tools["remove_dependency"].fn
@@ -1313,7 +1313,7 @@ class TestTaskDecompositionTools:
 
     def test_set_task_tags_returns_formatted_response(self) -> None:
         """Test set_task_tags returns properly formatted response."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
@@ -1321,7 +1321,7 @@ class TestTaskDecompositionTools:
         result_task.tags = ["new-tag", "another-tag"]
         client.set_task_tags.return_value = result_task
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         set_tags_fn = mcp._tool_manager._tools["set_task_tags"].fn
@@ -1334,12 +1334,12 @@ class TestTaskDecompositionTools:
 
     def test_update_task_notes_returns_confirmation(self) -> None:
         """Test update_task_notes returns confirmation message."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         update_notes_fn = mcp._tool_manager._tools["update_task_notes"].fn
@@ -1351,13 +1351,13 @@ class TestTaskDecompositionTools:
 
     def test_get_task_notes_returns_content(self) -> None:
         """Test get_task_notes returns notes content."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
         client.get_task_notes.return_value = ("# Notes\nSome content", True)
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         get_notes_fn = mcp._tool_manager._tools["get_task_notes"].fn
@@ -1370,13 +1370,13 @@ class TestTaskDecompositionTools:
 
     def test_get_task_notes_no_notes(self) -> None:
         """Test get_task_notes when task has no notes."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
         client.get_task_notes.return_value = (None, False)
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         get_notes_fn = mcp._tool_manager._tools["get_task_notes"].fn
@@ -1387,7 +1387,7 @@ class TestTaskDecompositionTools:
 
     def test_decompose_task_handles_subtask_creation_error(self) -> None:
         """Test decompose_task handles subtask creation errors gracefully."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
@@ -1401,7 +1401,7 @@ class TestTaskDecompositionTools:
         ]
         client.get_task_notes.return_value = ("", False)
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         decompose_fn = mcp._tool_manager._tools["decompose_task"].fn
@@ -1421,7 +1421,7 @@ class TestTaskDecompositionTools:
 
     def test_decompose_task_handles_dependency_error(self) -> None:
         """Test decompose_task handles dependency creation errors."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
@@ -1435,7 +1435,7 @@ class TestTaskDecompositionTools:
         client.add_dependency.side_effect = Exception("Dependency error")
         client.get_task_notes.return_value = ("", False)
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         decompose_fn = mcp._tool_manager._tools["decompose_task"].fn
@@ -1455,7 +1455,7 @@ class TestTaskDecompositionTools:
 
     def test_decompose_task_handles_archive_error(self) -> None:
         """Test decompose_task handles archive error gracefully."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
@@ -1468,7 +1468,7 @@ class TestTaskDecompositionTools:
         client.archive_task.side_effect = Exception("Archive failed")
         client.get_task_notes.return_value = ("", False)
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         decompose_fn = mcp._tool_manager._tools["decompose_task"].fn
@@ -1486,7 +1486,7 @@ class TestTaskDecompositionTools:
 
     def test_update_decomposition_notes_handles_error(self) -> None:
         """Test _update_decomposition_notes silently handles errors."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_decomposition
 
         client = create_mock_client()
@@ -1499,7 +1499,7 @@ class TestTaskDecompositionTools:
         # Notes operations fail
         client.get_task_notes.side_effect = Exception("Notes read failed")
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_decomposition.register_tools(mcp, client)
 
         decompose_fn = mcp._tool_manager._tools["decompose_task"].fn
@@ -1519,7 +1519,7 @@ class TestTaskAuditTools:
 
     def test_list_audit_logs_returns_formatted_response(self) -> None:
         """Test list_audit_logs tool formats response correctly."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_audit
 
         from taskdog_core.application.dto.audit_log_dto import (
@@ -1562,7 +1562,7 @@ class TestTaskAuditTools:
             offset=0,
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_audit.register_tools(mcp, client)
 
         list_fn = mcp._tool_manager._tools["list_audit_logs"].fn
@@ -1588,7 +1588,7 @@ class TestTaskAuditTools:
 
     def test_list_audit_logs_with_filters(self) -> None:
         """Test list_audit_logs passes filters correctly."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_audit
 
         from taskdog_core.application.dto.audit_log_dto import AuditLogListOutput
@@ -1601,7 +1601,7 @@ class TestTaskAuditTools:
             offset=0,
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_audit.register_tools(mcp, client)
 
         list_fn = mcp._tool_manager._tools["list_audit_logs"].fn
@@ -1629,7 +1629,7 @@ class TestTaskAuditTools:
 
     def test_get_audit_log_returns_formatted_response(self) -> None:
         """Test get_audit_log tool returns all fields including old/new values."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_audit
 
         from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
@@ -1649,7 +1649,7 @@ class TestTaskAuditTools:
             error_message=None,
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_audit.register_tools(mcp, client)
 
         get_fn = mcp._tool_manager._tools["get_audit_log"].fn
@@ -1679,11 +1679,11 @@ class TestTaskAuditTools:
     )
     def test_list_audit_logs_invalid_datetime(self, field: str, value: str) -> None:
         """Test list_audit_logs raises ValueError for invalid since/until."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_audit
 
         client = create_mock_client()
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_audit.register_tools(mcp, client)
 
         list_fn = mcp._tool_manager._tools["list_audit_logs"].fn
@@ -1697,7 +1697,7 @@ class TestTaskTagTools:
 
     def test_delete_tag_returns_formatted_response(self) -> None:
         """Test delete_tag tool formats response correctly."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_tags
 
         from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
@@ -1707,7 +1707,7 @@ class TestTaskTagTools:
             tag_name="bug", affected_task_count=3
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_tags.register_tools(mcp, client)
 
         delete_tag_fn = mcp._tool_manager._tools["delete_tag"].fn
@@ -1720,7 +1720,7 @@ class TestTaskTagTools:
 
     def test_delete_tag_with_zero_affected_tasks(self) -> None:
         """Test delete_tag when tag exists but no tasks have it."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_tags
 
         from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
@@ -1730,7 +1730,7 @@ class TestTaskTagTools:
             tag_name="unused", affected_task_count=0
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_tags.register_tools(mcp, client)
 
         delete_tag_fn = mcp._tool_manager._tools["delete_tag"].fn
@@ -1741,7 +1741,7 @@ class TestTaskTagTools:
 
     def test_delete_tag_calls_client_with_correct_name(self) -> None:
         """Test delete_tag passes tag name to client correctly."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_tags
 
         from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
@@ -1751,7 +1751,7 @@ class TestTaskTagTools:
             tag_name="bug", affected_task_count=1
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_tags.register_tools(mcp, client)
 
         delete_tag_fn = mcp._tool_manager._tools["delete_tag"].fn
@@ -1806,7 +1806,7 @@ class TestTaskOptimizationTools:
 
     def test_optimize_schedule_returns_formatted_response(self) -> None:
         """Test optimize_schedule returns successful_tasks, daily_allocations, summary."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_optimization
 
         client = create_mock_client()
@@ -1814,7 +1814,7 @@ class TestTaskOptimizationTools:
             successful=[(1, "Task A"), (2, "Task B")],
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_optimization.register_tools(mcp, client)
 
         optimize_fn = mcp._tool_manager._tools["optimize_schedule"].fn
@@ -1840,7 +1840,7 @@ class TestTaskOptimizationTools:
 
     def test_optimize_schedule_with_failures(self) -> None:
         """Test optimize_schedule reports partial failures."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_optimization
 
         client = create_mock_client()
@@ -1849,7 +1849,7 @@ class TestTaskOptimizationTools:
             failed=[(2, "Task B", "deadline too tight")],
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_optimization.register_tools(mcp, client)
 
         optimize_fn = mcp._tool_manager._tools["optimize_schedule"].fn
@@ -1864,7 +1864,7 @@ class TestTaskOptimizationTools:
 
     def test_optimize_schedule_all_failed(self) -> None:
         """Test optimize_schedule when no tasks could be scheduled."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_optimization
 
         client = create_mock_client()
@@ -1876,7 +1876,7 @@ class TestTaskOptimizationTools:
             ],
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_optimization.register_tools(mcp, client)
 
         optimize_fn = mcp._tool_manager._tools["optimize_schedule"].fn
@@ -1888,13 +1888,13 @@ class TestTaskOptimizationTools:
 
     def test_optimize_schedule_no_tasks(self) -> None:
         """Test optimize_schedule when there's nothing to optimize."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_optimization
 
         client = create_mock_client()
         client.optimize_schedule.return_value = _make_optimization_output()
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_optimization.register_tools(mcp, client)
 
         optimize_fn = mcp._tool_manager._tools["optimize_schedule"].fn
@@ -1906,7 +1906,7 @@ class TestTaskOptimizationTools:
 
     def test_optimize_schedule_passes_all_arguments(self) -> None:
         """Test optimize_schedule forwards all arguments to the client."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_optimization
 
         client = create_mock_client()
@@ -1914,7 +1914,7 @@ class TestTaskOptimizationTools:
             successful=[(1, "Task A")],
         )
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_optimization.register_tools(mcp, client)
 
         optimize_fn = mcp._tool_manager._tools["optimize_schedule"].fn
@@ -1945,11 +1945,11 @@ class TestTaskOptimizationTools:
     )
     def test_optimize_schedule_invalid_datetime(self, invalid_date: str) -> None:
         """Test optimize_schedule raises ValueError for invalid datetime."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_optimization
 
         client = create_mock_client()
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_optimization.register_tools(mcp, client)
 
         optimize_fn = mcp._tool_manager._tools["optimize_schedule"].fn
@@ -1970,11 +1970,11 @@ class TestTaskOptimizationTools:
     )
     def test_optimize_schedule_invalid_max_hours(self, invalid_hours: float) -> None:
         """Test optimize_schedule rejects non-positive max_hours_per_day."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_optimization
 
         client = create_mock_client()
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_optimization.register_tools(mcp, client)
 
         optimize_fn = mcp._tool_manager._tools["optimize_schedule"].fn
@@ -1986,7 +1986,7 @@ class TestTaskOptimizationTools:
 
     def test_list_algorithms_returns_metadata(self) -> None:
         """Test list_algorithms returns formatted algorithm list."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server import MCPServer
         from taskdog_mcp.tools import task_optimization
 
         client = create_mock_client()
@@ -1995,7 +1995,7 @@ class TestTaskOptimizationTools:
             ("balanced", "Balanced", "Distribute hours evenly across days"),
         ]
 
-        mcp = FastMCP("test")
+        mcp = MCPServer("test")
         task_optimization.register_tools(mcp, client)
 
         list_fn = mcp._tool_manager._tools["list_algorithms"].fn

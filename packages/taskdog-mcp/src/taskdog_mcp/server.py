@@ -1,11 +1,11 @@
 """MCP server for Taskdog.
 
-This module creates and configures the FastMCP server with all task management tools.
+This module creates and configures the MCP server with all task management tools.
 """
 
 import logging
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 from taskdog_client import TaskdogApiClient
 
 from taskdog_mcp.config.mcp_config_manager import McpConfig, load_mcp_config
@@ -13,14 +13,14 @@ from taskdog_mcp.config.mcp_config_manager import McpConfig, load_mcp_config
 logger = logging.getLogger(__name__)
 
 
-def create_mcp_server(config: McpConfig | None = None) -> FastMCP:
+def create_mcp_server(config: McpConfig | None = None) -> MCPServer:
     """Create and configure the MCP server.
 
     Args:
         config: MCP configuration. If None, loads from mcp.toml.
 
     Returns:
-        Configured FastMCP server instance
+        Configured MCPServer instance
     """
     if config is None:
         config = load_mcp_config()
@@ -36,7 +36,7 @@ def create_mcp_server(config: McpConfig | None = None) -> FastMCP:
     client = TaskdogApiClient(base_url, api_key=config.api.api_key)
 
     # Create MCP server
-    mcp = FastMCP(config.server.name)
+    mcp = MCPServer(config.server.name)
 
     # Register all tools
     from taskdog_mcp.tools import (
