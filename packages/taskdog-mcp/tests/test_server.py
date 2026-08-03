@@ -40,5 +40,5 @@ class TestCreateMcpServer:
         mcp = create_mcp_server()
 
         # Check that tools are registered by verifying the server exists
-        # The actual tools are registered via FastMCP decorators
+        # The actual tools are registered via MCPServer decorators
         assert mcp is not None

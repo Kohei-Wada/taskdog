@@ -10,15 +10,15 @@ from typing import TYPE_CHECKING, Any
 from taskdog_mcp.tools.serializers import iso, parse_iso_datetime, task_result
 
 if TYPE_CHECKING:
-    from mcp.server.fastmcp import FastMCP
+    from mcp.server import MCPServer
     from taskdog_client import TaskdogApiClient
 
 
-def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
+def register_tools(mcp: MCPServer, client: TaskdogApiClient) -> None:
     """Register task lifecycle tools with the MCP server.
 
     Args:
-        mcp: FastMCP server instance
+        mcp: MCPServer instance
         client: Taskdog API client
     """
 
