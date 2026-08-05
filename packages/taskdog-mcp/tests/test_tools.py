@@ -1627,6 +1627,31 @@ class TestTaskAuditTools:
         assert result["total_count"] == 0
         assert result["logs"] == []
 
+    def test_list_audit_logs_until_date_only_covers_whole_day(self) -> None:
+        """A bare `until` date must include logs recorded later that day."""
+        from mcp.server import MCPServer
+        from taskdog_mcp.tools import task_audit
+
+        from taskdog_core.application.dto.audit_log_dto import AuditLogListOutput
+
+        client = create_mock_client()
+        client.list_audit_logs.return_value = AuditLogListOutput(
+            logs=[],
+            total_count=0,
+            limit=50,
+            offset=0,
+        )
+
+        mcp = MCPServer("test")
+        task_audit.register_tools(mcp, client)
+
+        list_fn = mcp._tool_manager._tools["list_audit_logs"].fn
+        list_fn(since="2025-12-31", until="2025-12-31")
+
+        kwargs = client.list_audit_logs.call_args.kwargs
+        assert kwargs["start_date"] == datetime(2025, 12, 31, 0, 0, 0)
+        assert kwargs["end_date"] == datetime(2025, 12, 31, 23, 59, 59, 999999)
+
     def test_get_audit_log_returns_formatted_response(self) -> None:
         """Test get_audit_log tool returns all fields including old/new values."""
         from mcp.server import MCPServer

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 import click
@@ -30,27 +29,11 @@ from taskdog.constants.common import HEADER_ID, HEADER_NAME, TABLE_HEADER_STYLE
 from taskdog.constants.formatting import format_table_title
 from taskdog.formatters.audit_log_formatter import compact_changes, truncate_error
 from taskdog.presenters.audit_log_presenter import AuditLogPresenter
+from taskdog_core.shared.utils.datetime_parser import parse_iso_datetime
 
 if TYPE_CHECKING:
     from taskdog.cli.context import CliContext
     from taskdog.view_models.audit_log_view_model import AuditLogRowViewModel
-
-
-def _parse_date_filter(date_str: str, end_of_day: bool = False) -> datetime:
-    """Parse a date filter string to datetime.
-
-    Args:
-        date_str: ISO format date or datetime string
-        end_of_day: If True and only date provided, use end of day
-
-    Returns:
-        Parsed datetime object
-    """
-    try:
-        return datetime.fromisoformat(date_str)
-    except ValueError:
-        suffix = "T23:59:59" if end_of_day else "T00:00:00"
-        return datetime.fromisoformat(f"{date_str}{suffix}")
 
 
 def _format_resource(row: AuditLogRowViewModel) -> str:
@@ -122,7 +105,10 @@ Examples:
     "--until",
     type=str,
     default=None,
-    help="Show logs until this date (ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)",
+    help=(
+        "Show logs until this date, inclusive "
+        "(ISO format: YYYY-MM-DD covers the whole day, or YYYY-MM-DDTHH:MM:SS)"
+    ),
 )
 @click.option(
     "--limit",
@@ -155,8 +141,8 @@ def list_command(
     api_client = ctx_obj.api_client
 
     # Parse date filters
-    start_date = _parse_date_filter(since) if since else None
-    end_date = _parse_date_filter(until, end_of_day=True) if until else None
+    start_date = parse_iso_datetime(since)
+    end_date = parse_iso_datetime(until, end_of_day=True)
 
     # Fetch audit logs via API
     result = api_client.list_audit_logs(

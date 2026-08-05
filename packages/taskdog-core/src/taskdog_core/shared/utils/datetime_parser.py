@@ -11,7 +11,7 @@ Error Handling:
 """
 
 from collections.abc import Iterable
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 
 def parse_iso_date(date_str: str | None) -> date | None:
@@ -33,11 +33,17 @@ def parse_iso_date(date_str: str | None) -> date | None:
     return datetime.fromisoformat(date_str).date()
 
 
-def parse_iso_datetime(datetime_str: str | None) -> datetime | None:
+def parse_iso_datetime(
+    datetime_str: str | None, end_of_day: bool = False
+) -> datetime | None:
     """Parse ISO 8601 datetime string to datetime object.
 
     Args:
         datetime_str: ISO format datetime string or None
+        end_of_day: If True and the input carries no time, return the last
+            microsecond of that day instead of midnight. Use it for inclusive
+            upper bounds, where a date-only midnight would drop every value
+            recorded later that day.
 
     Returns:
         Parsed datetime object, or None if input is None/empty
@@ -47,6 +53,13 @@ def parse_iso_datetime(datetime_str: str | None) -> datetime | None:
     """
     if not datetime_str:
         return None
+    if end_of_day:
+        try:
+            day = date.fromisoformat(datetime_str)
+        except ValueError:
+            pass
+        else:
+            return datetime.combine(day, time.max)
     return datetime.fromisoformat(datetime_str)
 
 

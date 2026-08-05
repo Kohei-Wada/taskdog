@@ -77,6 +77,32 @@ class TestParseIsoDatetime:
         """Empty string should return None."""
         assert parse_iso_datetime("") is None
 
+    def test_date_only_defaults_to_midnight(self):
+        """Date-only input should parse to the start of that day."""
+        assert parse_iso_datetime("2025-01-15") == datetime(2025, 1, 15, 0, 0, 0)
+
+    def test_date_only_with_end_of_day_returns_last_microsecond(self):
+        """end_of_day should push a date-only input to the end of that day."""
+        assert parse_iso_datetime("2025-01-15", end_of_day=True) == datetime(
+            2025, 1, 15, 23, 59, 59, 999999
+        )
+
+    def test_end_of_day_keeps_explicit_time(self):
+        """end_of_day should not touch an input that already carries a time."""
+        assert parse_iso_datetime("2025-01-15T10:30:00", end_of_day=True) == datetime(
+            2025, 1, 15, 10, 30, 0
+        )
+
+    def test_end_of_day_keeps_explicit_midnight(self):
+        """An explicit midnight is a real time, not a date-only value."""
+        assert parse_iso_datetime("2025-01-15T00:00:00", end_of_day=True) == datetime(
+            2025, 1, 15, 0, 0, 0
+        )
+
+    def test_end_of_day_with_none_returns_none(self):
+        """None input should return None regardless of end_of_day."""
+        assert parse_iso_datetime(None, end_of_day=True) is None
+
     @pytest.mark.parametrize(
         "invalid_input",
         ["invalid-datetime"],
