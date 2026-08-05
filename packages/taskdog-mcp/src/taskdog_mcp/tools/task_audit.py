@@ -39,7 +39,8 @@ def register_tools(mcp: MCPServer, client: TaskdogApiClient) -> None:
             operation: Filter by operation type (e.g., 'create_task', 'complete_task')
             client_name: Filter by client name
             since: Filter logs after this datetime (ISO format, e.g., '2025-12-11T09:00:00')
-            until: Filter logs before this datetime (ISO format, e.g., '2025-12-11T17:00:00')
+            until: Filter logs before this datetime (ISO format, e.g., '2025-12-11T17:00:00');
+                a date-only value covers the whole day
             failed: If True, only show failed operations
             limit: Maximum number of logs to return
 
@@ -47,7 +48,7 @@ def register_tools(mcp: MCPServer, client: TaskdogApiClient) -> None:
             Dictionary with logs list and metadata
         """
         start_date = parse_iso_datetime(since, "since")
-        end_date = parse_iso_datetime(until, "until")
+        end_date = parse_iso_datetime(until, "until", end_of_day=True)
         success = False if failed else None
 
         result = client.list_audit_logs(
