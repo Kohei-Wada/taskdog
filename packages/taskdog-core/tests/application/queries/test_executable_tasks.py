@@ -5,12 +5,19 @@ from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
 class _StubRepo:
-    """Minimal repository: get_filtered returns all tasks (filters applied in Python)."""
+    """Minimal repository: returns all tasks (filters applied in Python)."""
 
     def __init__(self, tasks):
         self._tasks = tasks
+        self.get_all_calls = 0
+        self.get_filtered_calls = 0
+
+    def get_all(self):
+        self.get_all_calls += 1
+        return list(self._tasks)
 
     def get_filtered(self, **kwargs):
+        self.get_filtered_calls += 1
         return list(self._tasks)
 
 
@@ -148,3 +155,19 @@ def test_id_tie_break():
     ]
     ids = [t.id for t in _svc(tasks).get_executable_tasks()]
     assert ids == [1, 2, 3]
+
+
+def test_fetches_the_task_universe_without_a_throwaway_sort():
+    tasks = [_task(2, TaskStatus.PENDING), _task(1, TaskStatus.PENDING)]
+    repo = _StubRepo(tasks)
+    service = TaskQueryService(repo, _FixedTime())
+    sort_calls = []
+    service.sorter.sort = lambda *args, **kwargs: (
+        sort_calls.append(args) or list(args[0])
+    )
+
+    service.get_executable_tasks()
+
+    assert repo.get_all_calls == 1
+    assert repo.get_filtered_calls == 0
+    assert sort_calls == []

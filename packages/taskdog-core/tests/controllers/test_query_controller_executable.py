@@ -7,6 +7,9 @@ class _Repo:
     def __init__(self, tasks):
         self._tasks = tasks
 
+    def get_all(self):
+        return list(self._tasks)
+
     def get_filtered(self, **kwargs):
         return list(self._tasks)
 

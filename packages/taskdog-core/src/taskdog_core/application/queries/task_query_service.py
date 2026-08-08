@@ -99,7 +99,8 @@ class TaskQueryService(QueryService):
         """
         # Load the full task universe (incl. archived/completed) so a dependency's
         # status can be resolved even after it was archived post-completion.
-        all_tasks = self.get_filtered_tasks()
+        # Fetched unsorted: the candidates are re-sorted by _executable_sort_key below.
+        all_tasks = self.repository.get_all()
         status_by_id = {t.id: t.status for t in all_tasks}
 
         def deps_met(task: Task) -> bool:
