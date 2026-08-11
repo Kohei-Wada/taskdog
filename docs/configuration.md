@@ -198,6 +198,7 @@ These variables configure how CLI/TUI connect to the API server:
 | `TASKDOG_API_HOST` | string | `"127.0.0.1"` | API server host |
 | `TASKDOG_API_PORT` | int | `8000` | API server port |
 | `TASKDOG_API_KEY` | string | `None` | API key for authentication |
+| `TASKDOG_API_BASE_URL` | string | `None` | Full API base URL (overrides host/port) |
 | `TASKDOG_GANTT_MIN_DISPLAY_DAYS` | int | `56` | Minimum days in TUI Gantt chart |
 
 **Example:**
@@ -287,6 +288,39 @@ Or use environment variables:
 export TASKDOG_API_HOST=192.168.1.100
 export TASKDOG_API_PORT=8000
 ```
+
+### HTTPS / Reverse Proxy
+
+`host` and `port` always produce a plain `http://host:port` URL. To reach a
+server exposed over HTTPS, or served under a path prefix by a reverse proxy
+(Caddy, nginx, Traefik, ...), set `base_url` instead:
+
+```toml
+# ~/.config/taskdog/cli.toml
+[api]
+base_url = "https://tasks.example.com"
+```
+
+Or via environment variable / CLI option:
+
+```bash
+export TASKDOG_API_BASE_URL=https://tasks.example.com
+taskdog --base-url https://tasks.example.com table
+```
+
+The same setting is available in `mcp.toml` (`[api] base_url`). When `base_url`
+is set, `host`/`port` are ignored; the TUI derives its WebSocket URL from it, so
+an `https://` base URL connects over `wss://`.
+
+If the server uses a certificate that is not signed by a public CA, point
+`SSL_CERT_FILE` at the CA bundle that signed it:
+
+```bash
+export SSL_CERT_FILE=/path/to/ca.pem
+```
+
+**Priority order:** `--base-url` > `--host`/`--port` > `TASKDOG_API_BASE_URL` >
+`base_url` in the config file > `host`/`port`
 
 ### Server Authentication
 

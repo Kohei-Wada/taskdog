@@ -32,7 +32,7 @@ def create_mcp_server(config: McpConfig | None = None) -> MCPServer:
     )
 
     # Create API client
-    base_url = f"http://{config.api.host}:{config.api.port}"
+    base_url = config.api.base_url or f"http://{config.api.host}:{config.api.port}"
     client = TaskdogApiClient(base_url, api_key=config.api.api_key)
 
     # Create MCP server

@@ -7,7 +7,7 @@ from taskdog import __version__
 from taskdog.cli.context import CliContext
 from taskdog.cli.lazy_group import LazyGroup
 from taskdog.console.rich_console_writer import RichConsoleWriter
-from taskdog.infrastructure.cli_config_manager import load_cli_config
+from taskdog.infrastructure.cli_config_manager import CliApiConfig, load_cli_config
 
 # Registry of every subcommand: name -> (import path "module.attr", summary).
 #
@@ -107,6 +107,25 @@ LAZY_SUBCOMMANDS: dict[str, tuple[str, str]] = {
 COMMAND_ALIASES: dict[str, str] = {"ls": "list"}
 
 
+def _resolve_base_url(
+    api_config: CliApiConfig,
+    host: str | None,
+    port: int | None,
+    base_url: str | None,
+) -> str:
+    """Resolve the API base URL.
+
+    Precedence: --base-url > --host/--port > configured base_url > host/port.
+    """
+    if base_url is not None:
+        return base_url
+    if host is None and port is None and api_config.base_url:
+        return api_config.base_url
+    api_host = host if host is not None else api_config.host
+    api_port = port if port is not None else api_config.port
+    return f"http://{api_host}:{api_port}"
+
+
 class TaskdogGroup(LazyGroup):
     """Root group: lazy loading (via LazyGroup) plus ASCII art in --help."""
 
@@ -143,6 +162,12 @@ class TaskdogGroup(LazyGroup):
     help="API server port (overrides config/env)",
 )
 @click.option(
+    "--base-url",
+    type=str,
+    default=None,
+    help="Full API base URL, e.g. https://tasks.example.com (overrides host/port)",
+)
+@click.option(
     "-k",
     "--api-key",
     type=str,
@@ -151,7 +176,11 @@ class TaskdogGroup(LazyGroup):
 )
 @click.pass_context
 def cli(
-    ctx: click.Context, host: str | None, port: int | None, api_key: str | None
+    ctx: click.Context,
+    host: str | None,
+    port: int | None,
+    base_url: str | None,
+    api_key: str | None,
 ) -> None:
     """Taskdog: Task management CLI tool with time tracking and optimization."""
     # Display help when no subcommand is provided
@@ -165,16 +194,15 @@ def cli(
     config = load_cli_config()
 
     # CLI options override config/env settings
-    api_host = host if host is not None else config.api.host
-    api_port = port if port is not None else config.api.port
     effective_api_key = api_key if api_key is not None else config.api.api_key
+    api_base_url = _resolve_base_url(config.api, host, port, base_url)
 
     # Initialize API client (required for all CLI commands)
     # Health check is deferred to actual API calls for better performance
     from taskdog_client import TaskdogApiClient
 
     api_client = TaskdogApiClient(
-        base_url=f"http://{api_host}:{api_port}",
+        base_url=api_base_url,
         api_key=effective_api_key,
     )
 
