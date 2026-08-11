@@ -27,6 +27,7 @@ class TestCliGlobalOptions:
         mock_config.api.host = "127.0.0.1"
         mock_config.api.port = 8000
         mock_config.api.api_key = None
+        mock_config.api.base_url = None
         mock_load_config.return_value = mock_config
 
         mock_client_instance = MagicMock()
@@ -50,6 +51,7 @@ class TestCliGlobalOptions:
         mock_config.api.host = "127.0.0.1"
         mock_config.api.port = 8000
         mock_config.api.api_key = None
+        mock_config.api.base_url = None
         mock_load_config.return_value = mock_config
 
         mock_client_instance = MagicMock()
@@ -72,6 +74,7 @@ class TestCliGlobalOptions:
         mock_config.api.host = "127.0.0.1"
         mock_config.api.port = 8000
         mock_config.api.api_key = None
+        mock_config.api.base_url = None
         mock_load_config.return_value = mock_config
 
         mock_client_instance = MagicMock()
@@ -94,6 +97,7 @@ class TestCliGlobalOptions:
         mock_config.api.host = "127.0.0.1"
         mock_config.api.port = 8000
         mock_config.api.api_key = None
+        mock_config.api.base_url = None
         mock_load_config.return_value = mock_config
 
         mock_client_instance = MagicMock()
@@ -148,6 +152,7 @@ class TestCliGlobalOptions:
         mock_config.api.host = "127.0.0.1"
         mock_config.api.port = 8000
         mock_config.api.api_key = None
+        mock_config.api.base_url = None
         mock_load_config.return_value = mock_config
 
         mock_client_instance = MagicMock()
@@ -175,6 +180,7 @@ class TestCliGlobalOptions:
         mock_config.api.host = "127.0.0.1"
         mock_config.api.port = 8000
         mock_config.api.api_key = "config-key"
+        mock_config.api.base_url = None
         mock_load_config.return_value = mock_config
 
         mock_client_instance = MagicMock()
@@ -197,6 +203,7 @@ class TestCliGlobalOptions:
         mock_config.api.host = "127.0.0.1"
         mock_config.api.port = 8000
         mock_config.api.api_key = "config-key"
+        mock_config.api.base_url = None
         mock_load_config.return_value = mock_config
 
         mock_client_instance = MagicMock()
@@ -209,6 +216,68 @@ class TestCliGlobalOptions:
         mock_api_client.assert_called_once_with(
             base_url="http://127.0.0.1:8000", api_key="config-key"
         )
+
+    @patch("taskdog_client.TaskdogApiClient")
+    @patch("taskdog.cli_main.load_cli_config")
+    def test_base_url_from_config(self, mock_load_config, mock_api_client):
+        """Test base_url from config is used instead of host/port."""
+        mock_config = MagicMock()
+        mock_config.api.host = "127.0.0.1"
+        mock_config.api.port = 8000
+        mock_config.api.api_key = None
+        mock_config.api.base_url = "https://tasks.example.com"
+        mock_load_config.return_value = mock_config
+
+        self.runner.invoke(cli, ["list", "--help"])
+
+        mock_api_client.assert_called_once_with(
+            base_url="https://tasks.example.com", api_key=None
+        )
+
+    @patch("taskdog_client.TaskdogApiClient")
+    @patch("taskdog.cli_main.load_cli_config")
+    def test_base_url_option_override(self, mock_load_config, mock_api_client):
+        """Test --base-url overrides the configured base_url."""
+        mock_config = MagicMock()
+        mock_config.api.host = "127.0.0.1"
+        mock_config.api.port = 8000
+        mock_config.api.api_key = None
+        mock_config.api.base_url = "https://config.example.com"
+        mock_load_config.return_value = mock_config
+
+        self.runner.invoke(
+            cli, ["--base-url", "https://cli.example.com", "list", "--help"]
+        )
+
+        mock_api_client.assert_called_once_with(
+            base_url="https://cli.example.com", api_key=None
+        )
+
+    @patch("taskdog_client.TaskdogApiClient")
+    @patch("taskdog.cli_main.load_cli_config")
+    def test_host_option_wins_over_configured_base_url(
+        self, mock_load_config, mock_api_client
+    ):
+        """Test an explicit --host/--port beats a configured base_url."""
+        mock_config = MagicMock()
+        mock_config.api.host = "127.0.0.1"
+        mock_config.api.port = 8000
+        mock_config.api.api_key = None
+        mock_config.api.base_url = "https://config.example.com"
+        mock_load_config.return_value = mock_config
+
+        self.runner.invoke(cli, ["--host", "192.168.1.100", "list", "--help"])
+
+        mock_api_client.assert_called_once_with(
+            base_url="http://192.168.1.100:8000", api_key=None
+        )
+
+    def test_help_shows_base_url_option(self):
+        """Test that --help displays --base-url option."""
+        result = self.runner.invoke(cli, ["--help"])
+
+        assert result.exit_code == 0
+        assert "--base-url" in result.output
 
     def test_help_shows_api_key_option(self):
         """Test that --help displays --api-key option."""

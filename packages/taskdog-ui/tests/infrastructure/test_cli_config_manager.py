@@ -25,6 +25,7 @@ class TestCliConfig:
         original_env = {
             "TASKDOG_API_HOST": os.environ.get("TASKDOG_API_HOST"),
             "TASKDOG_API_PORT": os.environ.get("TASKDOG_API_PORT"),
+            "TASKDOG_API_BASE_URL": os.environ.get("TASKDOG_API_BASE_URL"),
             "TASKDOG_GANTT_WORKLOAD_COMFORTABLE_HOURS": os.environ.get(
                 "TASKDOG_GANTT_WORKLOAD_COMFORTABLE_HOURS"
             ),
@@ -36,6 +37,7 @@ class TestCliConfig:
         for key in [
             "TASKDOG_API_HOST",
             "TASKDOG_API_PORT",
+            "TASKDOG_API_BASE_URL",
             "TASKDOG_GANTT_WORKLOAD_COMFORTABLE_HOURS",
             "TASKDOG_GANTT_WORKLOAD_MODERATE_HOURS",
         ]:
@@ -180,6 +182,48 @@ theme = "nord"
                 assert config.api.port == 4000
                 # UI settings should come from file (no env var override)
                 assert config.ui.theme == "nord"
+
+    def test_base_url_defaults_to_none(self):
+        """Test base_url is unset by default."""
+        assert CliConfig().api.base_url is None
+
+    def test_load_config_with_base_url(self):
+        """Test loading base_url from the [api] section."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_dir = Path(tmpdir)
+            (config_dir / "cli.toml").write_text(
+                """
+[api]
+base_url = "https://tasks.example.com"
+"""
+            )
+
+            with patch(
+                "taskdog.infrastructure.cli_config_manager.XDGDirectories.get_config_home",
+                return_value=config_dir,
+            ):
+                config = load_cli_config()
+                assert config.api.base_url == "https://tasks.example.com"
+
+    def test_env_var_overrides_base_url(self):
+        """Test TASKDOG_API_BASE_URL overrides the file setting."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_dir = Path(tmpdir)
+            (config_dir / "cli.toml").write_text(
+                """
+[api]
+base_url = "https://file.example.com"
+"""
+            )
+
+            os.environ["TASKDOG_API_BASE_URL"] = "https://env.example.com"
+
+            with patch(
+                "taskdog.infrastructure.cli_config_manager.XDGDirectories.get_config_home",
+                return_value=config_dir,
+            ):
+                config = load_cli_config()
+                assert config.api.base_url == "https://env.example.com"
 
     def test_gantt_config_defaults(self):
         """Test GanttConfig default values."""

@@ -22,6 +22,7 @@ class TestMcpConfig:
         assert config.api.host == "127.0.0.1"
         assert config.api.port == 8000
         assert config.api.api_key is None
+        assert config.api.base_url is None
         assert config.server.name == "taskdog"
         assert config.server.log_level == "INFO"
 
@@ -130,6 +131,52 @@ port = 5000
                 assert config.api.host == "127.0.0.1"  # default
                 assert config.api.port == 5000  # from file
                 assert config.server.name == "taskdog"  # default
+
+
+class TestMcpConfigBaseUrl:
+    """Test the optional base_url setting."""
+
+    def test_load_base_url_from_file(self) -> None:
+        """Test loading base_url from the [api] section."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "mcp.toml"
+            config_path.write_text("""
+[api]
+base_url = "https://tasks.example.com"
+""")
+
+            with patch(
+                "taskdog_mcp.config.mcp_config_manager.XDGDirectories.get_config_home"
+            ) as mock_config_home:
+                mock_config_home.return_value = Path(tmpdir)
+
+                config = load_mcp_config()
+
+                assert config.api.base_url == "https://tasks.example.com"
+
+    def test_env_var_overrides_base_url(self) -> None:
+        """Test TASKDOG_API_BASE_URL overrides the file setting."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "mcp.toml"
+            config_path.write_text("""
+[api]
+base_url = "https://file.example.com"
+""")
+
+            with (
+                patch(
+                    "taskdog_mcp.config.mcp_config_manager.XDGDirectories.get_config_home"
+                ) as mock_config_home,
+                patch.dict(
+                    "os.environ",
+                    {"TASKDOG_API_BASE_URL": "https://env.example.com"},
+                ),
+            ):
+                mock_config_home.return_value = Path(tmpdir)
+
+                config = load_mcp_config()
+
+                assert config.api.base_url == "https://env.example.com"
 
 
 class TestMcpConfigEnvVars:

@@ -28,6 +28,7 @@ Create `~/.config/taskdog/mcp.toml`:
 host = "127.0.0.1"
 port = 8000
 api_key = ""  # Optional, for authenticated servers
+# base_url = "https://tasks.example.com"  # Overrides host/port (HTTPS, reverse proxy)
 
 [server]
 name = "taskdog"
@@ -39,6 +40,7 @@ Environment variables override config file:
 - `TASKDOG_API_HOST`
 - `TASKDOG_API_PORT`
 - `TASKDOG_API_KEY`
+- `TASKDOG_API_BASE_URL`
 - `TASKDOG_MCP_NAME`
 - `TASKDOG_MCP_LOG_LEVEL`
 

@@ -1,5 +1,7 @@
 """Tests for MCP server creation."""
 
+from unittest.mock import patch
+
 from taskdog_mcp.config.mcp_config_manager import (
     McpApiConfig,
     McpConfig,
@@ -32,6 +34,34 @@ class TestCreateMcpServer:
 
         assert mcp is not None
         assert mcp.name == "custom-server"
+
+    def test_client_uses_host_and_port_when_base_url_unset(self) -> None:
+        """Test the API URL falls back to http://host:port."""
+        from taskdog_mcp.server import create_mcp_server
+
+        config = McpConfig(api=McpApiConfig(host="custom-host", port=9999))
+
+        with patch("taskdog_mcp.server.TaskdogApiClient") as mock_client:
+            create_mcp_server(config)
+
+        mock_client.assert_called_once_with("http://custom-host:9999", api_key=None)
+
+    def test_client_uses_base_url_when_set(self) -> None:
+        """Test base_url takes precedence over host/port."""
+        from taskdog_mcp.server import create_mcp_server
+
+        config = McpConfig(
+            api=McpApiConfig(
+                host="custom-host",
+                port=9999,
+                base_url="https://tasks.example.com",
+            )
+        )
+
+        with patch("taskdog_mcp.server.TaskdogApiClient") as mock_client:
+            create_mcp_server(config)
+
+        mock_client.assert_called_once_with("https://tasks.example.com", api_key=None)
 
     def test_server_has_registered_tools(self) -> None:
         """Test server has tools registered."""

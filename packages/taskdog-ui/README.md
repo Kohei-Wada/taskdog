@@ -73,6 +73,7 @@ Edit `~/.config/taskdog/cli.toml`:
 enabled = true
 host = "127.0.0.1"
 port = 8000
+# base_url = "https://tasks.example.com"  # Overrides host/port (HTTPS, reverse proxy)
 ```
 
 Or set environment variables:
@@ -80,6 +81,7 @@ Or set environment variables:
 ```bash
 export TASKDOG_API_HOST=127.0.0.1
 export TASKDOG_API_PORT=8000
+# export TASKDOG_API_BASE_URL=https://tasks.example.com
 ```
 
 ### 4. Verify Connection

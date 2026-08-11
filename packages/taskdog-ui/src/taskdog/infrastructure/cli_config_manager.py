@@ -51,11 +51,15 @@ class CliApiConfig:
         host: API server hostname
         port: API server port
         api_key: API key for authentication (used with reverse proxies like Kong)
+        base_url: Full API base URL (e.g. "https://tasks.example.com").
+            Takes precedence over host/port; required for HTTPS endpoints or
+            reverse proxies serving the API under a path prefix.
     """
 
     host: str = "127.0.0.1"
     port: int = 8000
     api_key: str | None = None
+    base_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -133,6 +137,7 @@ def load_cli_config() -> CliConfig:
         TASKDOG_API_HOST: API server hostname
         TASKDOG_API_PORT: API server port
         TASKDOG_API_KEY: API key for authentication
+        TASKDOG_API_BASE_URL: Full API base URL (overrides host/port)
         TASKDOG_INPUT_DEADLINE_TIME: Default time for deadline input
         TASKDOG_INPUT_PLANNED_START_TIME: Default time for planned_start input
         TASKDOG_INPUT_PLANNED_END_TIME: Default time for planned_end input
@@ -195,6 +200,11 @@ def load_cli_config() -> CliConfig:
             api_key=ConfigLoader.get_env(
                 "API_KEY",
                 api_data.get("api_key"),
+                str,
+            ),
+            base_url=ConfigLoader.get_env(
+                "API_BASE_URL",
+                api_data.get("base_url"),
                 str,
             ),
         ),
