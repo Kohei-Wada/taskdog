@@ -1,7 +1,7 @@
 # Maintainer: Kohei Wada <program3152019@gmail.com>
 pkgname=taskdog
 _pkgname=taskdog
-pkgver=0.26.0
+pkgver=0.27.0
 pkgrel=1
 pkgdesc="Task management system with CLI/TUI and a REST API server (GTD, time tracking, schedule optimization)"
 arch=('x86_64')
