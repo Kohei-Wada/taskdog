@@ -338,18 +338,6 @@ class Task:
         self.actual_end = None
         self.actual_duration = None
 
-    def reopen(self) -> None:
-        """Reopen a finished task back to PENDING.
-
-        Side effects:
-            - Changes status to PENDING
-            - Clears actual_start, actual_end, and actual_duration
-        """
-        self.status = TaskStatus.PENDING
-        self.actual_start = None
-        self.actual_end = None
-        self.actual_duration = None
-
     def fix_actual_times(
         self,
         actual_start: datetime | EllipsisType | None = ...,

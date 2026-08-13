@@ -64,6 +64,32 @@ class TestTaskStatusService:
         assert from_db.status == TaskStatus.COMPLETED
         assert from_db.actual_end is not None
 
+    def test_change_status_to_pending_clears_time_tracking(self):
+        """Test changing status to PENDING clears time tracking."""
+        task = self.repository.create(name="Test Task", priority=1)
+        task = self.service.change_status_with_tracking(
+            task, TaskStatus.IN_PROGRESS, self.repository
+        )
+
+        updated = self.service.change_status_with_tracking(
+            task, TaskStatus.PENDING, self.repository
+        )
+
+        assert updated.status == TaskStatus.PENDING
+        assert updated.actual_start is None
+        assert updated.actual_end is None
+        assert updated.actual_duration is None
+
+    def test_apply_status_change_does_not_persist(self):
+        """Test apply_status_change mutates the task without saving it."""
+        task = self.repository.create(name="Test Task", priority=1)
+
+        self.service.apply_status_change(task, TaskStatus.IN_PROGRESS)
+
+        assert task.status == TaskStatus.IN_PROGRESS
+        assert task.actual_start is not None
+        assert self.repository.get_by_id(task.id).status == TaskStatus.PENDING
+
     def test_change_status_to_canceled(self):
         """Test changing status to CANCELED records actual_end."""
         # Create a task and start it
