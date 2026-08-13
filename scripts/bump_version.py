@@ -16,8 +16,10 @@ import tomllib
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).parent.parent
+PKGBUILD = ROOT_DIR / "contrib" / "aur" / "PKGBUILD"
 
 VERSION_PATTERN = re.compile(r'^version\s*=\s*"(\d+\.\d+\.\d+)"', re.MULTILINE)
+PKGVER_PATTERN = re.compile(r"^pkgver=(\d+\.\d+\.\d+)$", re.MULTILINE)
 DEPENDENCY_PATTERN = re.compile(
     r"(taskdog-(?:core|client|server|ui|mcp))==(\d+\.\d+\.\d+)"
 )
@@ -83,6 +85,35 @@ def update_pyproject_file(filepath: Path, new_version: str, dry_run: bool) -> li
     return changes
 
 
+def update_pkgbuild(new_version: str, dry_run: bool) -> list[str]:
+    """Update pkgver in the AUR PKGBUILD.
+
+    sha256sums is left as SKIP: the release tarball does not exist yet at bump
+    time, and the AUR publish step regenerates the sums with updpkgsums.
+
+    Returns list of changes made.
+    """
+    if not PKGBUILD.exists():
+        return []
+
+    changes = []
+    content = PKGBUILD.read_text()
+    original_content = content
+
+    def replace_pkgver(match: re.Match[str]) -> str:
+        old_version = match.group(1)
+        if old_version != new_version:
+            changes.append(f"  pkgver: {old_version} -> {new_version}")
+        return f"pkgver={new_version}"
+
+    content = PKGVER_PATTERN.sub(replace_pkgver, content)
+
+    if content != original_content and not dry_run:
+        PKGBUILD.write_text(content)
+
+    return changes
+
+
 def verify_no_old_versions(old_version: str) -> list[str]:
     """Verify no old version references remain after update.
 
@@ -103,6 +134,10 @@ def verify_no_old_versions(old_version: str) -> list[str]:
         problems.extend(
             f"{relative_path}: {match} still present" for match in old_dep_matches
         )
+
+    if PKGBUILD.exists() and f"pkgver={old_version}" in PKGBUILD.read_text():
+        relative_path = PKGBUILD.relative_to(ROOT_DIR)
+        problems.append(f"{relative_path}: pkgver={old_version} still present")
 
     return problems
 
@@ -150,6 +185,8 @@ def git_commit_and_tag(new_version: str, pyproject_files: list[Path]) -> int:
     tag = f"v{new_version}"
     paths = [str(f.relative_to(ROOT_DIR)) for f in pyproject_files]
     paths.append("uv.lock")
+    if PKGBUILD.exists():
+        paths.append(str(PKGBUILD.relative_to(ROOT_DIR)))
 
     def run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
         return subprocess.run(cmd, cwd=ROOT_DIR, capture_output=True, text=True)
@@ -217,6 +254,14 @@ def bump_version(new_version: str, dry_run: bool, no_git: bool) -> int:
                 print(change)
             print()
             total_changes += len(changes)
+
+    pkgbuild_changes = update_pkgbuild(new_version, dry_run)
+    if pkgbuild_changes:
+        print(f"{PKGBUILD.relative_to(ROOT_DIR)}:")
+        for change in pkgbuild_changes:
+            print(change)
+        print()
+        total_changes += len(pkgbuild_changes)
 
     if total_changes == 0:
         print("No changes needed - already at target version.")
