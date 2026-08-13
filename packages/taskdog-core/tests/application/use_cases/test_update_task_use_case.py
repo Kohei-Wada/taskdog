@@ -98,6 +98,24 @@ class TestUpdateTaskUseCase:
         # Verify time tracking was triggered
         assert result.task.actual_start is not None
 
+    def test_execute_update_status_to_pending_clears_time_tracking(self):
+        """Test updating status to PENDING clears time tracking like pause does."""
+        task = self.repository.create(
+            name="Test Task", priority=1, status=TaskStatus.PENDING
+        )
+        self.use_case.execute(
+            UpdateTaskInput(task_id=task.id, status=TaskStatus.IN_PROGRESS)
+        )
+
+        result = self.use_case.execute(
+            UpdateTaskInput(task_id=task.id, status=TaskStatus.PENDING)
+        )
+
+        assert result.task.status == TaskStatus.PENDING
+        assert result.task.actual_start is None
+        assert result.task.actual_end is None
+        assert result.task.actual_duration is None
+
     def test_execute_update_multiple_fields(self):
         """Test updating multiple fields at once."""
         task = self.repository.create(name="Test Task", priority=1)

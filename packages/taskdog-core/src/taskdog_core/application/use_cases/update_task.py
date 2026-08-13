@@ -1,17 +1,17 @@
 """Use case for updating a task."""
 
 from dataclasses import replace
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from taskdog_core.application.dto.update_task_input import UpdateTaskInput
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 from taskdog_core.application.queries.workload._strategies import ActualScheduleStrategy
+from taskdog_core.application.services.task_status_service import TaskStatusService
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.application.validators.validator_registry import (
     TaskFieldValidatorRegistry,
 )
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 if TYPE_CHECKING:
@@ -39,6 +39,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, TaskUpdateOutput]):
         """
         self.repository = repository
         self.validator_registry = TaskFieldValidatorRegistry(repository)
+        self.status_service = TaskStatusService()
         self._strategy = ActualScheduleStrategy(holiday_checker=holiday_checker)
 
     def _update_status(
@@ -58,17 +59,9 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, TaskUpdateOutput]):
             # Validate status transition
             self.validator_registry.validate_field("status", input_dto.status, task)
 
-            # Use Task entity methods for status changes (encapsulation)
-            timestamp = datetime.now()
-            if input_dto.status == TaskStatus.IN_PROGRESS:
-                task.start(timestamp)
-            elif input_dto.status == TaskStatus.COMPLETED:
-                task.complete(timestamp)
-            elif input_dto.status == TaskStatus.CANCELED:
-                task.cancel(timestamp)
-            elif input_dto.status == TaskStatus.PENDING:
-                # For update command, preserve timestamps by default (don't clear)
-                task.status = TaskStatus.PENDING
+            # Shared cascade with the lifecycle use cases; persistence is done
+            # once by execute() after all fields are updated.
+            self.status_service.apply_status_change(task, input_dto.status)
 
             updated_fields.append("status")
 

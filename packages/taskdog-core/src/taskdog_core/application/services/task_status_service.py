@@ -17,13 +17,38 @@ class TaskStatusService:
     and reduces code duplication in use cases.
     """
 
+    def apply_status_change(self, task: Task, new_status: TaskStatus) -> Task:
+        """Apply a status change with time tracking, without persisting.
+
+        Use this when the caller owns persistence (e.g. UpdateTaskUseCase,
+        which saves once after all fields are updated).
+
+        Args:
+            task: Task to update
+            new_status: New status to set
+
+        Returns:
+            The same task instance, with status and timestamps updated
+        """
+        # Update status via Task entity methods (encapsulation)
+        timestamp = datetime.now()
+
+        if new_status == TaskStatus.IN_PROGRESS:
+            task.start(timestamp)
+        elif new_status == TaskStatus.COMPLETED:
+            task.complete(timestamp)
+        elif new_status == TaskStatus.CANCELED:
+            task.cancel(timestamp)
+        elif new_status == TaskStatus.PENDING:
+            task.pause()
+
+        return task
+
     def change_status_with_tracking(
         self,
         task: Task,
         new_status: TaskStatus,
         repository: TaskRepository,
-        *,
-        clear_timestamps: bool = True,
     ) -> Task:
         """Change task status with automatic time tracking and persistence.
 
@@ -35,8 +60,6 @@ class TaskStatusService:
             task: Task to update
             new_status: New status to set
             repository: Repository for persisting changes
-            clear_timestamps: Whether to clear timestamps when moving to PENDING
-                              (True for pause, False for direct status change)
 
         Returns:
             Updated task with new status
@@ -50,23 +73,7 @@ class TaskStatusService:
             >>> assert updated.status == TaskStatus.IN_PROGRESS
             >>> assert updated.actual_start is not None
         """
-        # Update status via Task entity methods (encapsulation)
-        timestamp = datetime.now()
-
-        if new_status == TaskStatus.IN_PROGRESS:
-            task.start(timestamp)
-        elif new_status == TaskStatus.COMPLETED:
-            task.complete(timestamp)
-        elif new_status == TaskStatus.CANCELED:
-            task.cancel(timestamp)
-        elif new_status == TaskStatus.PENDING:
-            # For PENDING, use pause (clears timestamps) or reopen based on context
-            if clear_timestamps:
-                task.pause()
-            else:
-                task.reopen()
-
-        # Persist changes
+        self.apply_status_change(task, new_status)
         repository.save(task)
 
         return task
