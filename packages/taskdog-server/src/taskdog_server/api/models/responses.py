@@ -38,6 +38,18 @@ class TaskFieldsBase(BaseModel):
     tags: list[str] = Field(default_factory=list)
     is_fixed: bool = False
     is_archived: bool = False
+    daily_allocations: dict[str, float] = Field(default_factory=dict)
+
+    @field_validator("daily_allocations", mode="before")
+    @classmethod
+    def _isoformat_allocation_keys(cls, value: Any) -> Any:
+        """Convert date keys (from the DTO) to ISO format strings."""
+        if isinstance(value, dict):
+            return {
+                key.isoformat() if isinstance(key, date) else key: hours
+                for key, hours in value.items()
+            }
+        return value
 
 
 class TaskOperationResponse(TaskFieldsBase):
@@ -83,22 +95,10 @@ class TaskReadResponseBase(TaskFieldsBase):
 
     model_config = ConfigDict(frozen=True)
 
-    daily_allocations: dict[str, float] = Field(default_factory=dict)
     is_finished: bool = False
     has_notes: bool = False
     created_at: datetime
     updated_at: datetime
-
-    @field_validator("daily_allocations", mode="before")
-    @classmethod
-    def _isoformat_allocation_keys(cls, value: Any) -> Any:
-        """Convert date keys (from the DTO) to ISO format strings."""
-        if isinstance(value, dict):
-            return {
-                key.isoformat() if isinstance(key, date) else key: hours
-                for key, hours in value.items()
-            }
-        return value
 
 
 class TaskResponse(TaskReadResponseBase):
