@@ -126,6 +126,45 @@ class TestTaskOperationResponse:
         assert response.tags == dto.tags
         assert response.actual_duration_hours == dto.actual_duration_hours
 
+    def test_from_dto_preserves_daily_allocations(self):
+        """Test from_dto keeps daily_allocations instead of dropping them."""
+        # Arrange
+        dto = TaskOperationOutput(
+            id=1,
+            name="Test Task",
+            status=TaskStatus.PENDING,
+            priority=2,
+            daily_allocations={"2026-01-15": 4.0, "2026-01-16": 2.5},
+        )
+
+        # Act
+        response = TaskOperationResponse.from_dto(dto)
+
+        # Assert
+        assert response.daily_allocations == {"2026-01-15": 4.0, "2026-01-16": 2.5}
+
+    def test_from_dto_converts_date_keys_in_daily_allocations(self):
+        """Test date keys are normalized to ISO strings like read responses."""
+        # Act
+        response = TaskOperationResponse.model_validate(
+            {
+                "id": 1,
+                "name": "Test Task",
+                "status": TaskStatus.PENDING,
+                "priority": 2,
+                "daily_allocations": {date(2026, 1, 15): 4.0},
+            }
+        )
+
+        # Assert
+        assert response.daily_allocations == {"2026-01-15": 4.0}
+
+    def test_fields_match_task_operation_output_dto(self):
+        """Test the response model does not drift from the DTO it mirrors."""
+        assert set(TaskOperationResponse.model_fields) == set(
+            TaskOperationOutput.model_fields
+        )
+
 
 class TestUpdateTaskResponse:
     """Test cases for UpdateTaskResponse model."""
