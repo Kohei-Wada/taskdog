@@ -18,7 +18,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "alembic>=1.19.0",
+    "alembic>=1.19.1",
     "holidays>=0.101",
     "pydantic>=2.10.0",
     "sqlalchemy>=2.0.0",
