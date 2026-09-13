@@ -4,13 +4,14 @@ from taskdog_client.taskdog_api_client import TaskdogApiClient
 
 
 def test_executable_ranking_end_to_end(client: TaskdogApiClient) -> None:
-    from datetime import datetime
+    from datetime import datetime, timedelta
 
+    now = datetime.now()
     pending_soon = client.create_task(
-        name="pending soon", deadline=datetime(2026, 7, 20, 18, 0)
+        name="pending soon", deadline=now + timedelta(days=7)
     )
     pending_later = client.create_task(
-        name="pending later", deadline=datetime(2026, 7, 30, 18, 0)
+        name="pending later", deadline=now + timedelta(days=17)
     )
     started = client.create_task(name="started")
     client.start_task(started.id)

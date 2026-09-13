@@ -7,6 +7,10 @@ from taskdog_core.application.dto.create_task_input import CreateTaskInput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.queries.workload._strategies import ActualScheduleStrategy
 from taskdog_core.application.use_cases.base import UseCase
+from taskdog_core.application.validators.validator_registry import (
+    TaskFieldValidatorRegistry,
+)
+from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 if TYPE_CHECKING:
@@ -29,6 +33,7 @@ class CreateTaskUseCase(UseCase[CreateTaskInput, TaskOperationOutput]):
                            from daily allocation calculations
         """
         self.repository = repository
+        self.validator_registry = TaskFieldValidatorRegistry(repository)
         self._strategy = ActualScheduleStrategy(holiday_checker=holiday_checker)
 
     def execute(self, input_dto: CreateTaskInput) -> TaskOperationOutput:
@@ -45,6 +50,8 @@ class CreateTaskUseCase(UseCase[CreateTaskInput, TaskOperationOutput]):
             daily_allocations is automatically calculated using ActualScheduleStrategy.
             This enables SQL aggregation for workload calculations.
         """
+        self._validate_fields(input_dto)
+
         # Calculate daily_allocations if all required fields are present
         daily_allocations = self._calculate_daily_allocations(input_dto)
 
@@ -62,6 +69,28 @@ class CreateTaskUseCase(UseCase[CreateTaskInput, TaskOperationOutput]):
         )
 
         return TaskOperationOutput.from_task(task)
+
+    def _validate_fields(self, input_dto: CreateTaskInput) -> None:
+        """Run the same field validators UpdateTaskUseCase enforces.
+
+        Args:
+            input_dto: Task creation input data
+
+        Raises:
+            TaskValidationError: If any field fails validation
+        """
+        candidate = Task(name=input_dto.name, is_fixed=input_dto.is_fixed)
+
+        for field_name in (
+            "priority",
+            "planned_start",
+            "planned_end",
+            "deadline",
+            "estimated_duration",
+        ):
+            self.validator_registry.validate_field(
+                field_name, getattr(input_dto, field_name), candidate
+            )
 
     def _calculate_daily_allocations(
         self, input_dto: CreateTaskInput
