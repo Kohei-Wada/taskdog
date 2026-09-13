@@ -35,11 +35,16 @@ API connection settings for connecting to the taskdog-server.
 
 ```toml
 [api]
-host = "127.0.0.1"  # API server hostname (default: "127.0.0.1")
-port = 8000          # API server port (default: 8000)
+base_url = "http://127.0.0.1:8000"  # Full API base URL (default: "http://127.0.0.1:8000")
 ```
 
+`base_url` accepts any HTTP(S) URL, including HTTPS endpoints and reverse proxies
+that serve the API under a path prefix (e.g. `https://tasks.example.com/taskdog`).
+
 **Note**: CLI/TUI always requires the API server to be running. There is no standalone mode.
+
+**Note**: `base_url` is where the *client* connects. It is unrelated to
+`taskdog-server --host/--port`, which set the *server's* bind address.
 
 ### [ui] Section
 
@@ -79,29 +84,28 @@ Environment variables have the highest priority and override settings from `cli.
 
 | Variable | Description | Default |
 | -------- | ----------- | ------- |
-| `TASKDOG_API_HOST` | API server hostname | `127.0.0.1` |
-| `TASKDOG_API_PORT` | API server port | `8000` |
+| `TASKDOG_API_BASE_URL` | Full API base URL | `http://127.0.0.1:8000` |
 | `TASKDOG_GANTT_MIN_DISPLAY_DAYS` | Minimum days in TUI Gantt chart | `56` |
 
 ### Examples
 
 ```bash
 # Connect to remote server
-export TASKDOG_API_HOST=192.168.1.100
-export TASKDOG_API_PORT=3000
+export TASKDOG_API_BASE_URL=http://192.168.1.100:3000
 taskdog list
 
 # Or inline
-TASKDOG_API_HOST=192.168.1.100 taskdog list
+TASKDOG_API_BASE_URL=http://192.168.1.100:3000 taskdog list
 ```
 
 ## Priority Order
 
 Configuration values are loaded with the following priority (highest to lowest):
 
-1. **Environment variables** (`TASKDOG_API_HOST`, `TASKDOG_API_PORT`)
-2. **cli.toml file** (`~/.config/taskdog/cli.toml`)
-3. **Defaults** (host: `127.0.0.1`, port: `8000`)
+1. **CLI options** (`--base-url`, `--api-key`)
+2. **Environment variables** (`TASKDOG_API_BASE_URL`)
+3. **cli.toml file** (`~/.config/taskdog/cli.toml`)
+4. **Defaults** (base_url: `http://127.0.0.1:8000`)
 
 ## Minimal Example
 
@@ -128,14 +132,13 @@ Create `~/.config/taskdog/cli.toml`:
 
 ```toml
 [api]
-host = "127.0.0.1"
-port = 3000
+base_url = "http://127.0.0.1:3000"
 ```
 
 Or use environment variables:
 
 ```bash
-export TASKDOG_API_PORT=3000
+export TASKDOG_API_BASE_URL=http://127.0.0.1:3000
 taskdog list
 ```
 
@@ -145,8 +148,7 @@ To connect CLI/TUI to a remote server:
 
 ```toml
 [api]
-host = "192.168.1.100"
-port = 8000
+base_url = "http://192.168.1.100:8000"
 ```
 
 **Security Note**: For production use, configure API key authentication in `server.toml`. See [Authentication](../../docs/API.md#authentication) for details.
@@ -230,14 +232,13 @@ The separation means:
 2. Common mistakes:
    - Missing quotes around strings
    - Wrong section names (`[api]` not `[API]`)
-   - Invalid port (must be integer)
+   - Missing scheme in `base_url` (must start with `http://` or `https://`)
 
 3. Start fresh with minimal config:
 
    ```toml
    [api]
-   host = "127.0.0.1"
-   port = 8000
+   base_url = "http://127.0.0.1:8000"
    ```
 
 ## See Also

@@ -14,13 +14,11 @@
 # CLI/TUI always requires the API server to be running.
 
 [api]
-# API server hostname (default: "127.0.0.1")
-# Use "127.0.0.1" for localhost, or IP address for remote server
-host = "127.0.0.1"
-
-# API server port (default: 8000)
-# Must match the port used by taskdog-server
-port = 8000
+# Full API base URL (default: "http://127.0.0.1:8000")
+# Must point at a running taskdog-server. Any HTTP(S) URL works, including a
+# reverse proxy serving the API under a path prefix.
+# Environment variable: TASKDOG_API_BASE_URL
+base_url = "http://127.0.0.1:8000"
 
 # API key for authentication (REQUIRED when auth is enabled on server)
 # This key must match one configured in server.toml's [[auth.api_keys]] section.
@@ -29,9 +27,13 @@ port = 8000
 api_key = "sk-your-api-key-here"
 
 # Examples:
-# - Default local server: host = "127.0.0.1", port = 8000
-# - Custom local port: host = "127.0.0.1", port = 3000
-# - Remote server: host = "192.168.1.100", port = 8000
+# - Default local server: base_url = "http://127.0.0.1:8000"
+# - Custom local port:    base_url = "http://127.0.0.1:3000"
+# - Remote server:        base_url = "http://192.168.1.100:8000"
+# - Behind a proxy:       base_url = "https://tasks.example.com/taskdog"
+#
+# Note: this is the client's connection URL. The server's own bind address is
+# set with taskdog-server --host/--port and is unrelated to this setting.
 
 # =============================================================================
 # UI Appearance Settings
@@ -171,8 +173,7 @@ workload_moderate_hours = 8.0
 # Environment variables override settings in this file:
 #
 # API Connection:
-# - TASKDOG_API_HOST: API server hostname
-# - TASKDOG_API_PORT: API server port
+# - TASKDOG_API_BASE_URL: Full API base URL
 # - TASKDOG_API_KEY: API key for authentication
 #
 # Input Defaults:
@@ -187,8 +188,7 @@ workload_moderate_hours = 8.0
 #
 # Examples:
 #
-#   export TASKDOG_API_HOST=192.168.1.100
-#   export TASKDOG_API_PORT=3000
+#   export TASKDOG_API_BASE_URL=http://192.168.1.100:3000
 #   export TASKDOG_API_KEY=sk-your-api-key
 #   export TASKDOG_INPUT_DEADLINE_TIME=17:00
 #   taskdog list

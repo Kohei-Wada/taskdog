@@ -112,8 +112,7 @@ Edit `~/.config/taskdog/cli.toml`:
 
 ```toml
 [api]
-host = "127.0.0.1"
-port = 8000
+base_url = "http://127.0.0.1:8000"
 ```
 
 **Method B: Environment variable**

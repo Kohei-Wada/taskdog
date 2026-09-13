@@ -9,6 +9,7 @@ from taskdog_core.shared.config_loader import ConfigLoader
 from taskdog_core.shared.xdg_utils import XDGDirectories
 
 MCP_CONFIG_FILENAME = "mcp.toml"
+DEFAULT_API_BASE_URL = "http://127.0.0.1:8000"
 
 
 @dataclass(frozen=True)
@@ -16,18 +17,14 @@ class McpApiConfig:
     """API connection configuration for MCP server.
 
     Attributes:
-        host: API server hostname
-        port: API server port
         api_key: API key for authentication
         base_url: Full API base URL (e.g. "https://tasks.example.com").
-            Takes precedence over host/port; required for HTTPS endpoints or
-            reverse proxies serving the API under a path prefix.
+            Supports HTTPS endpoints and reverse proxies serving the API under
+            a path prefix.
     """
 
-    host: str = "127.0.0.1"
-    port: int = 8000
     api_key: str | None = None
-    base_url: str | None = None
+    base_url: str = DEFAULT_API_BASE_URL
 
 
 @dataclass(frozen=True)
@@ -60,10 +57,8 @@ def load_mcp_config() -> McpConfig:
     """Load MCP configuration with priority: env vars > mcp.toml > defaults.
 
     Environment variables:
-        TASKDOG_API_HOST: API server hostname
-        TASKDOG_API_PORT: API server port
         TASKDOG_API_KEY: API key for authentication
-        TASKDOG_API_BASE_URL: Full API base URL (overrides host/port)
+        TASKDOG_API_BASE_URL: Full API base URL
         TASKDOG_MCP_NAME: MCP server name
         TASKDOG_MCP_LOG_LEVEL: Logging level
 
@@ -85,17 +80,6 @@ def load_mcp_config() -> McpConfig:
     # Build config with env var overrides
     return McpConfig(
         api=McpApiConfig(
-            host=ConfigLoader.get_env(
-                "API_HOST",
-                api_data.get("host", "127.0.0.1"),
-                str,
-            ),
-            port=ConfigLoader.get_env(
-                "API_PORT",
-                api_data.get("port", 8000),
-                int,
-                log_errors=False,
-            ),
             api_key=ConfigLoader.get_env(
                 "API_KEY",
                 api_data.get("api_key"),
@@ -103,7 +87,7 @@ def load_mcp_config() -> McpConfig:
             ),
             base_url=ConfigLoader.get_env(
                 "API_BASE_URL",
-                api_data.get("base_url"),
+                api_data.get("base_url", DEFAULT_API_BASE_URL),
                 str,
             ),
         ),

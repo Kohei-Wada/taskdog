@@ -26,7 +26,7 @@ class TestCreateMcpServer:
         from taskdog_mcp.server import create_mcp_server
 
         config = McpConfig(
-            api=McpApiConfig(host="custom-host", port=9999),
+            api=McpApiConfig(base_url="http://custom-host:9999"),
             server=McpServerConfig(name="custom-server"),
         )
 
@@ -35,28 +35,20 @@ class TestCreateMcpServer:
         assert mcp is not None
         assert mcp.name == "custom-server"
 
-    def test_client_uses_host_and_port_when_base_url_unset(self) -> None:
-        """Test the API URL falls back to http://host:port."""
+    def test_client_uses_default_base_url(self) -> None:
+        """Test the API URL defaults to the local server."""
         from taskdog_mcp.server import create_mcp_server
-
-        config = McpConfig(api=McpApiConfig(host="custom-host", port=9999))
 
         with patch("taskdog_mcp.server.TaskdogApiClient") as mock_client:
-            create_mcp_server(config)
+            create_mcp_server(McpConfig())
 
-        mock_client.assert_called_once_with("http://custom-host:9999", api_key=None)
+        mock_client.assert_called_once_with("http://127.0.0.1:8000", api_key=None)
 
-    def test_client_uses_base_url_when_set(self) -> None:
-        """Test base_url takes precedence over host/port."""
+    def test_client_uses_configured_base_url(self) -> None:
+        """Test the configured base_url is passed to the client."""
         from taskdog_mcp.server import create_mcp_server
 
-        config = McpConfig(
-            api=McpApiConfig(
-                host="custom-host",
-                port=9999,
-                base_url="https://tasks.example.com",
-            )
-        )
+        config = McpConfig(api=McpApiConfig(base_url="https://tasks.example.com"))
 
         with patch("taskdog_mcp.server.TaskdogApiClient") as mock_client:
             create_mcp_server(config)

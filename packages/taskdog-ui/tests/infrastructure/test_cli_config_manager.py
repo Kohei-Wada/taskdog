@@ -23,8 +23,6 @@ class TestCliConfig:
         """Set up and clean up environment variables."""
         # Store original env vars
         original_env = {
-            "TASKDOG_API_HOST": os.environ.get("TASKDOG_API_HOST"),
-            "TASKDOG_API_PORT": os.environ.get("TASKDOG_API_PORT"),
             "TASKDOG_API_BASE_URL": os.environ.get("TASKDOG_API_BASE_URL"),
             "TASKDOG_GANTT_WORKLOAD_COMFORTABLE_HOURS": os.environ.get(
                 "TASKDOG_GANTT_WORKLOAD_COMFORTABLE_HOURS"
@@ -35,8 +33,6 @@ class TestCliConfig:
         }
         # Clear env vars for clean tests
         for key in [
-            "TASKDOG_API_HOST",
-            "TASKDOG_API_PORT",
             "TASKDOG_API_BASE_URL",
             "TASKDOG_GANTT_WORKLOAD_COMFORTABLE_HOURS",
             "TASKDOG_GANTT_WORKLOAD_MODERATE_HOURS",
@@ -55,8 +51,7 @@ class TestCliConfig:
     def test_default_config(self):
         """Test default config values."""
         config = CliConfig()
-        assert config.api.host == "127.0.0.1"
-        assert config.api.port == 8000
+        assert config.api.base_url == "http://127.0.0.1:8000"
         assert config.ui.theme == "textual-dark"
         assert config.keybindings == {}
 
@@ -78,8 +73,7 @@ class TestCliConfig:
             config_path.write_text(
                 """
 [api]
-host = "192.168.1.100"
-port = 3000
+base_url = "http://192.168.1.100:3000"
 
 [ui]
 theme = "nord"
@@ -91,8 +85,7 @@ theme = "nord"
                 return_value=config_dir,
             ):
                 config = load_cli_config()
-                assert config.api.host == "192.168.1.100"
-                assert config.api.port == 3000
+                assert config.api.base_url == "http://192.168.1.100:3000"
                 assert config.ui.theme == "nord"
 
     def test_load_config_with_missing_ui_section(self):
@@ -103,8 +96,7 @@ theme = "nord"
             config_path.write_text(
                 """
 [api]
-host = "localhost"
-port = 9000
+base_url = "http://localhost:9000"
 """
             )
 
@@ -113,8 +105,7 @@ port = 9000
                 return_value=config_dir,
             ):
                 config = load_cli_config()
-                assert config.api.host == "localhost"
-                assert config.api.port == 9000
+                assert config.api.base_url == "http://localhost:9000"
                 # UI should use defaults
                 assert config.ui.theme == "textual-dark"
 
@@ -148,8 +139,7 @@ theme = "gruvbox"
                 return_value=config_dir,
             ):
                 config = load_cli_config()
-                assert config.api.host == "127.0.0.1"
-                assert config.api.port == 8000
+                assert config.api.base_url == "http://127.0.0.1:8000"
                 assert config.ui.theme == "textual-dark"
 
     def test_env_vars_override_api_only(self):
@@ -160,8 +150,7 @@ theme = "gruvbox"
             config_path.write_text(
                 """
 [api]
-host = "localhost"
-port = 9000
+base_url = "http://localhost:9000"
 
 [ui]
 theme = "nord"
@@ -169,8 +158,7 @@ theme = "nord"
             )
 
             # Set env vars for API only
-            os.environ["TASKDOG_API_HOST"] = "192.168.1.200"
-            os.environ["TASKDOG_API_PORT"] = "4000"
+            os.environ["TASKDOG_API_BASE_URL"] = "http://192.168.1.200:4000"
 
             with patch(
                 "taskdog.infrastructure.cli_config_manager.XDGDirectories.get_config_home",
@@ -178,14 +166,13 @@ theme = "nord"
             ):
                 config = load_cli_config()
                 # API settings should be overridden by env vars
-                assert config.api.host == "192.168.1.200"
-                assert config.api.port == 4000
+                assert config.api.base_url == "http://192.168.1.200:4000"
                 # UI settings should come from file (no env var override)
                 assert config.ui.theme == "nord"
 
-    def test_base_url_defaults_to_none(self):
-        """Test base_url is unset by default."""
-        assert CliConfig().api.base_url is None
+    def test_base_url_default(self):
+        """Test base_url falls back to the local server."""
+        assert CliConfig().api.base_url == "http://127.0.0.1:8000"
 
     def test_load_config_with_base_url(self):
         """Test loading base_url from the [api] section."""
@@ -275,7 +262,7 @@ workload_moderate_hours = 6.0
             config_path.write_text(
                 """
 [api]
-host = "localhost"
+base_url = "http://localhost:8000"
 """
             )
 

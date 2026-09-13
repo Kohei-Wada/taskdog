@@ -24,10 +24,10 @@ Five packages under `packages/`:
 - **Config**: optional TOML at `$XDG_CONFIG_HOME/taskdog/` (fallback `~/.config/taskdog/`):
   - `core.toml` — `[time]`, `[region]`, `[storage]` (default_start/end_time, country, database_url, backend)
   - `server.toml` — `[auth]` (enabled, api_keys)
-  - `cli.toml` — `[api]`, `[ui]`, `[notes]`, `[keybindings]` (host, port, api_key, theme)
-  - `mcp.toml` — `[api]` (host, port, api_key)
+  - `cli.toml` — `[api]`, `[ui]`, `[notes]`, `[keybindings]` (base_url, api_key, theme)
+  - `mcp.toml` — `[api]` (base_url, api_key)
 - **Priority**: Environment vars > CLI args > Config file > Defaults.
-- Server host/port via `taskdog-server --host --port`. CLI/TUI connection via `cli.toml` or `TASKDOG_API_HOST` / `TASKDOG_API_PORT`. Access config via `ctx.obj.config` (CLI) or `context.config` (TUI).
+- Server bind address via `taskdog-server --host --port`. CLI/TUI/MCP connection via `base_url` in `cli.toml` / `mcp.toml`, `TASKDOG_API_BASE_URL`, or `taskdog --base-url` (clients have no host/port setting). Access config via `ctx.obj.config` (CLI) or `context.config` (TUI).
 
 ## Development Commands
 

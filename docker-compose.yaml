@@ -28,8 +28,7 @@ services:
       # CLI/TUI Settings (for docker exec usage)
       # ============================================
       # API connection (CLI inside container connects to localhost)
-      - TASKDOG_API_HOST=127.0.0.1
-      - TASKDOG_API_PORT=8000
+      - TASKDOG_API_BASE_URL=http://127.0.0.1:8000
       - TASKDOG_API_KEY=${TASKDOG_API_KEY:-}
     restart: unless-stopped
 
