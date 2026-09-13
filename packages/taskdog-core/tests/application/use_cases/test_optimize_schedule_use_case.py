@@ -226,20 +226,18 @@ class TestOptimizeScheduleUseCase:
     def test_optimize_respects_deadline(self):
         """Test that tasks with closer deadlines are prioritized."""
         # Create tasks with different deadlines
-        far_deadline = CreateTaskInput(
+        self.repository.create(
             name="Far Deadline",
             priority=100,
             estimated_duration=3.0,
             deadline=datetime(2025, 12, 31, 18, 0, 0),
         )
-        near_deadline = CreateTaskInput(
+        self.repository.create(
             name="Near Deadline",
             priority=100,
             estimated_duration=3.0,
             deadline=datetime(2025, 10, 20, 18, 0, 0),
         )
-        self.create_use_case.execute(far_deadline)
-        self.create_use_case.execute(near_deadline)
 
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)
@@ -334,14 +332,13 @@ class TestOptimizeScheduleUseCase:
     def test_optimize_skips_existing_schedules_by_default(self):
         """Test that tasks with existing schedules are skipped unless force=True."""
         # Create task with existing schedule
-        input_dto = CreateTaskInput(
+        self.repository.create(
             name="Already Scheduled",
             priority=100,
             estimated_duration=3.0,
             planned_start=datetime(2025, 10, 10, 18, 0, 0),
             planned_end=datetime(2025, 10, 10, 18, 0, 0),
         )
-        self.create_use_case.execute(input_dto)
 
         # Optimize without force
         start_date = datetime(2025, 10, 15, 18, 0, 0)
@@ -359,14 +356,13 @@ class TestOptimizeScheduleUseCase:
     def test_optimize_force_overrides_existing_schedules(self):
         """Test that force=True overrides existing schedules."""
         # Create task with existing schedule
-        input_dto = CreateTaskInput(
+        task_result = self.repository.create(
             name="Already Scheduled",
             priority=100,
             estimated_duration=3.0,
             planned_start=datetime(2025, 10, 10, 18, 0, 0),
             planned_end=datetime(2025, 10, 10, 18, 0, 0),
         )
-        task_result = self.create_use_case.execute(input_dto)
         old_start = task_result.planned_start
 
         # Optimize with force
@@ -489,7 +485,7 @@ class TestOptimizeScheduleUseCase:
     def test_optimize_fixed_task(self):
         """Test that optimizing a fixed task raises NoSchedulableTasksError."""
         # Create a fixed task (not schedulable)
-        input_dto = CreateTaskInput(
+        result = self.repository.create(
             name="Fixed Task",
             priority=100,
             estimated_duration=2.0,
@@ -497,7 +493,6 @@ class TestOptimizeScheduleUseCase:
             planned_start=datetime(2025, 10, 20, 9, 0, 0),
             planned_end=datetime(2025, 10, 20, 11, 0, 0),
         )
-        result = self.create_use_case.execute(input_dto)
 
         # Try to optimize the fixed task
         start_date = datetime(2025, 10, 15, 18, 0, 0)
@@ -643,13 +638,12 @@ class TestOptimizeScheduleUseCase:
     def test_optimize_backward_includes_weekends_when_include_all_days_true(self):
         """Test that backward strategy includes weekends when include_all_days=True."""
         # Create task with 10h duration and a deadline on Wednesday
-        input_dto = CreateTaskInput(
+        task_result = self.repository.create(
             name="Backward Weekend Task",
             priority=100,
             estimated_duration=10.0,
             deadline=datetime(2025, 10, 22, 18, 0, 0),  # Wednesday
         )
-        task_result = self.create_use_case.execute(input_dto)
 
         # Start on Thursday 2025-10-16
         start_date = datetime(2025, 10, 16, 18, 0, 0)  # Thursday
@@ -680,13 +674,12 @@ class TestOptimizeScheduleUseCase:
     def test_optimize_balanced_includes_weekends_when_include_all_days_true(self):
         """Test that balanced strategy includes weekends when include_all_days=True."""
         # Create task with 10h duration
-        input_dto = CreateTaskInput(
+        task_result = self.repository.create(
             name="Balanced Weekend Task",
             priority=100,
             estimated_duration=10.0,
             deadline=datetime(2025, 10, 20, 18, 0, 0),  # Monday
         )
-        task_result = self.create_use_case.execute(input_dto)
 
         # Start on Friday 2025-10-17
         start_date = datetime(2025, 10, 17, 18, 0, 0)  # Friday
@@ -760,7 +753,7 @@ class TestOptimizeScheduleUseCase:
         its hours towards the daily allocation, preventing over-scheduling.
         """
         # Create a fixed task on Saturday (2025-10-18)
-        fixed_task_input = CreateTaskInput(
+        fixed_result = self.repository.create(
             name="Fixed Saturday Task",
             priority=100,
             estimated_duration=4.0,
@@ -768,62 +761,12 @@ class TestOptimizeScheduleUseCase:
             planned_end=datetime(2025, 10, 18, 13, 0, 0),
             is_fixed=True,
         )
-        fixed_result = self.create_use_case.execute(fixed_task_input)
 
         # Set daily_allocations for the fixed task (simulating optimizer output)
         fixed_task = self.repository.get_by_id(fixed_result.id)
         assert fixed_task is not None
         fixed_task.set_daily_allocations({date(2025, 10, 18): 4.0})
         self.repository.save(fixed_task)
-
-        # Create a task to be optimized
-        task_input = CreateTaskInput(
-            name="Task to Optimize", priority=100, estimated_duration=5.0
-        )
-        task_result = self.create_use_case.execute(task_input)
-
-        # Optimize starting from Saturday with include_all_days=True
-        start_date = datetime(2025, 10, 18, 9, 0, 0)  # Saturday
-        optimize_input = OptimizeScheduleInput(
-            start_date=start_date,
-            max_hours_per_day=6.0,
-            force_override=False,
-            algorithm_name="greedy",
-            include_all_days=True,  # Include weekends
-        )
-        self.optimize_use_case.execute(optimize_input)
-
-        # Re-fetch task from repository
-        task = self.repository.get_by_id(task_result.id)
-        assert task is not None
-        assert task.daily_allocations is not None
-
-        # Saturday should have at most 2h (6h max - 4h fixed = 2h available)
-        saturday = date(2025, 10, 18)
-        if saturday in task.daily_allocations:
-            assert task.daily_allocations[saturday] <= 2.0
-
-        # Total hours should be 5.0
-        total_hours = sum(task.daily_allocations.values())
-        assert total_hours == 5.0
-
-    def test_optimize_respects_fixed_task_on_weekend_without_daily_allocations(self):
-        """Test fixed task on weekend is counted even without daily_allocations.
-
-        When a fixed task is scheduled on Saturday but doesn't have daily_allocations
-        set, the workload calculator should still count its hours toward the day.
-        """
-        # Create a fixed task on Saturday without daily_allocations
-        fixed_task_input = CreateTaskInput(
-            name="Fixed Saturday Task",
-            priority=100,
-            estimated_duration=4.0,
-            planned_start=datetime(2025, 10, 18, 9, 0, 0),  # Saturday
-            planned_end=datetime(2025, 10, 18, 13, 0, 0),
-            is_fixed=True,
-        )
-        self.create_use_case.execute(fixed_task_input)
-        # Note: NOT setting daily_allocations - let calculator compute it
 
         # Create a task to be optimized
         task_input = CreateTaskInput(

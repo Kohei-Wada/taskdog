@@ -4,9 +4,7 @@ from datetime import datetime
 
 import pytest
 
-from taskdog_core.application.dto.create_task_input import CreateTaskInput
 from taskdog_core.application.dto.optimize_schedule_input import OptimizeScheduleInput
-from taskdog_core.application.use_cases.create_task import CreateTaskUseCase
 from taskdog_core.application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from taskdog_core.domain.entities.task import Task
 
@@ -28,7 +26,6 @@ class BaseOptimizationStrategyTest:
     def setup(self, repository):
         """Set up test fixtures using repository from conftest."""
         self.repository = repository
-        self.create_use_case = CreateTaskUseCase(self.repository)
         self.optimize_use_case = OptimizeScheduleUseCase(self.repository)
 
     def create_task(
@@ -41,6 +38,10 @@ class BaseOptimizationStrategyTest:
     ) -> Task:
         """Helper to create a task and return the created task object.
 
+        Writes through the repository rather than CreateTaskUseCase so that the
+        fixed calendar dates these tests assert on are not rejected as past
+        dates by the use case's field validators.
+
         Args:
             name: Task name
             priority: Task priority (default: 100)
@@ -51,16 +52,13 @@ class BaseOptimizationStrategyTest:
         Returns:
             The created Task object
         """
-        input_dto = CreateTaskInput(
+        return self.repository.create(
             name=name,
             priority=priority,
             estimated_duration=estimated_duration,
             deadline=deadline,
             is_fixed=is_fixed,
         )
-        result = self.create_use_case.execute(input_dto)
-        # Return the actual Task entity from repository for test manipulation
-        return self.repository.get_by_id(result.id)  # type: ignore[return-value]
 
     def optimize_schedule(
         self,

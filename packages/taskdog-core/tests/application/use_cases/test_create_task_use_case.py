@@ -1,11 +1,23 @@
 """Tests for CreateTaskUseCase."""
 
-from datetime import datetime
+from datetime import datetime, time, timedelta
 
 import pytest
 
 from taskdog_core.application.dto.create_task_input import CreateTaskInput
 from taskdog_core.application.use_cases.create_task import CreateTaskUseCase
+from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
+
+
+def next_monday(hour: int = 9) -> datetime:
+    """Return the Monday of the coming week, so scheduling dates stay in the future."""
+    today = datetime.now().date()
+    return datetime.combine(today + timedelta(days=7 - today.weekday()), time(hour, 0))
+
+
+MONDAY = next_monday()
+FRIDAY = next_monday(17) + timedelta(days=4)
+NEXT_SATURDAY = next_monday(18) + timedelta(days=5)
 
 
 class TestCreateTaskUseCase:
@@ -58,9 +70,9 @@ class TestCreateTaskUseCase:
         input_dto = CreateTaskInput(
             name="Full Task",
             priority=3,
-            planned_start=datetime(2025, 1, 1, 9, 0, 0),
-            planned_end=datetime(2025, 1, 31, 17, 0, 0),
-            deadline=datetime(2025, 2, 1, 18, 0, 0),
+            planned_start=MONDAY,
+            planned_end=FRIDAY,
+            deadline=NEXT_SATURDAY,
             estimated_duration=10.5,
         )
 
@@ -68,9 +80,9 @@ class TestCreateTaskUseCase:
 
         assert result.name == "Full Task"
         assert result.priority == 3
-        assert result.planned_start == datetime(2025, 1, 1, 9, 0, 0)
-        assert result.planned_end == datetime(2025, 1, 31, 17, 0, 0)
-        assert result.deadline == datetime(2025, 2, 1, 18, 0, 0)
+        assert result.planned_start == MONDAY
+        assert result.planned_end == FRIDAY
+        assert result.deadline == NEXT_SATURDAY
         assert result.estimated_duration == 10.5
 
     def test_execute_with_none_optional_fields(self):
@@ -96,12 +108,11 @@ class TestCreateTaskUseCase:
     def test_execute_auto_calculates_daily_allocations(self):
         """Test that daily_allocations is auto-calculated when all required fields are set."""
         # Use a weekday-only period (Mon-Fri) for predictable calculation
-        # Mon 2025-01-20 to Fri 2025-01-24 = 5 weekdays
         input_dto = CreateTaskInput(
             name="Scheduled Task",
             priority=1,
-            planned_start=datetime(2025, 1, 20, 9, 0, 0),  # Monday
-            planned_end=datetime(2025, 1, 24, 17, 0, 0),  # Friday
+            planned_start=MONDAY,
+            planned_end=FRIDAY,
             estimated_duration=10.0,  # 10 hours = 2 hours per day
         )
 
@@ -125,8 +136,8 @@ class TestCreateTaskUseCase:
         input_dto = CreateTaskInput(
             name="No Duration",
             priority=1,
-            planned_start=datetime(2025, 1, 20, 9, 0, 0),
-            planned_end=datetime(2025, 1, 24, 17, 0, 0),
+            planned_start=MONDAY,
+            planned_end=FRIDAY,
             estimated_duration=None,  # Missing
         )
 
@@ -143,7 +154,7 @@ class TestCreateTaskUseCase:
             name="No Start",
             priority=1,
             planned_start=None,  # Missing
-            planned_end=datetime(2025, 1, 24, 17, 0, 0),
+            planned_end=FRIDAY,
             estimated_duration=10.0,
         )
 
@@ -159,7 +170,7 @@ class TestCreateTaskUseCase:
         input_dto = CreateTaskInput(
             name="No End",
             priority=1,
-            planned_start=datetime(2025, 1, 20, 9, 0, 0),
+            planned_start=MONDAY,
             planned_end=None,  # Missing
             estimated_duration=10.0,
         )
@@ -170,3 +181,48 @@ class TestCreateTaskUseCase:
         persisted_task = self.repository.get_by_id(result.id)
         assert persisted_task is not None
         assert persisted_task.daily_allocations == {}
+
+
+class TestCreateTaskUseCaseFieldValidation:
+    """CreateTaskUseCase enforces the same field validators as UpdateTaskUseCase."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
+        self.repository = repository
+        self.use_case = CreateTaskUseCase(self.repository)
+
+    @pytest.mark.parametrize("field", ["deadline", "planned_start", "planned_end"])
+    def test_rejects_past_datetime(self, field):
+        past = datetime.now() - timedelta(days=1)
+        input_dto = CreateTaskInput(name="Past", priority=1, **{field: past})
+
+        with pytest.raises(TaskValidationError, match=field):
+            self.use_case.execute(input_dto)
+
+        assert self.repository.get_all() == []
+
+    def test_accepts_future_datetime(self):
+        future = datetime.now() + timedelta(days=1)
+        input_dto = CreateTaskInput(name="Future", priority=1, deadline=future)
+
+        result = self.use_case.execute(input_dto)
+
+        assert result.deadline == future
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [("priority", 0), ("priority", -1), ("estimated_duration", 0.0)],
+    )
+    def test_rejects_non_positive_numeric(self, field, value):
+        input_dto = CreateTaskInput(name="Bad", **{field: value})
+
+        with pytest.raises(TaskValidationError):
+            self.use_case.execute(input_dto)
+
+        assert self.repository.get_all() == []
+
+    def test_rejects_non_datetime_deadline(self):
+        input_dto = CreateTaskInput(name="Bad", priority=1, deadline="2099-01-01")
+
+        with pytest.raises(TaskValidationError, match="deadline"):
+            self.use_case.execute(input_dto)
