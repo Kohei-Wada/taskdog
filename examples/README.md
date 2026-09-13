@@ -162,38 +162,32 @@ taskdog list   # Uses defaults
 
 ### Scenario 2: Custom Server Port
 
-**Core** (`~/.config/taskdog/core.toml`):
+**Server**:
 
-```toml
-[api]
-enabled = true
-port = 3000
+```bash
+taskdog-server --port 3000
 ```
 
 **CLI** (`~/.config/taskdog/cli.toml`):
 
 ```toml
 [api]
-port = 3000
+base_url = "http://127.0.0.1:3000"
 ```
 
 ### Scenario 3: Remote Server
 
 **Server** (on remote machine):
 
-```toml
-[api]
-enabled = true
-host = "0.0.0.0"  # Listen on all interfaces
-port = 8000
+```bash
+taskdog-server --host 0.0.0.0 --port 8000  # Listen on all interfaces
 ```
 
 **CLI** (on local machine):
 
 ```toml
 [api]
-host = "192.168.1.100"  # Remote server IP
-port = 8000
+base_url = "http://192.168.1.100:8000"  # Remote server IP
 ```
 
 ### Scenario 4: Custom Business Logic
@@ -218,8 +212,7 @@ Both configs support environment variable overrides:
 ### CLI (`cli.toml`)
 
 ```bash
-export TASKDOG_API_HOST=192.168.1.100
-export TASKDOG_API_PORT=3000
+export TASKDOG_API_BASE_URL=http://192.168.1.100:3000
 taskdog list
 ```
 

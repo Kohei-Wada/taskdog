@@ -32,8 +32,7 @@ def create_mcp_server(config: McpConfig | None = None) -> MCPServer:
     )
 
     # Create API client
-    base_url = config.api.base_url or f"http://{config.api.host}:{config.api.port}"
-    client = TaskdogApiClient(base_url, api_key=config.api.api_key)
+    client = TaskdogApiClient(config.api.base_url, api_key=config.api.api_key)
 
     # Create MCP server
     mcp = MCPServer(config.server.name)
@@ -58,7 +57,8 @@ def create_mcp_server(config: McpConfig | None = None) -> MCPServer:
     task_optimization.register_tools(mcp, client)
 
     logger.info(
-        f"MCP server '{config.server.name}' initialized, connecting to {base_url}"
+        f"MCP server '{config.server.name}' initialized, "
+        f"connecting to {config.api.base_url}"
     )
 
     return mcp

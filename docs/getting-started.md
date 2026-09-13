@@ -61,8 +61,7 @@ chmod 600 ~/.config/taskdog/server.toml
 # Create CLI config with the same API key
 cat > ~/.config/taskdog/cli.toml << 'EOF'
 [api]
-host = "127.0.0.1"
-port = 8000
+base_url = "http://127.0.0.1:8000"
 api_key = "sk-YOUR-GENERATED-KEY-HERE"  # Same key as server.toml
 
 [ui]
@@ -193,7 +192,7 @@ taskdog-server
 systemctl --user status taskdog-server  # Look for --port in the command
 
 # Make sure config matches
-cat ~/.config/taskdog/cli.toml  # Check [api] port value
+cat ~/.config/taskdog/cli.toml  # Check [api] base_url value
 
 # Update config if needed
 nano ~/.config/taskdog/cli.toml
@@ -213,7 +212,7 @@ ss -tlnp | grep 8000
 taskdog-server --port 8001
 
 # Update config to match
-# Edit ~/.config/taskdog/cli.toml: port = 8001
+# Edit ~/.config/taskdog/cli.toml: base_url = "http://127.0.0.1:8001"
 ```
 
 ### Error: Authentication failed (401)
@@ -252,8 +251,7 @@ uv tool install taskdog-mcp
 # Create MCP config
 cat > ~/.config/taskdog/mcp.toml << 'EOF'
 [api]
-host = "127.0.0.1"
-port = 8000
+base_url = "http://127.0.0.1:8000"
 api_key = "sk-YOUR-GENERATED-KEY-HERE"  # Same key as server.toml
 
 [server]
@@ -305,8 +303,7 @@ Instead of editing the config file, you can set environment variables:
 
 ```bash
 # Add to your shell profile (~/.bashrc, ~/.zshrc, etc.)
-export TASKDOG_API_HOST=127.0.0.1
-export TASKDOG_API_PORT=8000
+export TASKDOG_API_BASE_URL=http://127.0.0.1:8000
 export TASKDOG_API_KEY=sk-your-api-key
 
 # Or set them temporarily

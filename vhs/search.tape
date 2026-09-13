@@ -15,7 +15,7 @@
 #     XDG_DATA_HOME=$DATA XDG_CONFIG_HOME=$CONF \
 #       taskdog-server --host 127.0.0.1 --port 8765 &
 #     python scripts/demo_data.py --host 127.0.0.1 --port 8765 -y --no-optimize
-#     XDG_CONFIG_HOME=$CONF TASKDOG_API_HOST=127.0.0.1 TASKDOG_API_PORT=8765 \
+#     XDG_CONFIG_HOME=$CONF TASKDOG_API_BASE_URL=http://127.0.0.1:8765 \
 #       vhs vhs/search.tape         # → assets/search.mp4
 
 Output assets/search.mp4

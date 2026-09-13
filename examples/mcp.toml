@@ -10,13 +10,12 @@
 # Configure how the MCP server connects to the taskdog API server.
 
 [api]
-# API server hostname
-# Environment variable: TASKDOG_API_HOST
-host = "127.0.0.1"
-
-# API server port
-# Environment variable: TASKDOG_API_PORT
-port = 8000
+# Full API base URL of the taskdog server (default: "http://127.0.0.1:8000")
+# Any HTTP(S) URL works, including a reverse proxy serving the API under a path
+# prefix. Unrelated to taskdog-server --host/--port, which set the server's bind
+# address.
+# Environment variable: TASKDOG_API_BASE_URL
+base_url = "http://127.0.0.1:8000"
 
 # API key for authentication (REQUIRED)
 # The taskdog-server requires API key authentication by default.
