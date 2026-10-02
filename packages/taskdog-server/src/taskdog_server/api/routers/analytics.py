@@ -237,6 +237,12 @@ def get_gantt_chart(
     tags: Annotated[
         list[str] | None, Query(description="Filter by tags (OR logic)")
     ] = None,
+    filter_start_date: Annotated[
+        str | None, Query(description="Task filter start date (ISO format)")
+    ] = None,
+    filter_end_date: Annotated[
+        str | None, Query(description="Task filter end date (ISO format)")
+    ] = None,
     start_date: Annotated[
         str | None, Query(description="Chart start date (ISO format)")
     ] = None,
@@ -257,6 +263,8 @@ def get_gantt_chart(
         include_archived: Include archived tasks
         status_filter: Filter by task status
         tags: Filter by tags (OR logic)
+        filter_start_date: Task filter start date
+        filter_end_date: Task filter end date
         start_date: Chart start date
         end_date: Chart end date
         sort: Sort field name
@@ -274,8 +282,8 @@ def get_gantt_chart(
         include_archived=include_archived,
         status=status_filter,
         tags=tags or [],
-        start_date=start,
-        end_date=end,
+        start_date=parse_iso_date(filter_start_date),
+        end_date=parse_iso_date(filter_end_date),
         sort_by=sort,
         reverse=reverse,
     )

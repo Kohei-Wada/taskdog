@@ -233,6 +233,66 @@ class TestAnalyticsRouter:
         data = response.json()
         assert "date_range" in data["gantt"]
 
+    @pytest.mark.parametrize(
+        ("params", "expected_names"),
+        [
+            ({"filter_start_date": "2025-01-10"}, {"Middle", "After"}),
+            ({"filter_end_date": "2025-01-20"}, {"Before", "Middle"}),
+            (
+                {"filter_start_date": "2025-01-10", "filter_end_date": "2025-01-20"},
+                {"Middle"},
+            ),
+            (
+                {"filter_start_date": "2025-01-15", "filter_end_date": "2025-01-15"},
+                {"Middle"},
+            ),
+        ],
+    )
+    def test_gantt_task_date_filters(
+        self, client, task_factory, params, expected_names
+    ):
+        for name, day in [("Before", 5), ("Middle", 15), ("After", 25)]:
+            task_factory.create(name=name, deadline=datetime(2025, 1, day))
+
+        response = client.get(
+            "/api/v1/gantt",
+            params={"start_date": "2025-01-01", "end_date": "2025-01-31", **params},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert {task["name"] for task in data["tasks"]} == expected_names
+        assert data["total_count"] == 3
+        assert data["filtered_count"] == len(expected_names)
+        assert data["gantt"]["date_range"] == {
+            "start_date": "2025-01-01",
+            "end_date": "2025-01-31",
+        }
+
+    def test_gantt_chart_range_does_not_filter_tasks(self, client, task_factory):
+        task_factory.create(name="Before", deadline=datetime(2025, 1, 5))
+        task_factory.create(name="After", deadline=datetime(2025, 1, 25))
+
+        response = client.get(
+            "/api/v1/gantt",
+            params={"start_date": "2025-01-10", "end_date": "2025-01-20"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert {task["name"] for task in data["tasks"]} == {"Before", "After"}
+        assert data["gantt"]["date_range"] == {
+            "start_date": "2025-01-10",
+            "end_date": "2025-01-20",
+        }
+
+    @pytest.mark.parametrize("param", ["filter_start_date", "filter_end_date"])
+    def test_gantt_rejects_invalid_task_filter_dates(self, client, param):
+        response = client.get("/api/v1/gantt", params={param: "invalid-date"})
+
+        assert response.status_code == 400
+        assert "Invalid date format" in response.json()["detail"]
+
     def test_get_gantt_chart_include_archived(self, client, task_factory):
         """Test getting Gantt chart data including archived tasks."""
         # Arrange - create archived task
