@@ -5,6 +5,7 @@ from pathlib import Path
 from sqlalchemy import create_engine, inspect, text
 
 from taskdog_core.infrastructure.persistence.database.migration_runner import (
+    create_alembic_config,
     get_current_revision,
     get_migrations_dir,
     run_migrations,
@@ -24,6 +25,20 @@ class TestGetMigrationsDir:
         assert migrations_dir.name == "migrations"
         assert (migrations_dir / "env.py").exists()
         assert (migrations_dir / "versions").is_dir()
+
+
+class TestCreateAlembicConfig:
+    """Tests for create_alembic_config function."""
+
+    def test_url_with_percent_round_trips(self, tmp_path: Path) -> None:
+        """Test that a database URL containing '%' survives ConfigParser interpolation."""
+        engine = create_engine(f"sqlite:///{tmp_path / '100%done.db'}")
+        try:
+            alembic_cfg = create_alembic_config(engine)
+
+            assert alembic_cfg.get_main_option("sqlalchemy.url") == str(engine.url)
+        finally:
+            engine.dispose()
 
 
 class TestRunMigrations:
