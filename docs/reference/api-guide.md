@@ -414,9 +414,14 @@ Get Gantt chart data
 
 **Query Parameters:**
 
-- Same filtering options as GET /api/v1/tasks/
-- `start_date` (string, optional) - Chart start date
-- `end_date` (string, optional) - Chart end date
+- `all`, `status`, `tags`, `sort` and `reverse` follow GET /api/v1/tasks/.
+- `filter_start_date` (string, optional), task filter start date (YYYY-MM-DD).
+- `filter_end_date` (string, optional), task filter end date (YYYY-MM-DD).
+- `start_date` (string, optional), chart start date.
+- `end_date` (string, optional), chart end date.
+
+When either task filter date is provided, task selection uses only those filter dates.
+Otherwise, `start_date` and `end_date` also filter tasks for compatibility with existing clients.
 
 **Response:**
 
