@@ -41,7 +41,8 @@ def create_alembic_config(engine: Engine) -> AlembicConfig:
 
     alembic_cfg = AlembicConfig()
     alembic_cfg.set_main_option("script_location", str(migrations_dir))
-    alembic_cfg.set_main_option("sqlalchemy.url", str(engine.url))
+    # ConfigParser treats '%' as interpolation syntax; SQLAlchemy 2.1 percent-encodes URLs
+    alembic_cfg.set_main_option("sqlalchemy.url", str(engine.url).replace("%", "%%"))
 
     # Pass the engine through config attributes for env.py to use
     # This is necessary for in-memory SQLite databases where new connections
