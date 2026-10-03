@@ -68,6 +68,50 @@ def test_gantt_date_filters_select_tasks_over_http(client: TaskdogApiClient) -> 
     assert [task.id for task in result.tasks] == [selected.id]
 
 
+def test_gantt_chart_dates_filter_tasks_over_http(client: TaskdogApiClient) -> None:
+    start = date.today() + timedelta(days=1)
+    client.create_task(name="Before", deadline=datetime.combine(start, time()))
+    selected = client.create_task(
+        name="Selected", deadline=datetime.combine(start + timedelta(days=10), time())
+    )
+    client.create_task(
+        name="After", deadline=datetime.combine(start + timedelta(days=20), time())
+    )
+
+    result = client.get_gantt_data(
+        start_date=start + timedelta(days=5),
+        end_date=start + timedelta(days=15),
+    )
+
+    assert [task.id for task in result.tasks] == [selected.id]
+    assert result.gantt_data is not None
+    assert result.gantt_data.date_range.start_date == start + timedelta(days=5)
+    assert result.gantt_data.date_range.end_date == start + timedelta(days=15)
+
+
+@pytest.mark.parametrize("filter_bound", ["start", "end"])
+def test_gantt_explicit_filter_ignores_opposite_chart_bound_over_http(
+    client: TaskdogApiClient, filter_bound: str
+) -> None:
+    start = date.today() + timedelta(days=1)
+    before = client.create_task(name="Before", deadline=datetime.combine(start, time()))
+    after = client.create_task(
+        name="After", deadline=datetime.combine(start + timedelta(days=20), time())
+    )
+
+    result = client.get_gantt_data(
+        start_date=start + timedelta(days=5),
+        end_date=start + timedelta(days=15),
+        filter_start_date=start if filter_bound == "start" else None,
+        filter_end_date=start + timedelta(days=20) if filter_bound == "end" else None,
+    )
+
+    assert {task.id for task in result.tasks} == {before.id, after.id}
+    assert result.gantt_data is not None
+    assert result.gantt_data.date_range.start_date == start + timedelta(days=5)
+    assert result.gantt_data.date_range.end_date == start + timedelta(days=15)
+
+
 def test_gantt_invalid_filter_date_uses_client_validation_error(
     client: TaskdogApiClient,
 ) -> None:

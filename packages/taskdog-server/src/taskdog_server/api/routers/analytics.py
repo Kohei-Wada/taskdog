@@ -244,10 +244,18 @@ def get_gantt_chart(
         str | None, Query(description="Task filter end date (ISO format)")
     ] = None,
     start_date: Annotated[
-        str | None, Query(description="Chart start date (ISO format)")
+        str | None,
+        Query(
+            description="Chart start date (ISO format). "
+            "Filters tasks when no task filter dates are given."
+        ),
     ] = None,
     end_date: Annotated[
-        str | None, Query(description="Chart end date (ISO format)")
+        str | None,
+        Query(
+            description="Chart end date (ISO format). "
+            "Filters tasks when no task filter dates are given."
+        ),
     ] = None,
     sort: Annotated[str, Query(description="Sort field")] = "deadline",
     reverse: Annotated[bool, Query(description="Reverse sort order")] = False,
@@ -256,6 +264,8 @@ def get_gantt_chart(
 
     Returns the shared task list plus the Gantt overlay (daily hours, workload,
     holidays); clients join them by task id.
+
+    Without task filter dates, chart dates also filter tasks.
 
     Args:
         controller: Query controller dependency
@@ -276,14 +286,20 @@ def get_gantt_chart(
     # Parse date strings to date objects
     start = parse_iso_date(start_date)
     end = parse_iso_date(end_date)
+    if filter_start_date is None and filter_end_date is None:
+        task_start = start
+        task_end = end
+    else:
+        task_start = parse_iso_date(filter_start_date)
+        task_end = parse_iso_date(filter_end_date)
 
     # Create Input DTO (filter building is done in Use Case)
     input_dto = ListTasksInput(
         include_archived=include_archived,
         status=status_filter,
         tags=tags or [],
-        start_date=parse_iso_date(filter_start_date),
-        end_date=parse_iso_date(filter_end_date),
+        start_date=task_start,
+        end_date=task_end,
         sort_by=sort,
         reverse=reverse,
     )

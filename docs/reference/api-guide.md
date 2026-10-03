@@ -420,7 +420,8 @@ Get Gantt chart data
 - `start_date` (string, optional), chart start date.
 - `end_date` (string, optional), chart end date.
 
-Task filtering is independent of chart display dates.
+When either task filter date is provided, task selection uses only those filter dates.
+Otherwise, `start_date` and `end_date` also filter tasks for compatibility with existing clients.
 
 **Response:**
 
