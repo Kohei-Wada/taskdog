@@ -109,6 +109,36 @@ class TestTaskStatisticsCalculator:
         assert result.estimation_stats.over_estimated_count == 1
         assert result.estimation_stats.under_estimated_count == 1
 
+    def test_task_summaries_include_durations(self):
+        """Longest/shortest/best/worst task summaries carry their durations."""
+        now = datetime.now()
+        tasks = [
+            Task(
+                name="Write report",
+                priority=10,
+                id=1,
+                estimated_duration=4.0,
+                actual_start=(now - timedelta(hours=6)),
+                actual_end=now,
+            ),
+        ]
+
+        result = self.calculator.calculate_all(tasks)
+
+        assert result.time_stats is not None
+        assert result.estimation_stats is not None
+        summaries = [
+            result.time_stats.longest_task,
+            result.time_stats.shortest_task,
+            result.estimation_stats.best_estimated_tasks[0],
+            result.estimation_stats.worst_estimated_tasks[0],
+        ]
+        for summary in summaries:
+            assert summary is not None
+            assert summary.id == 1
+            assert summary.estimated_duration == 4.0
+            assert summary.actual_duration_hours == pytest.approx(6.0)
+
     def test_calculate_deadline_compliance(self):
         """Test deadline compliance statistics."""
         now = datetime.now()
