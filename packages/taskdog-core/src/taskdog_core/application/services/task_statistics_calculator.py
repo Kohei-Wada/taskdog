@@ -349,9 +349,7 @@ class TaskStatisticsCalculator:
     @staticmethod
     def _to_summary_dto(task: Task) -> TaskSummaryDto:
         """Convert a Task to TaskSummaryDto, validating that it has an ID."""
-        if task.id is None:
-            raise ValueError("Task must have an ID")
-        return TaskSummaryDto(id=task.id, name=task.name)
+        return TaskSummaryDto.from_entity(task)
 
     def _calculate_activity_patterns(
         self, tasks: list[Task]
