@@ -1,12 +1,17 @@
 """Tests for MCP server creation."""
 
-from unittest.mock import patch
+from typing import Any
+from unittest.mock import MagicMock, patch
 
+from mcp import Client
+from mcp.types import CallToolResult, TextContent
 from taskdog_mcp.config.mcp_config_manager import (
     McpApiConfig,
     McpConfig,
     McpServerConfig,
 )
+
+from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
 class TestCreateMcpServer:
@@ -64,3 +69,37 @@ class TestCreateMcpServer:
         # Check that tools are registered by verifying the server exists
         # The actual tools are registered via MCPServer decorators
         assert mcp is not None
+
+
+class TestToolErrorMessages:
+    """Test tool failures reach the MCP client with their message."""
+
+    async def _call_tool(
+        self, api_client: MagicMock, name: str, arguments: dict[str, Any]
+    ) -> CallToolResult:
+        from taskdog_mcp.server import create_mcp_server
+
+        with patch("taskdog_mcp.server.TaskdogApiClient", return_value=api_client):
+            mcp = create_mcp_server(McpConfig())
+
+        async with Client(mcp) as client:
+            return await client.call_tool(name, arguments)
+
+    async def test_task_error_message_is_returned(self) -> None:
+        api_client = MagicMock()
+        api_client.get_task_by_id.side_effect = TaskNotFoundException(999)
+
+        result = await self._call_tool(api_client, "get_task", {"task_id": 999})
+
+        assert result.is_error
+        assert isinstance(result.content[0], TextContent)
+        assert "Task with ID 999 not found" in result.content[0].text
+
+    async def test_value_error_message_is_returned(self) -> None:
+        result = await self._call_tool(
+            MagicMock(), "create_task", {"name": "x", "deadline": "next friday"}
+        )
+
+        assert result.is_error
+        assert isinstance(result.content[0], TextContent)
+        assert "next friday" in result.content[0].text
