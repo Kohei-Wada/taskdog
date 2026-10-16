@@ -177,3 +177,34 @@ class TestLifecycleRouter:
         # Assert
         assert response.status_code == 400
         assert "already IN_PROGRESS" in response.json()["detail"]
+
+    @pytest.mark.parametrize("duration", [0, -3])
+    def test_fix_actual_rejects_non_positive_duration(
+        self, client, repository, task_factory, duration
+    ):
+        """Test fix-actual rejects a duration that is not positive."""
+        task = task_factory.create(name="Task", priority=1)
+
+        response = client.post(
+            f"/api/v1/tasks/{task.id}/fix-actual", json={"actual_duration": duration}
+        )
+
+        assert response.status_code == 422
+        assert repository.get_by_id(task.id).actual_duration is None
+
+    def test_fix_actual_rejects_end_before_start(
+        self, client, repository, task_factory
+    ):
+        """Test fix-actual rejects actual_end earlier than actual_start."""
+        task = task_factory.create(name="Task", priority=1)
+
+        response = client.post(
+            f"/api/v1/tasks/{task.id}/fix-actual",
+            json={
+                "actual_start": "2025-12-13T17:00:00",
+                "actual_end": "2025-12-13T09:00:00",
+            },
+        )
+
+        assert response.status_code == 400
+        assert repository.get_by_id(task.id).actual_end is None
