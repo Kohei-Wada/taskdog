@@ -17,7 +17,7 @@ class TestOptimizationSummaryBuilder:
     def setup(self, repository):
         """Set up test fixtures."""
         self.repository = repository
-        self.builder = OptimizationSummaryBuilder(self.repository)
+        self.builder = OptimizationSummaryBuilder()
 
     def test_build_with_new_tasks(self):
         """Test build calculates correct counts for newly scheduled tasks."""
@@ -49,7 +49,11 @@ class TestOptimizationSummaryBuilder:
         max_hours_per_day = 8.0
 
         summary = self.builder.build(
-            modified_tasks, task_states_before, daily_allocations, max_hours_per_day
+            modified_tasks,
+            task_states_before,
+            daily_allocations,
+            max_hours_per_day,
+            self.repository.get_all(),
         )
 
         assert summary.new_count == 2
@@ -77,7 +81,11 @@ class TestOptimizationSummaryBuilder:
         max_hours_per_day = 8.0
 
         summary = self.builder.build(
-            modified_tasks, task_states_before, daily_allocations, max_hours_per_day
+            modified_tasks,
+            task_states_before,
+            daily_allocations,
+            max_hours_per_day,
+            self.repository.get_all(),
         )
 
         assert summary.new_count == 0
@@ -103,7 +111,11 @@ class TestOptimizationSummaryBuilder:
         max_hours_per_day = 8.0
 
         summary = self.builder.build(
-            modified_tasks, task_states_before, daily_allocations, max_hours_per_day
+            modified_tasks,
+            task_states_before,
+            daily_allocations,
+            max_hours_per_day,
+            self.repository.get_all(),
         )
 
         assert summary.deadline_conflicts == 1
@@ -127,7 +139,11 @@ class TestOptimizationSummaryBuilder:
         max_hours_per_day = 8.0
 
         summary = self.builder.build(
-            modified_tasks, task_states_before, daily_allocations, max_hours_per_day
+            modified_tasks,
+            task_states_before,
+            daily_allocations,
+            max_hours_per_day,
+            self.repository.get_all(),
         )
 
         assert len(summary.overloaded_days) == 1
@@ -163,7 +179,11 @@ class TestOptimizationSummaryBuilder:
         max_hours_per_day = 8.0
 
         summary = self.builder.build(
-            modified_tasks, task_states_before, daily_allocations, max_hours_per_day
+            modified_tasks,
+            task_states_before,
+            daily_allocations,
+            max_hours_per_day,
+            self.repository.get_all(),
         )
 
         assert len(summary.unscheduled_tasks) == 1
@@ -188,7 +208,25 @@ class TestOptimizationSummaryBuilder:
         max_hours_per_day = 8.0
 
         summary = self.builder.build(
-            modified_tasks, task_states_before, daily_allocations, max_hours_per_day
+            modified_tasks,
+            task_states_before,
+            daily_allocations,
+            max_hours_per_day,
+            self.repository.get_all(),
         )
 
         assert len(summary.unscheduled_tasks) == 0
+
+    def test_build_ignores_archived_unscheduled_tasks(self):
+        archived = Task(
+            id=1,
+            name="Archived",
+            priority=1,
+            status=TaskStatus.PENDING,
+            estimated_duration=8.0,
+            is_archived=True,
+        )
+
+        summary = self.builder.build([], {}, {}, 8.0, [archived])
+
+        assert summary.unscheduled_tasks == []

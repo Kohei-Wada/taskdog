@@ -5,23 +5,14 @@ from datetime import date, datetime
 from taskdog_core.application.dto.optimization_summary import OptimizationSummary
 from taskdog_core.application.dto.task_dto import TaskSummaryDto
 from taskdog_core.domain.entities.task import Task
-from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 
 class OptimizationSummaryBuilder:
-    """Builds optimization summary from modified tasks and repository state.
+    """Builds optimization summary from modified tasks and post-save task state.
 
     This service analyzes optimization results and calculates metrics like
     new/rescheduled task counts, deadline conflicts, and workload violations.
     """
-
-    def __init__(self, repository: TaskRepository):
-        """Initialize the summary builder.
-
-        Args:
-            repository: Task repository for querying task state
-        """
-        self.repository = repository
 
     def _analyze_modified_tasks(
         self,
@@ -122,18 +113,20 @@ class OptimizationSummaryBuilder:
         max_date = max(end_dates).date()
         return (max_date - min_date).days + 1
 
-    def _find_unscheduled_tasks(self) -> list[TaskSummaryDto]:
+    def _find_unscheduled_tasks(self, tasks_after: list[Task]) -> list[TaskSummaryDto]:
         """Find tasks that couldn't be scheduled.
+
+        Args:
+            tasks_after: Every task in its state after optimization was saved
 
         Returns:
             List of TaskSummaryDto for unscheduled tasks
         """
-        all_tasks_after = self.repository.get_all()
         unscheduled_tasks = []
 
-        for task in all_tasks_after:
-            # Skip finished tasks (COMPLETED or CANCELED)
-            if task.is_finished:
+        for task in tasks_after:
+            # Skip archived and finished tasks
+            if not task.should_count_in_workload():
                 continue
             # Skip tasks without estimated duration
             if not task.estimated_duration:
@@ -176,6 +169,7 @@ class OptimizationSummaryBuilder:
         task_states_before: dict[int, datetime | None],
         daily_allocations: dict[date, float],
         max_hours_per_day: float,
+        tasks_after: list[Task],
     ) -> OptimizationSummary:
         """Calculate optimization summary from modified tasks.
 
@@ -184,6 +178,7 @@ class OptimizationSummaryBuilder:
             task_states_before: Mapping of task IDs to their planned_start before optimization
             daily_allocations: Daily workload allocations (date_str -> hours)
             max_hours_per_day: Maximum hours per day constraint
+            tasks_after: Every task in its state after optimization was saved
 
         Returns:
             OptimizationSummary with calculated metrics
@@ -197,7 +192,7 @@ class OptimizationSummaryBuilder:
             days_span,
         ) = self._analyze_modified_tasks(modified_tasks, task_states_before)
 
-        unscheduled_tasks_dto = self._find_unscheduled_tasks()
+        unscheduled_tasks_dto = self._find_unscheduled_tasks(tasks_after)
 
         overloaded_days = self._validate_workload(daily_allocations, max_hours_per_day)
 

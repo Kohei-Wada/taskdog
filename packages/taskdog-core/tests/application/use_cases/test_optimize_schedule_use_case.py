@@ -1,6 +1,7 @@
 """Tests for OptimizeScheduleUseCase."""
 
 from datetime import date, datetime
+from unittest.mock import patch
 
 import pytest
 
@@ -62,6 +63,32 @@ class TestOptimizeScheduleUseCase:
         # Verify daily_allocations
         assert task.daily_allocations is not None
         assert task.daily_allocations[date(2025, 10, 15)] == 4.0
+
+    def test_summary_unscheduled_excludes_archived_and_newly_scheduled(self):
+        scheduled = self.create_use_case.execute(
+            CreateTaskInput(name="Fits", priority=100, estimated_duration=4.0)
+        )
+        archived = self.repository.create(
+            name="Archived", priority=1, estimated_duration=4.0
+        )
+        archived.is_archived = True
+        self.repository.save(archived)
+
+        with patch.object(
+            self.repository, "get_all", wraps=self.repository.get_all
+        ) as get_all:
+            result = self.optimize_use_case.execute(
+                OptimizeScheduleInput(
+                    start_date=datetime(2025, 10, 15, 18, 0, 0),
+                    max_hours_per_day=6.0,
+                    force_override=False,
+                    algorithm_name="greedy",
+                )
+            )
+
+        assert [t.id for t in result.successful_tasks] == [scheduled.id]
+        assert result.summary.unscheduled_tasks == []
+        assert get_all.call_count == 1
 
     @pytest.mark.parametrize("algorithm_name", ["greedy", "backward"])
     @pytest.mark.parametrize("max_hours_per_day", [0.0, -1.0])
