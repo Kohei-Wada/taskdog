@@ -1,19 +1,14 @@
 """Analytics endpoints (statistics, optimization, gantt chart)."""
 
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Literal
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Query
 
 from taskdog_core.application.dto.query_inputs import ListTasksInput
 
 if TYPE_CHECKING:
     from taskdog_core.application.dto.task_dto import TaskSummaryDto
 
-from taskdog_core.domain.exceptions.task_exceptions import (
-    NoSchedulableTasksError,
-    TaskNotFoundException,
-    TaskValidationError,
-)
 from taskdog_server.api.dependencies import (
     AnalyticsControllerDep,
     AuditLogControllerDep,
@@ -45,8 +40,6 @@ from taskdog_server.api.models.responses import (
 from taskdog_server.api.utils import parse_iso_date
 from taskdog_server.api.validators import MAX_TAG_FILTERS
 
-VALID_PERIODS = ("all", "7d", "30d")
-
 router = APIRouter()
 
 
@@ -54,7 +47,9 @@ router = APIRouter()
 def get_statistics(
     controller: AnalyticsControllerDep,
     _client_name: AuthenticatedClientDep,
-    period: str = Query(VALID_PERIODS[0], description="Time period: all, 7d, or 30d"),
+    period: Literal["all", "7d", "30d"] = Query(
+        "all", description="Time period: all, 7d, or 30d"
+    ),
 ) -> StatisticsResponse:
     """Get task statistics for a time period.
 
@@ -64,138 +59,124 @@ def get_statistics(
 
     Returns:
         Task statistics including completion, time, estimation, deadline, and trends
-
-    Raises:
-        HTTPException: 400 if period is invalid
     """
-    if period not in VALID_PERIODS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Period must be one of: all, 7d, 30d",
+    result = controller.calculate_statistics(period=period)
+
+    # Helper to convert TaskSummaryDto to TaskSummaryResponse
+    def to_task_summary(
+        dto: "TaskSummaryDto | None",
+    ) -> TaskSummaryResponse | None:
+        if dto is None:
+            return None
+        return TaskSummaryResponse(
+            id=dto.id,
+            name=dto.name,
+            estimated_duration=dto.estimated_duration,
+            actual_duration_hours=dto.actual_duration_hours,
         )
 
-    try:
-        result = controller.calculate_statistics(period=period)
-
-        # Helper to convert TaskSummaryDto to TaskSummaryResponse
-        def to_task_summary(
-            dto: "TaskSummaryDto | None",
-        ) -> TaskSummaryResponse | None:
-            if dto is None:
-                return None
-            return TaskSummaryResponse(
-                id=dto.id,
-                name=dto.name,
-                estimated_duration=dto.estimated_duration,
-                actual_duration_hours=dto.actual_duration_hours,
+    def to_task_summary_list(
+        dtos: "list[TaskSummaryDto]",
+    ) -> list[TaskSummaryResponse]:
+        if not dtos:
+            return []
+        return [
+            TaskSummaryResponse(
+                id=d.id,
+                name=d.name,
+                estimated_duration=d.estimated_duration,
+                actual_duration_hours=d.actual_duration_hours,
             )
+            for d in dtos
+        ]
 
-        def to_task_summary_list(
-            dtos: "list[TaskSummaryDto]",
-        ) -> list[TaskSummaryResponse]:
-            if not dtos:
-                return []
-            return [
-                TaskSummaryResponse(
-                    id=d.id,
-                    name=d.name,
-                    estimated_duration=d.estimated_duration,
-                    actual_duration_hours=d.actual_duration_hours,
-                )
-                for d in dtos
-            ]
-
-        # Convert DTO to response model
-        response = StatisticsResponse(
-            completion=CompletionStatistics(
-                total=result.task_stats.total_tasks,
-                completed=result.task_stats.completed_count,
-                in_progress=result.task_stats.in_progress_count,
-                pending=result.task_stats.pending_count,
-                canceled=result.task_stats.canceled_count,
-                completion_rate=result.task_stats.completion_rate,
-            ),
-            time=(
-                TimeStatistics(
-                    total_work_hours=result.time_stats.total_work_hours,
-                    average_work_hours=result.time_stats.average_work_hours,
-                    median_work_hours=result.time_stats.median_work_hours,
-                    longest_task=to_task_summary(result.time_stats.longest_task),
-                    shortest_task=to_task_summary(result.time_stats.shortest_task),
-                    tasks_with_time_tracking=result.time_stats.tasks_with_time_tracking,
-                )
-                if result.time_stats
-                else None
-            ),
-            estimation=(
-                EstimationStatistics(
-                    total_tasks_with_estimation=result.estimation_stats.total_tasks_with_estimation,
-                    accuracy_rate=result.estimation_stats.accuracy_rate,
-                    over_estimated_count=result.estimation_stats.over_estimated_count,
-                    under_estimated_count=result.estimation_stats.under_estimated_count,
-                    exact_count=result.estimation_stats.exact_count,
-                    best_estimated_tasks=to_task_summary_list(
-                        result.estimation_stats.best_estimated_tasks
-                    ),
-                    worst_estimated_tasks=to_task_summary_list(
-                        result.estimation_stats.worst_estimated_tasks
-                    ),
-                    estimation_pairs=result.estimation_stats.estimation_pairs,
-                )
-                if result.estimation_stats
-                else None
-            ),
-            deadline=(
-                DeadlineStatistics(
-                    total_tasks_with_deadline=result.deadline_stats.total_tasks_with_deadline,
-                    met_deadline_count=result.deadline_stats.met_deadline_count,
-                    missed_deadline_count=result.deadline_stats.missed_deadline_count,
-                    compliance_rate=result.deadline_stats.compliance_rate,
-                    average_delay_days=result.deadline_stats.average_delay_days,
-                )
-                if result.deadline_stats
-                else None
-            ),
-            priority=PriorityDistribution(
-                distribution=result.priority_stats.priority_completion_map,
-                high_priority_count=result.priority_stats.high_priority_count,
-                medium_priority_count=result.priority_stats.medium_priority_count,
-                low_priority_count=result.priority_stats.low_priority_count,
-                high_priority_completion_rate=result.priority_stats.high_priority_completion_rate,
-            ),
-            trends=(
-                TrendData(
-                    last_7_days_completed=result.trend_stats.last_7_days_completed,
-                    last_30_days_completed=result.trend_stats.last_30_days_completed,
-                    weekly_completion_trend=result.trend_stats.weekly_completion_trend,
-                    monthly_completion_trend=result.trend_stats.monthly_completion_trend,
-                )
-                if result.trend_stats
-                else None
-            ),
-            activity=(
-                ActivityPattern(
-                    hourly_completions=result.activity_stats.hourly_completions,
-                    daily_completions=result.activity_stats.daily_completions,
-                    heatmap=result.activity_stats.heatmap,
-                    total_completed_with_time=result.activity_stats.total_completed_with_time,
-                )
-                if result.activity_stats
-                else None
-            ),
-            reschedule=(
-                RescheduleStatisticsData.model_validate(
-                    result.reschedule_stats, from_attributes=True
-                )
-                if result.reschedule_stats
-                else None
-            ),
-        )
-        return response
-    except TaskValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+    # Convert DTO to response model
+    response = StatisticsResponse(
+        completion=CompletionStatistics(
+            total=result.task_stats.total_tasks,
+            completed=result.task_stats.completed_count,
+            in_progress=result.task_stats.in_progress_count,
+            pending=result.task_stats.pending_count,
+            canceled=result.task_stats.canceled_count,
+            completion_rate=result.task_stats.completion_rate,
+        ),
+        time=(
+            TimeStatistics(
+                total_work_hours=result.time_stats.total_work_hours,
+                average_work_hours=result.time_stats.average_work_hours,
+                median_work_hours=result.time_stats.median_work_hours,
+                longest_task=to_task_summary(result.time_stats.longest_task),
+                shortest_task=to_task_summary(result.time_stats.shortest_task),
+                tasks_with_time_tracking=result.time_stats.tasks_with_time_tracking,
+            )
+            if result.time_stats
+            else None
+        ),
+        estimation=(
+            EstimationStatistics(
+                total_tasks_with_estimation=result.estimation_stats.total_tasks_with_estimation,
+                accuracy_rate=result.estimation_stats.accuracy_rate,
+                over_estimated_count=result.estimation_stats.over_estimated_count,
+                under_estimated_count=result.estimation_stats.under_estimated_count,
+                exact_count=result.estimation_stats.exact_count,
+                best_estimated_tasks=to_task_summary_list(
+                    result.estimation_stats.best_estimated_tasks
+                ),
+                worst_estimated_tasks=to_task_summary_list(
+                    result.estimation_stats.worst_estimated_tasks
+                ),
+                estimation_pairs=result.estimation_stats.estimation_pairs,
+            )
+            if result.estimation_stats
+            else None
+        ),
+        deadline=(
+            DeadlineStatistics(
+                total_tasks_with_deadline=result.deadline_stats.total_tasks_with_deadline,
+                met_deadline_count=result.deadline_stats.met_deadline_count,
+                missed_deadline_count=result.deadline_stats.missed_deadline_count,
+                compliance_rate=result.deadline_stats.compliance_rate,
+                average_delay_days=result.deadline_stats.average_delay_days,
+            )
+            if result.deadline_stats
+            else None
+        ),
+        priority=PriorityDistribution(
+            distribution=result.priority_stats.priority_completion_map,
+            high_priority_count=result.priority_stats.high_priority_count,
+            medium_priority_count=result.priority_stats.medium_priority_count,
+            low_priority_count=result.priority_stats.low_priority_count,
+            high_priority_completion_rate=result.priority_stats.high_priority_completion_rate,
+        ),
+        trends=(
+            TrendData(
+                last_7_days_completed=result.trend_stats.last_7_days_completed,
+                last_30_days_completed=result.trend_stats.last_30_days_completed,
+                weekly_completion_trend=result.trend_stats.weekly_completion_trend,
+                monthly_completion_trend=result.trend_stats.monthly_completion_trend,
+            )
+            if result.trend_stats
+            else None
+        ),
+        activity=(
+            ActivityPattern(
+                hourly_completions=result.activity_stats.hourly_completions,
+                daily_completions=result.activity_stats.daily_completions,
+                heatmap=result.activity_stats.heatmap,
+                total_completed_with_time=result.activity_stats.total_completed_with_time,
+            )
+            if result.activity_stats
+            else None
+        ),
+        reschedule=(
+            RescheduleStatisticsData.model_validate(
+                result.reschedule_stats, from_attributes=True
+            )
+            if result.reschedule_stats
+            else None
+        ),
+    )
+    return response
 
 
 @router.get("/tags/statistics", response_model=TagStatisticsResponse)
@@ -340,95 +321,83 @@ def optimize_schedule(
         Optimization results with summary and failures
 
     Raises:
-        HTTPException: 400 if validation fails
+        TaskNotFoundException: 404 via app-wide handler if a task ID is unknown
+        TaskValidationError: 400 via app-wide handler (incl. NoSchedulableTasksError)
     """
-    try:
-        # Use current date if not specified
-        start_date = request.start_date or time_provider.now()
+    # Use current date if not specified
+    start_date = request.start_date or time_provider.now()
 
-        # Run synchronously
-        result = controller.optimize_schedule(
+    # Run synchronously
+    result = controller.optimize_schedule(
+        algorithm=request.algorithm,
+        start_date=start_date,
+        max_hours_per_day=request.max_hours_per_day,
+        force_override=request.force_override,
+        task_ids=request.task_ids,
+        include_all_days=request.include_all_days,
+    )
+
+    # Broadcast WebSocket event in background (exclude the requester by client name)
+    broadcaster.schedule_optimized(
+        len(result.successful_tasks),
+        len(result.failed_tasks),
+        request.algorithm,
+        client_name,
+    )
+
+    # Audit log
+    audit_controller.log_operation(
+        operation="optimize_schedule",
+        resource_type="schedule",
+        resource_id=None,
+        resource_name=None,
+        client_name=client_name,
+        new_values={
+            "algorithm": request.algorithm,
+            "scheduled_tasks": len(result.successful_tasks),
+            "failed_tasks": len(result.failed_tasks),
+            "total_hours": result.summary.total_hours,
+            "task_ids": request.task_ids,
+        },
+        success=True,
+    )
+
+    # Convert DTO to response model
+    failures = [
+        SchedulingFailure(task_id=f.task.id, task_name=f.task.name, reason=f.reason)
+        for f in result.failed_tasks
+    ]
+
+    # Calculate date range from daily allocations
+    if result.daily_allocations:
+        dates = list(result.daily_allocations.keys())
+        opt_start_date = min(dates)
+        opt_end_date = max(dates)
+    else:
+        opt_start_date = start_date.date()
+        opt_end_date = start_date.date()
+
+    # Build optimization message
+    if result.all_failed():
+        message = f"No tasks were scheduled. {len(result.failed_tasks)} task(s) failed."
+    elif result.has_failures():
+        message = f"Partially optimized: {len(result.successful_tasks)} succeeded, {len(result.failed_tasks)} failed."
+    else:
+        message = f"Successfully optimized {len(result.successful_tasks)} task(s)."
+
+    return OptimizationResponse(
+        summary=OptimizationSummary(
+            total_tasks=len(result.successful_tasks) + len(result.failed_tasks),
+            scheduled_tasks=len(result.successful_tasks),
+            failed_tasks=len(result.failed_tasks),
+            total_hours=result.summary.total_hours,
+            start_date=opt_start_date,
+            end_date=opt_end_date,
             algorithm=request.algorithm,
-            start_date=start_date,
-            max_hours_per_day=request.max_hours_per_day,
-            force_override=request.force_override,
-            task_ids=request.task_ids,
-            include_all_days=request.include_all_days,
-        )
-
-        # Broadcast WebSocket event in background (exclude the requester by client name)
-        broadcaster.schedule_optimized(
-            len(result.successful_tasks),
-            len(result.failed_tasks),
-            request.algorithm,
-            client_name,
-        )
-
-        # Audit log
-        audit_controller.log_operation(
-            operation="optimize_schedule",
-            resource_type="schedule",
-            resource_id=None,
-            resource_name=None,
-            client_name=client_name,
-            new_values={
-                "algorithm": request.algorithm,
-                "scheduled_tasks": len(result.successful_tasks),
-                "failed_tasks": len(result.failed_tasks),
-                "total_hours": result.summary.total_hours,
-                "task_ids": request.task_ids,
-            },
-            success=True,
-        )
-
-        # Convert DTO to response model
-        failures = [
-            SchedulingFailure(task_id=f.task.id, task_name=f.task.name, reason=f.reason)
-            for f in result.failed_tasks
-        ]
-
-        # Calculate date range from daily allocations
-        if result.daily_allocations:
-            dates = list(result.daily_allocations.keys())
-            opt_start_date = min(dates)
-            opt_end_date = max(dates)
-        else:
-            opt_start_date = start_date.date()
-            opt_end_date = start_date.date()
-
-        # Build optimization message
-        if result.all_failed():
-            message = (
-                f"No tasks were scheduled. {len(result.failed_tasks)} task(s) failed."
-            )
-        elif result.has_failures():
-            message = f"Partially optimized: {len(result.successful_tasks)} succeeded, {len(result.failed_tasks)} failed."
-        else:
-            message = f"Successfully optimized {len(result.successful_tasks)} task(s)."
-
-        return OptimizationResponse(
-            summary=OptimizationSummary(
-                total_tasks=len(result.successful_tasks) + len(result.failed_tasks),
-                scheduled_tasks=len(result.successful_tasks),
-                failed_tasks=len(result.failed_tasks),
-                total_hours=result.summary.total_hours,
-                start_date=opt_start_date,
-                end_date=opt_end_date,
-                algorithm=request.algorithm,
-            ),
-            failures=failures,
-            message=message,
-        )
-    except TaskNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    except NoSchedulableTasksError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
-    except TaskValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        ),
+        failures=failures,
+        message=message,
+    )
 
 
 @router.get("/algorithms", response_model=list[dict[str, str]])

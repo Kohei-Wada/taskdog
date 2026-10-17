@@ -91,10 +91,9 @@ class TestAnalyticsRouter:
         # Act
         response = client.get("/api/v1/statistics?period=invalid")
 
-        # Assert
-        assert response.status_code == 400
-        assert "detail" in response.json()
-        assert "Period must be one of" in response.json()["detail"]
+        # Assert - validated like every other query param
+        assert response.status_code == 422
+        assert response.json()["detail"][0]["loc"] == ["query", "period"]
 
     @pytest.mark.parametrize("period", ["7d", "30d"])
     def test_get_statistics_valid_period(self, client, period):
@@ -529,3 +528,33 @@ class TestAnalyticsRouter:
         response = client.post("/api/v1/optimize", json=request_data)
         assert response.status_code == 200
         assert response.json()["summary"]["scheduled_tasks"] == 1
+
+
+class TestOptimizeErrorResponses:
+    """Domain errors from optimize map to the app-wide 400/404 envelope."""
+
+    def test_no_schedulable_tasks_returns_400(self, client, task_factory):
+        task = task_factory.create(
+            name="Done", priority=1, estimated_duration=2.0, status=TaskStatus.COMPLETED
+        )
+
+        response = client.post(
+            "/api/v1/optimize",
+            json={
+                "algorithm": "greedy",
+                "max_hours_per_day": 8.0,
+                "task_ids": [task.id],
+            },
+        )
+
+        assert response.status_code == 400
+        assert response.json()["detail"]
+
+    def test_unknown_task_id_returns_404(self, client):
+        response = client.post(
+            "/api/v1/optimize",
+            json={"algorithm": "greedy", "max_hours_per_day": 8.0, "task_ids": [999]},
+        )
+
+        assert response.status_code == 404
+        assert "999" in response.json()["detail"]
