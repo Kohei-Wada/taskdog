@@ -49,16 +49,6 @@ include = ["taskdog*"]
 taskdog_core = ["py.typed"]
 "taskdog_core.infrastructure.persistence.database.migrations" = ["*.mako"]
 
-[tool.mypy]
-python_version = "3.13"
-strict = true
-# Disable unused-ignore warnings (SQLAlchemy attr-defined errors are environment-dependent)
-warn_unused_ignores = false
-
-[[tool.mypy.overrides]]
-module = "alembic.*"
-ignore_missing_imports = true
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

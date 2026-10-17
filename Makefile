@@ -1,7 +1,6 @@
 .PHONY: help docs docs-api docs-serve docs-build test test-core test-server test-ui test-client test-mcp test-e2e test-all \
         install install-dev install-hooks install-core install-server install-ui install-client install-mcp \
-        install-ui-only install-server-only reinstall \
-        tool-install-ui tool-install-server check-deps \
+        install-local uninstall reinstall check-deps \
         clean lint format typecheck spell deadcode check \
         lint-core lint-client lint-server lint-ui lint-mcp \
         typecheck-core typecheck-client typecheck-server typecheck-ui typecheck-mcp \

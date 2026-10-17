@@ -54,12 +54,6 @@ include = ["taskdog*"]
 [tool.setuptools.package-data]
 taskdog_server = ["py.typed"]
 
-[tool.mypy]
-python_version = "3.13"
-strict = true
-# Disable unused-ignore warnings (environment-dependent)
-warn_unused_ignores = false
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   PYTHON_VERSION: "3.13"
 
@@ -60,11 +64,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: |
-          uv sync --all-extras --dev
-          uv pip install -e packages/taskdog-core
-          uv pip install -e packages/taskdog-server
-          uv pip install -e packages/taskdog-ui
+        run: uv sync --all-packages --all-extras --dev
 
       - name: Run type checker
         run: make typecheck
