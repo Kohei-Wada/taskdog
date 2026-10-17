@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -41,11 +40,17 @@ class BaseApiClient:
 
         Args:
             base_url: Base URL of the API server
-            timeout: Request timeout in seconds
+            timeout: Read/write timeout in seconds (connect and pool use 2s)
             api_key: API key for authentication (sent as X-Api-Key header)
         """
         self.base_url = base_url.rstrip("/")
-        self.client = httpx.Client(base_url=self.base_url, timeout=timeout)
+        self.client = httpx.Client(
+            base_url=self.base_url,
+            timeout=httpx.Timeout(timeout, connect=2.0, pool=2.0),
+            # Retries cover only connect errors/timeouts (a request is never
+            # sent twice); an unreachable host fails in ~6s instead of 30s.
+            transport=httpx.HTTPTransport(retries=2),
+        )
         self.client_id: str | None = None  # Set by WebSocket connection
         self.api_key = api_key
 
@@ -108,6 +113,18 @@ class BaseApiClient:
         except (KeyError, TypeError, ValueError):
             return "Validation error"
 
+    def _error_detail(self, response: httpx.Response, default: str) -> str:
+        """Return the string "detail" of an error body, or default.
+
+        The body may not be JSON (e.g. an HTML page from a reverse proxy).
+        """
+        try:
+            data = response.json()
+        except Exception:
+            return default
+        detail = data.get("detail") if isinstance(data, dict) else None
+        return detail if isinstance(detail, str) and detail else default
+
     def _handle_error(self, response: httpx.Response) -> None:
         """Handle HTTP error responses.
 
@@ -117,22 +134,24 @@ class BaseApiClient:
         Raises:
             TaskNotFoundException: If status is 404
             TaskValidationError: If status is 400 or 422
-            Exception: For other errors
+            AuthenticationError: If status is 401
+            ServerError: For any other error status
         """
         if response.status_code == 404:
-            detail = response.json().get("detail", "Task not found")
-            raise TaskNotFoundException(detail)
+            raise TaskNotFoundException(self._error_detail(response, "Task not found"))
         if response.status_code in (400, 422):
             detail = self._extract_validation_error_detail(response)
             raise TaskValidationError(detail)
         if response.status_code == 401:
-            raise AuthenticationError("Authentication failed. Check your API key.")
-        if response.status_code >= 500:
-            detail = "Server error occurred"
-            with contextlib.suppress(Exception):
-                detail = response.json().get("detail", detail)
-            raise ServerError(response.status_code, detail)
-        response.raise_for_status()
+            raise AuthenticationError(
+                self._error_detail(
+                    response, "Authentication failed. Check your API key."
+                )
+            )
+        raise ServerError(
+            response.status_code,
+            self._error_detail(response, "Server error occurred"),
+        )
 
     def lifecycle_operation(self, task_id: int, operation: str) -> TaskOperationOutput:
         """Execute a lifecycle operation on a task.

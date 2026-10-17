@@ -98,7 +98,7 @@ class AuthenticationError(TaskError):
 
 
 class ServerError(TaskError):
-    """Raised when API server returns 5xx error."""
+    """Raised when the API server returns an error status not mapped elsewhere."""
 
     def __init__(
         self, status_code: int, message: str = "Server error occurred."
@@ -106,7 +106,7 @@ class ServerError(TaskError):
         """Initialize with status code and error message.
 
         Args:
-            status_code: HTTP status code (5xx)
+            status_code: HTTP status code
             message: Human-readable error message
         """
         self.status_code = status_code
