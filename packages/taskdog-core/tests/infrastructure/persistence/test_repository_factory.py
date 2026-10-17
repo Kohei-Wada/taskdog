@@ -1,5 +1,6 @@
 """Tests for RepositoryFactory."""
 
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,7 @@ from taskdog_core.infrastructure.persistence.database.sqlite_task_repository imp
 )
 from taskdog_core.infrastructure.persistence.repository_factory import RepositoryFactory
 from taskdog_core.shared.config_manager import StorageConfig
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestRepositoryFactory:
@@ -101,3 +103,22 @@ class TestRepositoryFactory:
             # Clean up
             if hasattr(repository, "close"):
                 repository.close()
+
+    def test_create_passes_time_provider_to_repository(self):
+        """Test created_at and updated_at come from the given time provider."""
+        db_path = Path(self.temp_dir) / "test.db"
+        config = StorageConfig(backend="sqlite", database_url=f"sqlite:///{db_path}")
+        time_provider = FakeTimeProvider(datetime(2025, 3, 4, 5, 6, 7))
+
+        repository = RepositoryFactory.create(config, time_provider=time_provider)
+        try:
+            task = repository.create("Test Task", priority=1)
+            time_provider.advance(timedelta(hours=1))
+            task.name = "Renamed"
+            repository.save(task)
+
+            saved = repository.get_by_id(task.id)
+            assert saved.created_at == datetime(2025, 3, 4, 5, 6, 7)
+            assert saved.updated_at == datetime(2025, 3, 4, 6, 6, 7)
+        finally:
+            repository.close()

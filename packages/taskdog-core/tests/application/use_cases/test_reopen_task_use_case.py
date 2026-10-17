@@ -11,6 +11,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskValidationError,
 )
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestReopenTaskUseCase:
@@ -20,7 +21,7 @@ class TestReopenTaskUseCase:
     def setup(self, repository):
         """Initialize use case for each test."""
         self.repository = repository
-        self.use_case = ReopenTaskUseCase(self.repository)
+        self.use_case = ReopenTaskUseCase(self.repository, FakeTimeProvider())
 
     @pytest.mark.parametrize(
         "status,has_actual_start,has_actual_end",

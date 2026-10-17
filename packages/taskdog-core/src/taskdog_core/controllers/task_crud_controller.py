@@ -25,6 +25,7 @@ from taskdog_core.controllers.base_controller import BaseTaskController
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
+from taskdog_core.domain.services.time_provider import ITimeProvider
 from taskdog_core.shared.config_manager import Config
 
 logger = logging.getLogger(__name__)
@@ -51,6 +52,7 @@ class TaskCrudController(BaseTaskController):
         self,
         repository: TaskRepository,
         config: Config,
+        time_provider: ITimeProvider,
         holiday_checker: IHolidayChecker | None = None,
     ):
         """Initialize the CRUD controller.
@@ -58,9 +60,11 @@ class TaskCrudController(BaseTaskController):
         Args:
             repository: Task repository
             config: Application configuration
+            time_provider: Provider for status-change timestamps
             holiday_checker: Holiday checker for workload calculations (optional)
         """
         super().__init__(repository, config)
+        self._time_provider = time_provider
         self._holiday_checker = holiday_checker
 
     def create_task(
@@ -147,7 +151,9 @@ class TaskCrudController(BaseTaskController):
         """
         logger.info(f"Updating task: task_id={task_id}")
 
-        use_case = UpdateTaskUseCase(self.repository, self._holiday_checker)
+        use_case = UpdateTaskUseCase(
+            self.repository, self._time_provider, self._holiday_checker
+        )
         request = UpdateTaskInput(
             task_id=task_id,
             name=name,

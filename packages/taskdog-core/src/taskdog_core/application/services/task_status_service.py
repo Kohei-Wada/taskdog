@@ -1,9 +1,8 @@
 """Service for handling task status changes with time tracking."""
 
-from datetime import datetime
-
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.repositories.task_repository import TaskRepository
+from taskdog_core.domain.services.time_provider import ITimeProvider
 
 
 class TaskStatusService:
@@ -16,6 +15,9 @@ class TaskStatusService:
     This ensures consistent behavior across all status change operations
     and reduces code duplication in use cases.
     """
+
+    def __init__(self, time_provider: ITimeProvider) -> None:
+        self._time_provider = time_provider
 
     def apply_status_change(self, task: Task, new_status: TaskStatus) -> Task:
         """Apply a status change with time tracking, without persisting.
@@ -31,7 +33,7 @@ class TaskStatusService:
             The same task instance, with status and timestamps updated
         """
         # Update status via Task entity methods (encapsulation)
-        timestamp = datetime.now()
+        timestamp = self._time_provider.now()
 
         if new_status == TaskStatus.IN_PROGRESS:
             task.start(timestamp)
@@ -65,7 +67,7 @@ class TaskStatusService:
             Updated task with new status
 
         Example:
-            >>> service = TaskStatusService()
+            >>> service = TaskStatusService(SystemTimeProvider())
             >>> task = repository.get_by_id(1)
             >>> updated = service.change_status_with_tracking(
             ...     task, TaskStatus.IN_PROGRESS, repository

@@ -7,6 +7,7 @@ implementations based on storage backend configuration.
 from sqlalchemy.engine import Engine
 
 from taskdog_core.domain.repositories.task_repository import TaskRepository
+from taskdog_core.domain.services.time_provider import ITimeProvider
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
 )
@@ -24,7 +25,9 @@ class RepositoryFactory:
 
     @staticmethod
     def create(
-        storage_config: StorageConfig, engine: Engine | None = None
+        storage_config: StorageConfig,
+        engine: Engine | None = None,
+        time_provider: ITimeProvider | None = None,
     ) -> TaskRepository:
         """Create a TaskRepository instance based on storage configuration.
 
@@ -32,6 +35,7 @@ class RepositoryFactory:
             storage_config: Storage backend configuration
             engine: Optional shared SQLAlchemy Engine instance.
                    Pass a shared engine to avoid redundant connection pools.
+            time_provider: Optional provider for task timestamps.
 
         Returns:
             TaskRepository instance (SqliteTaskRepository)
@@ -43,7 +47,7 @@ class RepositoryFactory:
 
         if backend == "sqlite":
             return RepositoryFactory._create_sqlite_repository(
-                storage_config, engine=engine
+                storage_config, engine=engine, time_provider=time_provider
             )
         raise ValueError(
             f"Unsupported storage backend: {storage_config.backend}. "
@@ -54,12 +58,14 @@ class RepositoryFactory:
     def _create_sqlite_repository(
         storage_config: StorageConfig,
         engine: Engine | None = None,
+        time_provider: ITimeProvider | None = None,
     ) -> SqliteTaskRepository:
         """Create a SQLite-based repository instance.
 
         Args:
             storage_config: Storage configuration with optional database_url
             engine: Optional shared SQLAlchemy Engine instance.
+            time_provider: Optional provider for task timestamps.
 
         Returns:
             SqliteTaskRepository with configured database URL
@@ -74,4 +80,6 @@ class RepositoryFactory:
             database_url = f"sqlite:///{db_file}"
 
         mapper = TaskDbMapper()
-        return SqliteTaskRepository(database_url, mapper, engine=engine)
+        return SqliteTaskRepository(
+            database_url, mapper, time_provider=time_provider, engine=engine
+        )

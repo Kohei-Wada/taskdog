@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from taskdog_core.infrastructure.persistence.database.models import Base, TagModel
 from taskdog_core.infrastructure.persistence.mappers.tag_resolver import TagResolver
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestTagResolver:
@@ -42,7 +43,7 @@ class TestTagResolver:
         self.session.commit()
 
         # Resolve tag names to IDs
-        resolver = TagResolver(self.session)
+        resolver = TagResolver(self.session, FakeTimeProvider())
         tag_ids = resolver.resolve_tag_names_to_ids(["urgent", "backend"])
 
         assert len(tag_ids) == 2
@@ -51,7 +52,7 @@ class TestTagResolver:
 
     def test_resolve_new_tag_names_creates_tags(self):
         """Test that resolving new tag names automatically creates them."""
-        resolver = TagResolver(self.session)
+        resolver = TagResolver(self.session, FakeTimeProvider())
         tag_ids = resolver.resolve_tag_names_to_ids(["new-tag", "another-tag"])
 
         assert len(tag_ids) == 2
@@ -62,6 +63,15 @@ class TestTagResolver:
         tag_names = {tag.name for tag in tags}
         assert tag_names == {"new-tag", "another-tag"}
 
+    def test_new_tags_get_created_at_from_time_provider(self):
+        time_provider = FakeTimeProvider(datetime(2025, 3, 4, 5, 6, 7))
+        resolver = TagResolver(self.session, time_provider)
+
+        resolver.resolve_tag_names_to_ids(["new-tag"])
+
+        tag = self.session.query(TagModel).one()
+        assert tag.created_at == time_provider.now()
+
     def test_resolve_mixed_existing_and_new_tags(self):
         """Test resolving a mix of existing and new tags."""
         # Create one existing tag
@@ -70,7 +80,7 @@ class TestTagResolver:
         self.session.commit()
 
         # Resolve mixed tags
-        resolver = TagResolver(self.session)
+        resolver = TagResolver(self.session, FakeTimeProvider())
         tag_ids = resolver.resolve_tag_names_to_ids(["existing", "new"])
 
         assert len(tag_ids) == 2
@@ -83,7 +93,7 @@ class TestTagResolver:
 
     def test_resolve_empty_tag_list(self):
         """Test resolving an empty tag list."""
-        resolver = TagResolver(self.session)
+        resolver = TagResolver(self.session, FakeTimeProvider())
         tag_ids = resolver.resolve_tag_names_to_ids([])
 
         assert tag_ids == []
@@ -95,7 +105,7 @@ class TestTagResolver:
         self.session.add(tag)
         self.session.commit()
 
-        resolver = TagResolver(self.session)
+        resolver = TagResolver(self.session, FakeTimeProvider())
 
         # First call - should query database
         tag_ids_1 = resolver.resolve_tag_names_to_ids(["cached"])
@@ -113,7 +123,7 @@ class TestTagResolver:
         self.session.add(tag1)
         self.session.commit()
 
-        resolver = TagResolver(self.session)
+        resolver = TagResolver(self.session, FakeTimeProvider())
 
         # Try to resolve the same tag name multiple times
         tag_ids_1 = resolver.resolve_tag_names_to_ids(["duplicate"])
@@ -130,7 +140,7 @@ class TestTagResolver:
         """Test resolving tag names with special characters."""
         special_names = ["bug-fix", "v2.0", "frontend/ui", "日本語"]
 
-        resolver = TagResolver(self.session)
+        resolver = TagResolver(self.session, FakeTimeProvider())
         tag_ids = resolver.resolve_tag_names_to_ids(special_names)
 
         assert len(tag_ids) == len(special_names)
@@ -143,7 +153,7 @@ class TestTagResolver:
 
     def test_resolve_duplicate_names_in_same_list(self):
         """Test resolving a list with duplicate tag names."""
-        resolver = TagResolver(self.session)
+        resolver = TagResolver(self.session, FakeTimeProvider())
 
         # List with duplicates
         tag_names = ["urgent", "backend", "urgent"]

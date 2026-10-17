@@ -10,6 +10,7 @@ from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
 )
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestTaskLifecycleController:
@@ -23,6 +24,7 @@ class TestTaskLifecycleController:
         self.controller = TaskLifecycleController(
             repository=self.repository,
             config=self.config,
+            time_provider=FakeTimeProvider(),
         )
 
     @pytest.mark.parametrize(

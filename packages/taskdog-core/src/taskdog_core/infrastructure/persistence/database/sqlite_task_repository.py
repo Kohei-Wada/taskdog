@@ -254,10 +254,10 @@ class SqliteTaskRepository(SqliteBaseRepository, TaskRepository):
         Returns:
             Tuple of (insert_builder, tag_builder, allocation_builder)
         """
-        tag_resolver = TagResolver(session)
+        tag_resolver = TagResolver(session, self._time_provider)
         insert_builder = TaskInsertBuilder(session, self.mapper)
         tag_builder = TaskTagRelationshipBuilder(session, tag_resolver)
-        allocation_builder = DailyAllocationBuilder(session)
+        allocation_builder = DailyAllocationBuilder(session, self._time_provider)
         return insert_builder, tag_builder, allocation_builder
 
     def save_all(self, tasks: list[Task]) -> None:
@@ -276,7 +276,9 @@ class SqliteTaskRepository(SqliteBaseRepository, TaskRepository):
             insert_builder, tag_builder, allocation_builder = self._create_builders(
                 session
             )
-            update_builder = TaskUpdateBuilder(session, self.mapper)
+            update_builder = TaskUpdateBuilder(
+                session, self.mapper, self._time_provider
+            )
 
             # Bulk fetch existing tasks to avoid N+1 queries
             existing_ids = [t.id for t in tasks if t.id is not None]

@@ -16,6 +16,7 @@ from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 if TYPE_CHECKING:
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
+    from taskdog_core.domain.services.time_provider import ITimeProvider
 
 
 class UpdateTaskUseCase(UseCase[UpdateTaskInput, TaskUpdateOutput]):
@@ -28,18 +29,20 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, TaskUpdateOutput]):
     def __init__(
         self,
         repository: TaskRepository,
+        time_provider: "ITimeProvider",
         holiday_checker: "IHolidayChecker | None" = None,
     ):
         """Initialize use case.
 
         Args:
             repository: Task repository for data access
+            time_provider: Provider for status-change timestamps
             holiday_checker: Optional holiday checker for excluding holidays
                            from daily allocation calculations
         """
         self.repository = repository
         self.validator_registry = TaskFieldValidatorRegistry(repository)
-        self.status_service = TaskStatusService()
+        self.status_service = TaskStatusService(time_provider)
         self._strategy = ActualScheduleStrategy(holiday_checker=holiday_checker)
 
     def _update_status(

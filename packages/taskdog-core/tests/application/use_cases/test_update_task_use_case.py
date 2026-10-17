@@ -8,6 +8,7 @@ from taskdog_core.application.dto.update_task_input import UpdateTaskInput
 from taskdog_core.application.use_cases.update_task import UpdateTaskUseCase
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestUpdateTaskUseCase:
@@ -17,7 +18,7 @@ class TestUpdateTaskUseCase:
     def setup(self, repository):
         """Initialize use case for each test."""
         self.repository = repository
-        self.use_case = UpdateTaskUseCase(self.repository)
+        self.use_case = UpdateTaskUseCase(self.repository, FakeTimeProvider())
 
     @pytest.mark.parametrize(
         "field_name,update_kwargs,expected_field,expected_value_offset,description",

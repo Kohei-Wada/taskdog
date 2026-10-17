@@ -18,6 +18,9 @@ from taskdog_core.application.dto.task_operation_output import TaskOperationOutp
 from taskdog_core.application.use_cases.fix_actual_times import FixActualTimesUseCase
 from taskdog_core.application.use_cases.lifecycle_registry import LIFECYCLE_USE_CASES
 from taskdog_core.controllers.base_controller import BaseTaskController
+from taskdog_core.domain.repositories.task_repository import TaskRepository
+from taskdog_core.domain.services.time_provider import ITimeProvider
+from taskdog_core.shared.config_manager import Config
 
 
 class TaskLifecycleController(BaseTaskController):
@@ -37,6 +40,15 @@ class TaskLifecycleController(BaseTaskController):
         config: Application configuration (inherited from BaseTaskController)
     """
 
+    def __init__(
+        self,
+        repository: TaskRepository,
+        config: Config,
+        time_provider: ITimeProvider,
+    ):
+        super().__init__(repository, config)
+        self._time_provider = time_provider
+
     def execute_lifecycle(self, operation: str, task_id: int) -> StatusChangeOutput:
         """Execute a lifecycle status change on a task.
 
@@ -55,7 +67,7 @@ class TaskLifecycleController(BaseTaskController):
         use_case_cls = LIFECYCLE_USE_CASES.get(operation)
         if use_case_cls is None:
             raise ValueError(f"Invalid lifecycle operation: {operation}")
-        use_case = use_case_cls(self.repository)
+        use_case = use_case_cls(self.repository, self._time_provider)
         return use_case.execute(SingleTaskInput(task_id=task_id))
 
     def fix_actual_times(
