@@ -6,6 +6,7 @@ import pytest
 
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
 from taskdog_core.domain.entities.task import TaskStatus
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestTaskCrudController:
@@ -19,6 +20,7 @@ class TestTaskCrudController:
         self.controller = TaskCrudController(
             repository=self.repository,
             config=self.config,
+            time_provider=FakeTimeProvider(),
         )
 
     def test_create_task_returns_task_operation_output(self):
@@ -134,6 +136,7 @@ class TestTaskCrudController:
         controller = TaskCrudController(
             repository=repository,
             config=config,
+            time_provider=FakeTimeProvider(),
             holiday_checker=holiday_checker,
         )
 
@@ -149,6 +152,7 @@ class TestTaskCrudController:
         controller = TaskCrudController(
             repository=repository,
             config=config,
+            time_provider=FakeTimeProvider(),
         )
 
         # Assert - HolidayChecker should be None when not provided

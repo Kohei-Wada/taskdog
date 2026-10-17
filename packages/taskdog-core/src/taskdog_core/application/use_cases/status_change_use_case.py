@@ -12,6 +12,7 @@ from taskdog_core.application.validators.validator_registry import (
 )
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.repositories.task_repository import TaskRepository
+from taskdog_core.domain.services.time_provider import ITimeProvider
 
 
 class StatusChangeUseCase[TInput: SingleTaskInput](
@@ -40,15 +41,16 @@ class StatusChangeUseCase[TInput: SingleTaskInput](
                 return TaskStatus.IN_PROGRESS
     """
 
-    def __init__(self, repository: TaskRepository):
+    def __init__(self, repository: TaskRepository, time_provider: ITimeProvider):
         """Initialize use case with common dependencies.
 
         Args:
             repository: Task repository for data access
+            time_provider: Provider for status-change timestamps
         """
         self.repository = repository
         self.validator_registry = TaskFieldValidatorRegistry(repository)
-        self.status_service = TaskStatusService()
+        self.status_service = TaskStatusService(time_provider)
 
     def execute(self, input_dto: TInput) -> StatusChangeOutput:
         """Execute status change workflow (Template Method).

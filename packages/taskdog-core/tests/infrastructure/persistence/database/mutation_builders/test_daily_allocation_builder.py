@@ -14,6 +14,7 @@ from taskdog_core.infrastructure.persistence.database.models.task_model import B
 from taskdog_core.infrastructure.persistence.database.mutation_builders import (
     DailyAllocationBuilder,
 )
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestDailyAllocationBuilder:
@@ -45,7 +46,7 @@ class TestDailyAllocationBuilder:
             session.add(task_model)
             session.flush()
 
-            builder = DailyAllocationBuilder(session)
+            builder = DailyAllocationBuilder(session, FakeTimeProvider())
             allocations = {
                 date(2025, 1, 15): 2.0,
                 date(2025, 1, 16): 3.0,
@@ -91,7 +92,7 @@ class TestDailyAllocationBuilder:
 
         with self.Session() as session:
             task_model = session.get(TaskModel, 1)
-            builder = DailyAllocationBuilder(session)
+            builder = DailyAllocationBuilder(session, FakeTimeProvider())
 
             # Sync with different allocations
             allocations = {
@@ -144,7 +145,7 @@ class TestDailyAllocationBuilder:
 
         with self.Session() as session:
             task_model = session.get(TaskModel, 1)
-            builder = DailyAllocationBuilder(session)
+            builder = DailyAllocationBuilder(session, FakeTimeProvider())
 
             # Sync with empty dict
             builder.sync_daily_allocations(task_model, {})
@@ -170,7 +171,7 @@ class TestDailyAllocationBuilder:
             session.add(task_model)
             session.flush()
 
-            builder = DailyAllocationBuilder(session)
+            builder = DailyAllocationBuilder(session, FakeTimeProvider())
             allocations = {
                 date(2025, 1, 15): 2.0,
                 date(2025, 1, 16): 0.0,  # Should be skipped
@@ -204,7 +205,7 @@ class TestDailyAllocationBuilder:
             session.add(task_model)
             session.flush()
 
-            builder = DailyAllocationBuilder(session)
+            builder = DailyAllocationBuilder(session, FakeTimeProvider())
             allocations = {
                 date(2025, 1, 15): 2.0,
                 date(2025, 1, 16): -1.0,  # Should be skipped
@@ -263,7 +264,7 @@ class TestDailyAllocationBuilder:
 
         with self.Session() as session:
             task1 = session.get(TaskModel, 1)
-            builder = DailyAllocationBuilder(session)
+            builder = DailyAllocationBuilder(session, FakeTimeProvider())
 
             # Sync task 1 only
             builder.sync_daily_allocations(task1, {date(2025, 1, 15): 2.0})
@@ -293,7 +294,7 @@ class TestDailyAllocationBuilder:
 
         with self.Session() as session:
             task_model = session.get(TaskModel, 1)
-            builder = DailyAllocationBuilder(session)
+            builder = DailyAllocationBuilder(session, FakeTimeProvider())
             builder.sync_daily_allocations(task_model, {date(2025, 1, 15): 2.0})
             # Don't commit
 
@@ -317,7 +318,7 @@ class TestDailyAllocationBuilder:
             session.add(task_model)
             session.flush()
 
-            builder = DailyAllocationBuilder(session)
+            builder = DailyAllocationBuilder(session, FakeTimeProvider())
             builder.sync_daily_allocations(task_model, {date(2025, 1, 15): 2.0})
             session.commit()
 
@@ -342,7 +343,7 @@ class TestDailyAllocationBuilder:
                 updated_at=datetime.now(),
             )
 
-            builder = DailyAllocationBuilder(session)
+            builder = DailyAllocationBuilder(session, FakeTimeProvider())
             # Should not raise, just skip
             builder.sync_daily_allocations(task_model, {date(2025, 1, 15): 2.0})
             session.commit()
@@ -354,8 +355,8 @@ class TestDailyAllocationBuilder:
             assert len(records) == 0
 
     def test_sync_daily_allocations_sets_created_at(self):
-        """Test that sync_daily_allocations sets created_at timestamp."""
-        before = datetime.now()
+        """Test that sync_daily_allocations sets created_at from the time provider."""
+        time_provider = FakeTimeProvider(datetime(2025, 3, 4, 5, 6, 7))
 
         with self.Session() as session:
             task_model = TaskModel(
@@ -369,15 +370,12 @@ class TestDailyAllocationBuilder:
             session.add(task_model)
             session.flush()
 
-            builder = DailyAllocationBuilder(session)
+            builder = DailyAllocationBuilder(session, time_provider)
             builder.sync_daily_allocations(task_model, {date(2025, 1, 15): 2.0})
             session.commit()
 
-        after = datetime.now()
-
-        # Verify created_at is set correctly
         with self.Session() as session:
             stmt = select(DailyAllocationModel).where(DailyAllocationModel.task_id == 1)
             record = session.scalars(stmt).first()
             assert record is not None
-            assert before <= record.created_at <= after
+            assert record.created_at == time_provider.now()

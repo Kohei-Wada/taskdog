@@ -213,19 +213,23 @@ def app(
     query_controller = QueryController(
         session_repository, session_notes_repository, SystemTimeProvider()
     )
-    lifecycle_controller = TaskLifecycleController(session_repository, mock_config)
+    lifecycle_controller = TaskLifecycleController(
+        session_repository, mock_config, SystemTimeProvider()
+    )
     relationship_controller = TaskRelationshipController(
         session_repository, mock_config
     )
     analytics_controller = TaskAnalyticsController(
         session_repository, mock_config, None, session_audit_log_repository
     )
-    crud_controller = TaskCrudController(session_repository, mock_config)
+    crud_controller = TaskCrudController(
+        session_repository, mock_config, SystemTimeProvider()
+    )
     audit_log_controller = AuditLogController(
         session_audit_log_repository, SystemTimeProvider()
     )
     notes_controller = NotesController(session_repository, session_notes_repository)
-    bulk_service = BulkOperationService(session_repository)
+    bulk_service = BulkOperationService(session_repository, SystemTimeProvider())
     backup_controller = BackupController(SqliteBackupStore("sqlite:///:memory:"))
 
     # Create API context once

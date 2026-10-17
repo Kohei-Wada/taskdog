@@ -6,11 +6,10 @@ tag names and tag IDs, with automatic tag creation and caching for performance.
 This is part of Phase 2 implementation for Issue 228 (tag entity separation).
 """
 
-from datetime import datetime
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from taskdog_core.domain.services.time_provider import ITimeProvider
 from taskdog_core.infrastructure.persistence.database.models import TagModel
 
 
@@ -26,18 +25,20 @@ class TagResolver:
 
     Example:
         >>> with session_factory() as session:
-        ...     resolver = TagResolver(session)
+        ...     resolver = TagResolver(session, time_provider)
         ...     tag_ids = resolver.resolve_tag_names_to_ids(["urgent", "backend"])
         ...     # tag_ids = [1, 2] (creates tags if they don't exist)
     """
 
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, time_provider: ITimeProvider):
         """Initialize TagResolver with a database session.
 
         Args:
             session: SQLAlchemy session for database operations
+            time_provider: Provider for the created_at timestamp of new tags
         """
         self._session = session
+        self._time_provider = time_provider
         self._name_to_id_cache: dict[str, int] = {}
         self._id_to_name_cache: dict[int, str] = {}
 
@@ -88,7 +89,7 @@ class TagResolver:
         # Create new tags for names that don't exist (no duplicates)
         new_names = [name for name in uncached_names if name not in existing_names]
         for name in new_names:
-            new_tag = TagModel(name=name, created_at=datetime.now())
+            new_tag = TagModel(name=name, created_at=self._time_provider.now())
             self._session.add(new_tag)
             self._session.flush()  # Get the ID immediately
 

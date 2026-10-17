@@ -14,6 +14,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskAlreadyFinishedError,
     TaskNotFoundException,
 )
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class BaseStatusChangeUseCaseTest:
@@ -49,7 +50,8 @@ class BaseStatusChangeUseCaseTest:
     def setup(self, repository):
         """Initialize use case for each test."""
         self.repository = repository
-        self.use_case = self.use_case_class(self.repository)
+        self.time_provider = FakeTimeProvider()
+        self.use_case = self.use_case_class(self.repository, self.time_provider)
 
     def test_execute_sets_correct_status(self):
         """Test execute sets task status to the target status."""
@@ -86,9 +88,9 @@ class BaseStatusChangeUseCaseTest:
         result = self.use_case.execute(input_dto)
 
         if self.sets_actual_start:
-            assert result.task.actual_start is not None
+            assert result.task.actual_start == self.time_provider.now()
         if self.sets_actual_end:
-            assert result.task.actual_end is not None
+            assert result.task.actual_end == self.time_provider.now()
         if self.clears_actual_start:
             assert result.task.actual_start is None
         if self.clears_actual_end:

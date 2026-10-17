@@ -102,23 +102,27 @@ def initialize_api_context(
             holiday_checker = HolidayChecker(config.region.country)
 
     # Initialize repository using factory based on storage config (shared engine)
-    repository = RepositoryFactory.create(config.storage, engine=engine)
+    repository = RepositoryFactory.create(
+        config.storage, engine=engine, time_provider=time_provider
+    )
 
     # Initialize audit log repository (shared engine)
     audit_log_repository = SqliteAuditLogRepository(db_url, engine=engine)
 
     # Initialize controllers
     query_controller = QueryController(repository, notes_repository, time_provider)
-    lifecycle_controller = TaskLifecycleController(repository, config)
+    lifecycle_controller = TaskLifecycleController(repository, config, time_provider)
     relationship_controller = TaskRelationshipController(repository, config)
     analytics_controller = TaskAnalyticsController(
         repository, config, holiday_checker, audit_log_repository
     )
-    crud_controller = TaskCrudController(repository, config, holiday_checker)
+    crud_controller = TaskCrudController(
+        repository, config, time_provider, holiday_checker
+    )
     audit_log_controller = AuditLogController(audit_log_repository, time_provider)
     notes_controller = NotesController(repository, notes_repository)
 
-    bulk_service = BulkOperationService(repository)
+    bulk_service = BulkOperationService(repository, time_provider)
 
     # Backup/restore controller over a storage-neutral port
     backup_controller = BackupController(SqliteBackupStore(db_url))

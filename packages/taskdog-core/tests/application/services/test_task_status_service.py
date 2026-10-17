@@ -6,6 +6,7 @@ import pytest
 
 from taskdog_core.application.services.task_status_service import TaskStatusService
 from taskdog_core.domain.entities.task import TaskStatus
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestTaskStatusService:
@@ -15,7 +16,8 @@ class TestTaskStatusService:
     def setup(self, repository):
         """Set up test fixtures."""
         self.repository = repository
-        self.service = TaskStatusService()
+        self.time_provider = FakeTimeProvider()
+        self.service = TaskStatusService(self.time_provider)
 
     def test_change_status_to_in_progress(self):
         """Test changing status to IN_PROGRESS records actual_start."""

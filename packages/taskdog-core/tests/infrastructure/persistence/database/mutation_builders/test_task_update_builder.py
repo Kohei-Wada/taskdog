@@ -13,6 +13,7 @@ from taskdog_core.infrastructure.persistence.database.mutation_builders import (
     TaskUpdateBuilder,
 )
 from taskdog_core.infrastructure.persistence.mappers.task_db_mapper import TaskDbMapper
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestTaskUpdateBuilder:
@@ -55,7 +56,7 @@ class TestTaskUpdateBuilder:
             session.add(initial_model)
             session.flush()
 
-            builder = TaskUpdateBuilder(session, self.mapper)
+            builder = TaskUpdateBuilder(session, self.mapper, FakeTimeProvider())
             builder.update_task(initial_model, updated_task)
 
             # Verify changes applied
@@ -83,14 +84,11 @@ class TestTaskUpdateBuilder:
             session.add(initial_model)
             session.flush()
 
-            before_update = initial_model.updated_at
-
-            builder = TaskUpdateBuilder(session, self.mapper)
+            time_provider = FakeTimeProvider(datetime(2025, 3, 4, 5, 6, 7))
+            builder = TaskUpdateBuilder(session, self.mapper, time_provider)
             builder.update_task(initial_model, updated_task)
 
-            # Timestamp should be updated
-            assert initial_model.updated_at != before_update
-            assert initial_model.updated_at > before_update
+            assert initial_model.updated_at == time_provider.now()
 
     def test_update_task_does_not_commit(self):
         """Test that update_task does not commit the transaction."""
@@ -113,7 +111,7 @@ class TestTaskUpdateBuilder:
 
         with self.Session() as session:
             model = session.get(TaskModel, 1)
-            builder = TaskUpdateBuilder(session, self.mapper)
+            builder = TaskUpdateBuilder(session, self.mapper, FakeTimeProvider())
             builder.update_task(model, updated_task)
             # Don't commit
 
@@ -152,7 +150,7 @@ class TestTaskUpdateBuilder:
             session.add(initial_model)
             session.flush()
 
-            builder = TaskUpdateBuilder(session, self.mapper)
+            builder = TaskUpdateBuilder(session, self.mapper, FakeTimeProvider())
             builder.update_task(initial_model, updated_task)
 
             # Verify all fields updated

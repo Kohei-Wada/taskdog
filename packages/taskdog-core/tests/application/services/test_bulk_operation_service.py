@@ -6,13 +6,14 @@ from taskdog_core.application.services.bulk_operation_service import (
     BulkOperationService,
 )
 from taskdog_core.domain.entities.task import Task, TaskStatus
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestBulkOperationService:
     @pytest.fixture(autouse=True)
     def setup(self, repository):
         self.repository = repository
-        self.service = BulkOperationService(repository)
+        self.service = BulkOperationService(repository, FakeTimeProvider())
 
     def _add_task(self, name="Task", status=TaskStatus.PENDING, is_archived=False):
         task = Task(name=name, priority=1, status=status, is_archived=is_archived)

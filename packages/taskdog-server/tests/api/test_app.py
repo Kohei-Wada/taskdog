@@ -46,7 +46,7 @@ class TestApp:
             self.mock_repository, self.mock_notes_repository, SystemTimeProvider()
         )
         lifecycle_controller = TaskLifecycleController(
-            self.mock_repository, self.mock_config
+            self.mock_repository, self.mock_config, SystemTimeProvider()
         )
         relationship_controller = TaskRelationshipController(
             self.mock_repository, self.mock_config
@@ -57,6 +57,7 @@ class TestApp:
         crud_controller = TaskCrudController(
             self.mock_repository,
             self.mock_config,
+            SystemTimeProvider(),
         )
 
         # Create API context
@@ -75,7 +76,9 @@ class TestApp:
             notes_controller=NotesController(
                 self.mock_repository, self.mock_notes_repository
             ),
-            bulk_service=BulkOperationService(self.mock_repository),
+            bulk_service=BulkOperationService(
+                self.mock_repository, SystemTimeProvider()
+            ),
             backup_controller=BackupController(SqliteBackupStore("sqlite:///:memory:")),
         )
 

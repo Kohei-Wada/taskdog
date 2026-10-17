@@ -21,6 +21,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskValidationError,
 )
 from taskdog_core.domain.repositories.task_repository import TaskRepository
+from taskdog_core.domain.services.time_provider import ITimeProvider
 
 _TASK_ERRORS = (
     TaskNotFoundException,
@@ -38,8 +39,11 @@ class BulkOperationService:
     server layer is responsible for audit logging and WebSocket broadcasting.
     """
 
-    def __init__(self, repository: TaskRepository) -> None:
+    def __init__(
+        self, repository: TaskRepository, time_provider: ITimeProvider
+    ) -> None:
         self._repository = repository
+        self._time_provider = time_provider
 
     def bulk_lifecycle(
         self, task_ids: list[int], operation: str
@@ -63,7 +67,7 @@ class BulkOperationService:
         results: list[BulkTaskResultOutput] = []
         for task_id in task_ids:
             try:
-                result = use_case_cls(self._repository).execute(
+                result = use_case_cls(self._repository, self._time_provider).execute(
                     SingleTaskInput(task_id=task_id)
                 )
                 results.append(

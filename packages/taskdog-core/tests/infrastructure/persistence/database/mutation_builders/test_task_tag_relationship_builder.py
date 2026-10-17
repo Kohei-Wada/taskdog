@@ -16,6 +16,7 @@ from taskdog_core.infrastructure.persistence.database.mutation_builders import (
     TaskTagRelationshipBuilder,
 )
 from taskdog_core.infrastructure.persistence.mappers.tag_resolver import TagResolver
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestTaskTagRelationshipBuilder:
@@ -48,7 +49,7 @@ class TestTaskTagRelationshipBuilder:
             session.add(task_model)
             session.flush()
 
-            tag_resolver = TagResolver(session)
+            tag_resolver = TagResolver(session, FakeTimeProvider())
             builder = TaskTagRelationshipBuilder(session, tag_resolver)
             builder.sync_task_tags(task_model, ["urgent", "backend"])
 
@@ -85,7 +86,7 @@ class TestTaskTagRelationshipBuilder:
             assert len(task_model.tag_models) == 2
 
             # Sync with different tags
-            tag_resolver = TagResolver(session)
+            tag_resolver = TagResolver(session, FakeTimeProvider())
             builder = TaskTagRelationshipBuilder(session, tag_resolver)
             builder.sync_task_tags(task_model, ["frontend"])
 
@@ -119,7 +120,7 @@ class TestTaskTagRelationshipBuilder:
             assert len(task_model.tag_models) == 2
 
             # Sync with empty list
-            tag_resolver = TagResolver(session)
+            tag_resolver = TagResolver(session, FakeTimeProvider())
             builder = TaskTagRelationshipBuilder(session, tag_resolver)
             builder.sync_task_tags(task_model, [])
 
@@ -140,7 +141,7 @@ class TestTaskTagRelationshipBuilder:
             session.add(task_model)
             session.flush()
 
-            tag_resolver = TagResolver(session)
+            tag_resolver = TagResolver(session, FakeTimeProvider())
             builder = TaskTagRelationshipBuilder(session, tag_resolver)
             builder.sync_task_tags(task_model, ["zebra", "alpha", "beta", "gamma"])
 
@@ -168,7 +169,7 @@ class TestTaskTagRelationshipBuilder:
             assert len(existing_tags) == 0
 
             # Sync with new tags
-            tag_resolver = TagResolver(session)
+            tag_resolver = TagResolver(session, FakeTimeProvider())
             builder = TaskTagRelationshipBuilder(session, tag_resolver)
             builder.sync_task_tags(task_model, ["urgent", "backend"])
             session.commit()
@@ -200,7 +201,7 @@ class TestTaskTagRelationshipBuilder:
             session.flush()
 
             # Sync with existing tags
-            tag_resolver = TagResolver(session)
+            tag_resolver = TagResolver(session, FakeTimeProvider())
             builder = TaskTagRelationshipBuilder(session, tag_resolver)
             builder.sync_task_tags(task_model, ["urgent", "backend"])
             session.commit()
@@ -231,7 +232,7 @@ class TestTaskTagRelationshipBuilder:
             session.flush()
 
             # Sync with mix of existing and new tags
-            tag_resolver = TagResolver(session)
+            tag_resolver = TagResolver(session, FakeTimeProvider())
             builder = TaskTagRelationshipBuilder(session, tag_resolver)
             builder.sync_task_tags(task_model, ["urgent", "backend", "frontend"])
             session.commit()
@@ -260,7 +261,7 @@ class TestTaskTagRelationshipBuilder:
 
         with self.Session() as session:
             task_model = session.get(TaskModel, 1)
-            tag_resolver = TagResolver(session)
+            tag_resolver = TagResolver(session, FakeTimeProvider())
             builder = TaskTagRelationshipBuilder(session, tag_resolver)
             builder.sync_task_tags(task_model, ["urgent"])
             # Don't commit
@@ -284,7 +285,7 @@ class TestTaskTagRelationshipBuilder:
             session.add(task_model)
             session.flush()
 
-            tag_resolver = TagResolver(session)
+            tag_resolver = TagResolver(session, FakeTimeProvider())
             builder = TaskTagRelationshipBuilder(session, tag_resolver)
             builder.sync_task_tags(task_model, ["urgent", "backend"])
             session.commit()
@@ -311,7 +312,7 @@ class TestTaskTagRelationshipBuilder:
             session.add(task_model)
             session.flush()
 
-            tag_resolver = TagResolver(session)
+            tag_resolver = TagResolver(session, FakeTimeProvider())
             builder = TaskTagRelationshipBuilder(session, tag_resolver)
             builder.sync_task_tags(task_model, ["urgent", "backend"])
             session.commit()

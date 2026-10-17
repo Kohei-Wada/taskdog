@@ -17,6 +17,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskValidationError,
 )
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestOptimizeScheduleUseCase:
@@ -460,8 +461,8 @@ class TestOptimizeScheduleUseCase:
         from taskdog_core.application.use_cases.complete_task import CompleteTaskUseCase
         from taskdog_core.application.use_cases.start_task import StartTaskUseCase
 
-        start_use_case = StartTaskUseCase(self.repository)
-        complete_use_case = CompleteTaskUseCase(self.repository)
+        start_use_case = StartTaskUseCase(self.repository, FakeTimeProvider())
+        complete_use_case = CompleteTaskUseCase(self.repository, FakeTimeProvider())
 
         start_use_case.execute(SingleTaskInput(task_id=result.id))
         complete_use_case.execute(SingleTaskInput(task_id=result.id))
@@ -536,8 +537,8 @@ class TestOptimizeScheduleUseCase:
         from taskdog_core.application.use_cases.complete_task import CompleteTaskUseCase
         from taskdog_core.application.use_cases.start_task import StartTaskUseCase
 
-        start_use_case = StartTaskUseCase(self.repository)
-        complete_use_case = CompleteTaskUseCase(self.repository)
+        start_use_case = StartTaskUseCase(self.repository, FakeTimeProvider())
+        complete_use_case = CompleteTaskUseCase(self.repository, FakeTimeProvider())
 
         start_use_case.execute(SingleTaskInput(task_id=result2.id))
         complete_use_case.execute(SingleTaskInput(task_id=result2.id))
