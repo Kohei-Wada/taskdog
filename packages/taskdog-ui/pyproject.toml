@@ -60,21 +60,6 @@ include = ["taskdog*"]
 taskdog = ["py.typed"]
 "taskdog.tui.styles" = ["*.tcss"]
 
-[tool.mypy]
-python_version = "3.13"
-strict = true
-# Disable unused-ignore warnings (environment-dependent)
-warn_unused_ignores = false
-
-# Ignore missing imports for taskdog_client (installed separately)
-[[tool.mypy.overrides]]
-module = "taskdog_client"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "textual_plotext"
-ignore_missing_imports = true
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
