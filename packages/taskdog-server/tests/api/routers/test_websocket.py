@@ -116,3 +116,33 @@ class TestWebSocketDisconnect:
 
         # After context manager exits (disconnect), count should return to previous
         assert manager.get_connection_count() == count_before
+
+
+class TestWebSocketHeaderAuthentication:
+    """Test WebSocket authentication via the X-Api-Key header."""
+
+    def test_connect_with_valid_header(self, session_client):
+        with session_client.websocket_connect(
+            "/ws", headers={"X-Api-Key": TEST_API_KEY}
+        ) as ws:
+            data = ws.receive_json()
+            assert data["type"] == "connected"
+            assert data["user_name"] == TEST_CLIENT_NAME
+
+    def test_connect_with_invalid_header(self, session_client):
+        with (
+            pytest.raises(WebSocketDisconnect),
+            session_client.websocket_connect(
+                "/ws", headers={"X-Api-Key": "invalid-key"}
+            ) as ws,
+        ):
+            ws.receive_json()
+
+    def test_header_takes_precedence_over_query_token(self, session_client):
+        with (
+            pytest.raises(WebSocketDisconnect),
+            session_client.websocket_connect(
+                f"/ws?token={TEST_API_KEY}", headers={"X-Api-Key": "invalid-key"}
+            ) as ws,
+        ):
+            ws.receive_json()

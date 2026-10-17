@@ -6,7 +6,7 @@ real-time notifications about task changes.
 
 import uuid
 
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Header, Query, WebSocket, WebSocketDisconnect
 
 from taskdog_server.api.dependencies import (
     ConnectionManagerWsDep,
@@ -22,7 +22,12 @@ async def websocket_endpoint(
     websocket: WebSocket,
     manager: ConnectionManagerWsDep,
     server_config: ServerConfigWsDep,
-    token: str | None = Query(None, description="API key for authentication"),
+    x_api_key: str | None = Header(None, description="API key for authentication"),
+    token: str | None = Query(
+        None,
+        description="API key as query parameter, for clients that cannot set "
+        "headers (browsers). It appears in access logs; prefer X-Api-Key.",
+    ),
 ) -> None:
     """WebSocket endpoint for real-time task updates.
 
@@ -30,13 +35,16 @@ async def websocket_endpoint(
     when tasks are created, updated, or deleted.
 
     Authentication:
-        Pass API key as query parameter: /ws?token=sk-xxx
+        Send the API key in the X-Api-Key header. Browsers cannot set
+        WebSocket headers, so ?token= is still accepted, but the key then
+        shows up in access logs. The header wins when both are present.
 
     Args:
         websocket: The WebSocket connection
         manager: Connection manager dependency
         server_config: Server configuration dependency
-        token: API key for authentication (query parameter)
+        x_api_key: API key from the X-Api-Key header
+        token: API key from the query string (fallback)
 
     Message Format:
         {
@@ -48,7 +56,9 @@ async def websocket_endpoint(
     """
     # Validate API key before accepting connection
     try:
-        client_name = validate_api_key_for_websocket(token, server_config)
+        client_name = validate_api_key_for_websocket(
+            x_api_key if x_api_key is not None else token, server_config
+        )
     except ValueError as e:
         # Use standard WebSocket close code 1008 (Policy Violation) for auth failures
         await websocket.close(code=1008, reason=str(e))

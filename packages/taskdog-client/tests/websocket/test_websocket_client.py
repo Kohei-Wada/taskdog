@@ -1,6 +1,7 @@
 """Tests for WebSocketClient."""
 
 import asyncio
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -204,3 +205,40 @@ class TestWebSocketClientConcurrency:
 
             # Should end up disconnected
             assert client._state == ConnectionState.DISCONNECTED
+
+
+class TestWebSocketClientAuth:
+    """Tests for how the API key is sent on connect."""
+
+    async def _connect_call(self, client: WebSocketClient) -> Any:
+        def fake_connect(*args: Any, **kwargs: Any) -> None:
+            client._state = ConnectionState.DISCONNECTED
+            raise OSError("stop")
+
+        client._state = ConnectionState.CONNECTING
+        with (
+            patch(
+                "taskdog_client.websocket.websocket_client.websockets.connect",
+                side_effect=fake_connect,
+            ) as connect,
+            patch.object(client, "_handle_connection_error", return_value=(False, 1.0)),
+        ):
+            await client._run()
+        return connect.call_args
+
+    async def test_api_key_sent_as_header_not_in_url(self) -> None:
+        client = WebSocketClient("ws://localhost:8000/ws", api_key="sk-secret")
+
+        call = await self._connect_call(client)
+
+        assert call.args == ("ws://localhost:8000/ws",)
+        assert call.kwargs["additional_headers"] == {"X-Api-Key": "sk-secret"}
+        assert "sk-secret" not in client.ws_url
+
+    async def test_no_header_without_api_key(self) -> None:
+        client = WebSocketClient("ws://localhost:8000/ws")
+
+        call = await self._connect_call(client)
+
+        assert call.args == ("ws://localhost:8000/ws",)
+        assert call.kwargs["additional_headers"] == {}
