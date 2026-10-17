@@ -2,6 +2,11 @@
 
 from taskdog_core.shared.constants import MAX_TAG_LENGTH, MAX_TAGS_PER_TASK
 
+# Request size bounds against oversized payloads; far above real usage.
+MAX_TASK_IDS_PER_REQUEST = 1000
+MAX_NOTES_LENGTH = 1_000_000
+MAX_TAG_FILTERS = 100
+
 
 def validate_tags(tags: list[str]) -> list[str]:
     """Validate tags are non-empty, unique, and within limits.

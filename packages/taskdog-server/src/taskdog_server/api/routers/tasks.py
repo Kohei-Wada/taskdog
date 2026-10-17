@@ -27,6 +27,7 @@ from taskdog_server.api.models.responses import (
     UpdateTaskResponse,
 )
 from taskdog_server.api.utils import parse_iso_date
+from taskdog_server.api.validators import MAX_TAG_FILTERS
 
 router = APIRouter()
 
@@ -97,7 +98,8 @@ def list_tasks(
         str | None, Query(alias="status", description="Filter by status")
     ] = None,
     tags: Annotated[
-        list[str] | None, Query(description="Filter by tags (OR logic)")
+        list[str] | None,
+        Query(max_length=MAX_TAG_FILTERS, description="Filter by tags (OR logic)"),
     ] = None,
     start_date: Annotated[str | None, Query(description="Filter by start date")] = None,
     end_date: Annotated[str | None, Query(description="Filter by end date")] = None,
@@ -190,7 +192,8 @@ def get_executable_tasks(
     controller: QueryControllerDep,
     _client_name: AuthenticatedClientDep,
     tags: Annotated[
-        list[str] | None, Query(description="Filter by tags (OR logic)")
+        list[str] | None,
+        Query(max_length=MAX_TAG_FILTERS, description="Filter by tags (OR logic)"),
     ] = None,
     limit: Annotated[int, Query(ge=1, description="Maximum tasks to return")] = 10,
 ) -> NextTasksResponse:

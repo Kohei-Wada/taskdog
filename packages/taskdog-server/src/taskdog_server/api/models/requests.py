@@ -6,6 +6,10 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.shared.constants import MAX_TASK_NAME_LENGTH
+from taskdog_server.api.validators import (
+    MAX_NOTES_LENGTH,
+    MAX_TASK_IDS_PER_REQUEST,
+)
 from taskdog_server.api.validators import validate_tags as _validate_tags
 
 
@@ -147,7 +151,10 @@ class BulkTaskIdsRequest(BaseModel):
     """Request model for bulk task operations."""
 
     task_ids: list[int] = Field(
-        ..., min_length=1, description="List of task IDs to operate on"
+        ...,
+        min_length=1,
+        max_length=MAX_TASK_IDS_PER_REQUEST,
+        description="List of task IDs to operate on",
     )
 
 
@@ -166,6 +173,7 @@ class OptimizeScheduleRequest(BaseModel):
     )
     task_ids: list[int] | None = Field(
         None,
+        max_length=MAX_TASK_IDS_PER_REQUEST,
         description="Specific task IDs to optimize (None means all schedulable tasks)",
     )
     include_all_days: bool = Field(
@@ -177,4 +185,6 @@ class OptimizeScheduleRequest(BaseModel):
 class UpdateNotesRequest(BaseModel):
     """Request model for updating task notes."""
 
-    content: str = Field(..., description="Notes content (markdown)")
+    content: str = Field(
+        ..., max_length=MAX_NOTES_LENGTH, description="Notes content (markdown)"
+    )

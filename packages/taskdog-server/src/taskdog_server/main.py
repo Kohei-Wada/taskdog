@@ -1,9 +1,20 @@
 """Main entry point for Taskdog API server."""
 
 import argparse
+import ipaddress
 import sys
 
 from taskdog_server import __version__
+from taskdog_server.config.server_config_manager import ServerConfigManager
+
+
+def _is_loopback(host: str) -> bool:
+    if host == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
 
 
 def main() -> None:
@@ -14,7 +25,7 @@ def main() -> None:
         epilog="""
 Examples:
   taskdog-server                        # Start server on default host:port
-  taskdog-server --host 0.0.0.0         # Listen on all interfaces
+  taskdog-server --host 0.0.0.0         # Listen on all interfaces (enable auth first)
   taskdog-server --port 3000            # Use custom port
   taskdog-server --reload               # Enable auto-reload for dev
 
@@ -55,6 +66,14 @@ The API will be available at:
             file=sys.stderr,
         )
         sys.exit(1)
+
+    if not _is_loopback(args.host) and not ServerConfigManager.load().auth.enabled:
+        print(
+            f"WARNING: authentication is disabled but the server listens on {args.host}. "
+            "Anyone who can reach this address can read and delete your tasks. "
+            "Enable [auth] in server.toml or set TASKDOG_AUTH_ENABLED=true.",
+            file=sys.stderr,
+        )
 
     print(f"Starting Taskdog API server on {args.host}:{args.port}")
     print(f"API documentation: http://{args.host}:{args.port}/docs")

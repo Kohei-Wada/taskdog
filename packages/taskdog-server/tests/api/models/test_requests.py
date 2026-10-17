@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_server.api.models.requests import (
     AddDependencyRequest,
+    BulkTaskIdsRequest,
     CreateTaskRequest,
     OptimizeScheduleRequest,
     SetTaskTagsRequest,
@@ -298,3 +299,33 @@ class TestUpdateNotesRequest:
 
         # Assert
         assert request.content == markdown
+
+    def test_content_at_max_length_is_accepted(self):
+        request = UpdateNotesRequest(content="a" * 1_000_000)
+
+        assert len(request.content) == 1_000_000
+
+    def test_content_over_max_length_is_rejected(self):
+        with pytest.raises(ValidationError):
+            UpdateNotesRequest(content="a" * 1_000_001)
+
+
+class TestTaskIdsLimit:
+    """Test task ID arrays are bounded."""
+
+    def test_bulk_task_ids_at_max_is_accepted(self):
+        request = BulkTaskIdsRequest(task_ids=list(range(1, 1001)))
+
+        assert len(request.task_ids) == 1000
+
+    def test_bulk_task_ids_over_max_is_rejected(self):
+        with pytest.raises(ValidationError):
+            BulkTaskIdsRequest(task_ids=list(range(1, 1002)))
+
+    def test_optimize_task_ids_over_max_is_rejected(self):
+        with pytest.raises(ValidationError):
+            OptimizeScheduleRequest(
+                algorithm="greedy",
+                max_hours_per_day=8,
+                task_ids=list(range(1, 1002)),
+            )
