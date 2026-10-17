@@ -79,7 +79,7 @@ See [Authentication Documentation](https://kohei-wada.github.io/taskdog/referenc
 
 ## WebSocket Real-time Updates
 
-Connect to `/ws` for real-time task notifications:
+Connect to `/ws` for real-time task notifications. Clients that can set headers should send `X-Api-Key`; browsers can only use `?token=`, which is written to access logs:
 
 ```javascript
 const ws = new WebSocket('ws://localhost:8000/ws?token=your-api-key');

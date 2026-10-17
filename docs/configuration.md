@@ -59,7 +59,7 @@ name = "my-desktop"
 
 **Behavior:**
 
-- When `enabled = true`: All HTTP endpoints require `X-Api-Key` header, WebSocket requires `?token=` query parameter
+- When `enabled = true`: All HTTP endpoints and the WebSocket require the `X-Api-Key` header (browsers, which cannot set WebSocket headers, may use the `?token=` query parameter instead; it is written to access logs)
 - When `enabled = false`: No authentication required (for local development)
 - The `name` field is used as `source_user_name` in WebSocket broadcast payloads
 

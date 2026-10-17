@@ -52,7 +52,15 @@ curl -H "X-Api-Key: your-secret-key" http://localhost:8000/api/v1/tasks/
 
 ### WebSocket Authentication
 
-Send API key via query parameter:
+Send the API key in the `X-Api-Key` header (the CLI/TUI client does this):
+
+```python
+websockets.connect(
+    "ws://localhost:8000/ws", additional_headers={"X-Api-Key": "your-secret-key"}
+)
+```
+
+Browsers cannot set WebSocket headers, so `?token=` is accepted as a fallback. The key then appears in server and proxy access logs, so prefer the header whenever the client can set one:
 
 ```javascript
 const ws = new WebSocket('ws://localhost:8000/ws?token=your-secret-key');
@@ -532,7 +540,7 @@ Real-time task notifications
 Connect to WebSocket endpoint for real-time updates:
 
 ```javascript
-// With authentication
+// With authentication from a browser (non-browser clients should send X-Api-Key instead)
 const ws = new WebSocket('ws://localhost:8000/ws?token=your-api-key');
 
 // Without authentication (if auth.enabled = false)
