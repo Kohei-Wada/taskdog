@@ -10,12 +10,6 @@ MainScreen {
     text-align: center;
 }
 
-#table-title {
-    padding: 1 0;
-    text-align: left;
-    background: transparent;
-}
-
 /* Gantt chart - main display area */
 #gantt-widget {
     width: 100%;
