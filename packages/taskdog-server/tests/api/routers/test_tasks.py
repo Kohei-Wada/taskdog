@@ -480,3 +480,27 @@ class TestTasksRouter:
         query = AuditQuery(operation="update_task", limit=10, offset=0)
         logs = audit_log_repository.get_logs(query)
         assert len(logs) >= 1
+
+
+class TestTagFilterLimit:
+    """Test the tags query parameter is bounded."""
+
+    @pytest.mark.parametrize(
+        "path", ["/api/v1/tasks", "/api/v1/tasks/executable", "/api/v1/gantt"]
+    )
+    def test_tags_at_max_is_accepted(self, client, path):
+        params = [("tags", f"t{i}") for i in range(100)]
+
+        response = client.get(path, params=params)
+
+        assert response.status_code == 200
+
+    @pytest.mark.parametrize(
+        "path", ["/api/v1/tasks", "/api/v1/tasks/executable", "/api/v1/gantt"]
+    )
+    def test_tags_over_max_is_rejected(self, client, path):
+        params = [("tags", f"t{i}") for i in range(101)]
+
+        response = client.get(path, params=params)
+
+        assert response.status_code == 422

@@ -43,6 +43,7 @@ from taskdog_server.api.models.responses import (
     TrendData,
 )
 from taskdog_server.api.utils import parse_iso_date
+from taskdog_server.api.validators import MAX_TAG_FILTERS
 
 VALID_PERIODS = ("all", "7d", "30d")
 
@@ -235,7 +236,8 @@ def get_gantt_chart(
         str | None, Query(alias="status", description="Filter by status")
     ] = None,
     tags: Annotated[
-        list[str] | None, Query(description="Filter by tags (OR logic)")
+        list[str] | None,
+        Query(max_length=MAX_TAG_FILTERS, description="Filter by tags (OR logic)"),
     ] = None,
     filter_start_date: Annotated[
         str | None, Query(description="Task filter start date (ISO format)")
