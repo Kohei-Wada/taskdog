@@ -112,19 +112,52 @@ class TestBaseApiClient:
         assert "502" in str(exc_info.value)
         assert "Server error occurred" in str(exc_info.value)
 
-    def test_handle_error_other_status(self):
-        """Test _handle_error calls raise_for_status for other errors."""
+    @pytest.mark.parametrize("status_code", [403, 405, 409, 429])
+    def test_handle_error_unmapped_status_raises_server_error(self, status_code):
         client = BaseApiClient(self.base_url, self.timeout)
         response = Mock()
-        response.status_code = 403  # Use 403 Forbidden as "other" error
-        response.raise_for_status.side_effect = httpx.HTTPStatusError(
-            "Forbidden", request=Mock(), response=response
-        )
+        response.status_code = status_code
+        response.json.return_value = {"detail": "Nope"}
 
-        with pytest.raises(httpx.HTTPStatusError):
+        with pytest.raises(ServerError) as exc_info:
             client._handle_error(response)
 
-        response.raise_for_status.assert_called_once()
+        assert exc_info.value.status_code == status_code
+        assert "Nope" in str(exc_info.value)
+
+    def test_handle_error_404_with_non_json_body(self):
+        client = BaseApiClient(self.base_url, self.timeout)
+        response = Mock()
+        response.status_code = 404
+        response.json.side_effect = ValueError("Expecting value")
+
+        with pytest.raises(TaskNotFoundException) as exc_info:
+            client._handle_error(response)
+
+        assert "Task not found" in str(exc_info.value)
+
+    def test_handle_error_401_keeps_server_detail(self):
+        client = BaseApiClient(self.base_url, self.timeout)
+        response = Mock()
+        response.status_code = 401
+        response.json.return_value = {"detail": "API key required"}
+
+        with pytest.raises(AuthenticationError) as exc_info:
+            client._handle_error(response)
+
+        assert "API key required" in str(exc_info.value)
+
+    def test_connect_timeout_is_short_and_read_timeout_configurable(self):
+        client = BaseApiClient(self.base_url, self.timeout)
+
+        assert client.client.timeout.connect == 2.0
+        assert client.client.timeout.read == self.timeout
+
+    @patch("taskdog_client.base_client.httpx.HTTPTransport")
+    def test_transport_retries_connection_failures(self, mock_transport):
+        BaseApiClient(self.base_url, self.timeout)
+
+        mock_transport.assert_called_once_with(retries=2)
 
     @patch.object(BaseApiClient, "_handle_error")
     def test_safe_request_success(self, mock_handle_error):
