@@ -27,7 +27,7 @@ class TestAnalyticsClient:
         result = self.client.calculate_statistics(period="7d")
 
         self.mock_base._request_json.assert_called_once_with(
-            "get", "/api/v1/statistics?period=7d"
+            "get", "/api/v1/statistics", params={"period": "7d"}
         )
         assert result == mock_output
 

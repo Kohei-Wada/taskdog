@@ -40,7 +40,9 @@ class AnalyticsClient:
         Raises:
             TaskValidationError: If period is invalid
         """
-        data = self._base._request_json("get", f"/api/v1/statistics?period={period}")
+        data = self._base._request_json(
+            "get", "/api/v1/statistics", params={"period": period}
+        )
         return convert_to_statistics_output(data)
 
     def optimize_schedule(

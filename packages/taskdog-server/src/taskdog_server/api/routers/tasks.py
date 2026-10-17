@@ -375,7 +375,7 @@ def restore_task(
     return TaskOperationResponse.from_dto(result)
 
 
-@router.delete("/{task_id}")
+@router.delete("/{task_id}", response_model=TaskOperationResponse)
 def delete_task(
     task_id: int,
     controller: CrudControllerDep,
