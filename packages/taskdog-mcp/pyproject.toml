@@ -1,6 +1,6 @@
 [project]
 name = "taskdog-mcp"
-version = "0.28.1"
+version = "0.29.0"
 description = "MCP server for Taskdog - enables Claude Desktop integration"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -18,8 +18,8 @@ classifiers = [
 ]
 
 dependencies = [
-    "taskdog-client==0.28.1",
-    "taskdog-core==0.28.1",
+    "taskdog-client==0.29.0",
+    "taskdog-core==0.29.0",
     "mcp>=2.0.0",
 ]
 
