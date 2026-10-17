@@ -48,7 +48,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             holiday_checker: Holiday checker for workday validation (optional)
         """
         self.repository = repository
-        self.summary_builder = OptimizationSummaryBuilder(repository)
+        self.summary_builder = OptimizationSummaryBuilder()
         self.holiday_checker = holiday_checker
 
     def execute(self, input_dto: OptimizeScheduleInput) -> OptimizationOutput:
@@ -164,12 +164,18 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
                     task.clear_schedule()
                 self.repository.save_all(tasks_to_clear)
 
+        # Strategies return copies of scheduled tasks; overlay them on the
+        # fetched list (cleared tasks were mutated in place) instead of re-reading.
+        saved_by_id = {t.id: t for t in result.tasks}
+        tasks_after = [saved_by_id.get(t.id, t) for t in all_tasks]
+
         # Build optimization summary
         summary = self.summary_builder.build(
             result.tasks,
             task_states_before,
             result.daily_allocations,
             input_dto.max_hours_per_day,
+            tasks_after,
         )
 
         # Convert Tasks to DTOs
