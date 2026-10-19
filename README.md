@@ -132,6 +132,13 @@ https://github.com/user-attachments/assets/dcb44390-7b10-49a0-bdfc-01a03d7751f9
 - **[Design Philosophy](https://kohei-wada.github.io/taskdog/design-philosophy/)** - Why Taskdog works this way
 - **[Deployment Guide](contrib/README.md)** - Docker, systemd, launchd
 
+## Write-ups
+
+Background on why taskdog works the way it does, and how it is used day to day:
+
+- **[Building a CLI Task Manager That Solves the "When to Do It" Problem Taskwarrior Lacked](https://wada-dev.com/en/blog/taskdog-cli-task-management-tool/)** - What was missing, and the scheduling model that came out of it
+- **[Funneling Slack requests into taskdog and letting /loop run them](https://wada-dev.com/en/blog/taskloop-slack-inbox-to-taskdog/)** - Driving taskdog from an external inbox
+
 ## Architecture
 
 UV workspace monorepo with five packages:
