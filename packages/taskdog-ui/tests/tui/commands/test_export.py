@@ -1,11 +1,39 @@
 """Tests for ExportCommand."""
 
+import json
+from datetime import datetime
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from taskdog.tui.commands.export import ExportCommand
+from taskdog_core.application.dto.task_dto import TaskRowDto
+from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
+
+
+def _make_task(task_id: int) -> TaskRowDto:
+    return TaskRowDto(
+        id=task_id,
+        name=f"Task {task_id}",
+        priority=1,
+        status=TaskStatus.PENDING,
+        is_fixed=False,
+        depends_on=[],
+        tags=[],
+        estimated_duration=None,
+        actual_duration_hours=None,
+        planned_start=None,
+        planned_end=None,
+        actual_start=None,
+        actual_end=None,
+        deadline=None,
+        created_at=datetime(2024, 12, 20, 10, 0),
+        updated_at=datetime(2024, 12, 20, 10, 0),
+        is_archived=False,
+        is_finished=False,
+    )
 
 
 class TestExportCommandInit:
@@ -29,17 +57,6 @@ class TestExportCommandInit:
 
         assert command.format_key == ""
 
-    def test_exporter_classes_registered(self) -> None:
-        """Test that exporter classes are registered."""
-        mock_app = MagicMock()
-        mock_context = MagicMock()
-
-        command = ExportCommand(mock_app, mock_context)
-
-        assert "JsonTaskExporter" in command.exporter_classes
-        assert "CsvTaskExporter" in command.exporter_classes
-        assert "MarkdownTableExporter" in command.exporter_classes
-
 
 class TestExportCommandExecute:
     """Test cases for execute method."""
@@ -49,6 +66,7 @@ class TestExportCommandExecute:
         """Set up test fixtures."""
         self.mock_app = MagicMock()
         self.mock_context = MagicMock()
+        self.mock_context.state.is_filtered = False
 
     def test_warns_on_unknown_format(self) -> None:
         """Test warning when format is unknown."""
@@ -173,10 +191,10 @@ class TestExportCommandExecute:
 
         mock_downloads.mkdir.assert_called_once_with(parents=True, exist_ok=True)
 
-    @patch("taskdog.tui.commands.export.JsonTaskExporter")
+    @patch("taskdog.tui.commands.export.create_exporter")
     @patch("taskdog.tui.commands.export.Path")
     def test_success_message_includes_task_count(
-        self, mock_path: MagicMock, mock_exporter_class: MagicMock
+        self, mock_path: MagicMock, mock_create_exporter: MagicMock
     ) -> None:
         """Test that success message includes task count."""
         mock_home = MagicMock()
@@ -192,11 +210,9 @@ class TestExportCommandExecute:
         # Mock the exporter instance
         mock_exporter = MagicMock()
         mock_exporter.export.return_value = "[]"
-        mock_exporter_class.return_value = mock_exporter
+        mock_create_exporter.return_value = mock_exporter
 
         command = ExportCommand(self.mock_app, self.mock_context, format_key="json")
-        # Re-assign to use the mock
-        command.exporter_classes["JsonTaskExporter"] = mock_exporter_class
         command.notify_success = MagicMock()
 
         with patch("builtins.open", MagicMock()):
@@ -228,3 +244,39 @@ class TestExportCommandExecute:
         self.mock_context.api_client.list_tasks.assert_called_once_with(
             include_archived=True,
         )
+
+
+class TestExportCommandFilter:
+    """Export writes what the table shows when a search filter is active."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, tmp_path: Path) -> None:
+        self.mock_app = MagicMock()
+        self.mock_context = MagicMock()
+        result = MagicMock()
+        result.tasks = [_make_task(1), _make_task(2), _make_task(3)]
+        self.mock_context.api_client.list_tasks.return_value = result
+        self.home = tmp_path
+
+    def _export_ids(self) -> list[int]:
+        command = ExportCommand(self.mock_app, self.mock_context, format_key="json")
+        command.notify_success = MagicMock()
+        command.notify_error = MagicMock()
+
+        with patch("taskdog.tui.commands.export.Path.home", return_value=self.home):
+            command.execute()
+
+        command.notify_error.assert_not_called()
+        (exported,) = (self.home / "Downloads").glob("Taskdog_export_*.json")
+        return [task["id"] for task in json.loads(exported.read_text())]
+
+    def test_exports_only_tasks_matching_active_filter(self) -> None:
+        self.mock_context.state.is_filtered = True
+        self.mock_context.state.filtered_task_ids = {1, 3}
+
+        assert self._export_ids() == [1, 3]
+
+    def test_exports_all_tasks_without_filter(self) -> None:
+        self.mock_context.state.is_filtered = False
+
+        assert self._export_ids() == [1, 2, 3]
