@@ -13,8 +13,14 @@ FROM python:3.13-slim-bookworm
 
 WORKDIR /app
 
+ARG TASKDOG_VERSION=""
+
 # Install packages from PyPI
-RUN pip install --no-cache-dir taskdog-ui[server]
+RUN if [ -n "${TASKDOG_VERSION}" ]; then \
+        pip install --no-cache-dir "taskdog-ui[server]==${TASKDOG_VERSION}"; \
+    else \
+        pip install --no-cache-dir "taskdog-ui[server]"; \
+    fi
 
 # Copy demo scripts and entrypoint
 COPY scripts/demo_data.py scripts/demo_data.json ./scripts/
