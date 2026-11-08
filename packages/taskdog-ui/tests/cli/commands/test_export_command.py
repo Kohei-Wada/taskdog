@@ -21,8 +21,8 @@ class TestExportCommand:
         self.cli_context.console_writer = self.console_writer
         self.cli_context.api_client = self.api_client
 
-    @patch("taskdog.cli.commands.export.JsonTaskExporter")
-    def test_basic_export_json(self, mock_exporter_class):
+    @patch("taskdog.cli.commands.export.create_exporter")
+    def test_basic_export_json(self, mock_create_exporter):
         """Test basic JSON export to stdout."""
         # Setup
         mock_result = MagicMock()
@@ -31,7 +31,7 @@ class TestExportCommand:
 
         mock_exporter = MagicMock()
         mock_exporter.export.return_value = '{"tasks": []}'
-        mock_exporter_class.return_value = mock_exporter
+        mock_create_exporter.return_value = mock_exporter
 
         # Execute
         result = self.runner.invoke(export_command, [], obj=self.cli_context)
@@ -41,8 +41,8 @@ class TestExportCommand:
         self.api_client.list_tasks.assert_called_once()
         mock_exporter.export.assert_called_once()
 
-    @patch("taskdog.cli.commands.export.CsvTaskExporter")
-    def test_export_csv(self, mock_exporter_class):
+    @patch("taskdog.cli.commands.export.create_exporter")
+    def test_export_csv(self, mock_create_exporter):
         """Test CSV export."""
         # Setup
         mock_result = MagicMock()
@@ -51,7 +51,7 @@ class TestExportCommand:
 
         mock_exporter = MagicMock()
         mock_exporter.export.return_value = "id,name\n1,Task"
-        mock_exporter_class.return_value = mock_exporter
+        mock_create_exporter.return_value = mock_exporter
 
         # Execute
         result = self.runner.invoke(
@@ -60,10 +60,10 @@ class TestExportCommand:
 
         # Verify
         assert result.exit_code == 0
-        mock_exporter_class.assert_called_once()
+        mock_create_exporter.assert_called_once_with("csv", field_list=None)
 
-    @patch("taskdog.cli.commands.export.MarkdownTableExporter")
-    def test_export_markdown(self, mock_exporter_class):
+    @patch("taskdog.cli.commands.export.create_exporter")
+    def test_export_markdown(self, mock_create_exporter):
         """Test Markdown export."""
         # Setup
         mock_result = MagicMock()
@@ -72,7 +72,7 @@ class TestExportCommand:
 
         mock_exporter = MagicMock()
         mock_exporter.export.return_value = "| id | name |\n|---|---|"
-        mock_exporter_class.return_value = mock_exporter
+        mock_create_exporter.return_value = mock_exporter
 
         # Execute
         result = self.runner.invoke(
@@ -81,10 +81,10 @@ class TestExportCommand:
 
         # Verify
         assert result.exit_code == 0
-        mock_exporter_class.assert_called_once()
+        mock_create_exporter.assert_called_once_with("markdown", field_list=None)
 
-    @patch("taskdog.cli.commands.export.JsonTaskExporter")
-    def test_export_to_file(self, mock_exporter_class):
+    @patch("taskdog.cli.commands.export.create_exporter")
+    def test_export_to_file(self, mock_create_exporter):
         """Test export to file."""
         # Setup
         mock_result = MagicMock()
@@ -93,7 +93,7 @@ class TestExportCommand:
 
         mock_exporter = MagicMock()
         mock_exporter.export.return_value = '{"tasks": []}'
-        mock_exporter_class.return_value = mock_exporter
+        mock_create_exporter.return_value = mock_exporter
 
         # Execute with isolated filesystem
         with self.runner.isolated_filesystem():
@@ -105,8 +105,8 @@ class TestExportCommand:
             assert result.exit_code == 0
             self.console_writer.success.assert_called_once()
 
-    @patch("taskdog.cli.commands.export.JsonTaskExporter")
-    def test_export_with_all_option(self, mock_exporter_class):
+    @patch("taskdog.cli.commands.export.create_exporter")
+    def test_export_with_all_option(self, mock_create_exporter):
         """Test export with --all option."""
         # Setup
         mock_result = MagicMock()
@@ -115,7 +115,7 @@ class TestExportCommand:
 
         mock_exporter = MagicMock()
         mock_exporter.export.return_value = '{"tasks": []}'
-        mock_exporter_class.return_value = mock_exporter
+        mock_create_exporter.return_value = mock_exporter
 
         # Execute
         result = self.runner.invoke(export_command, ["--all"], obj=self.cli_context)
@@ -125,8 +125,8 @@ class TestExportCommand:
         call_kwargs = self.api_client.list_tasks.call_args[1]
         assert call_kwargs["include_archived"] is True
 
-    @patch("taskdog.cli.commands.export.JsonTaskExporter")
-    def test_export_with_status_filter(self, mock_exporter_class):
+    @patch("taskdog.cli.commands.export.create_exporter")
+    def test_export_with_status_filter(self, mock_create_exporter):
         """Test export with --status filter."""
         # Setup
         mock_result = MagicMock()
@@ -135,7 +135,7 @@ class TestExportCommand:
 
         mock_exporter = MagicMock()
         mock_exporter.export.return_value = '{"tasks": []}'
-        mock_exporter_class.return_value = mock_exporter
+        mock_create_exporter.return_value = mock_exporter
 
         # Execute
         result = self.runner.invoke(
@@ -147,8 +147,8 @@ class TestExportCommand:
         call_kwargs = self.api_client.list_tasks.call_args[1]
         assert call_kwargs["status"] == "completed"
 
-    @patch("taskdog.cli.commands.export.JsonTaskExporter")
-    def test_export_with_tags_filter(self, mock_exporter_class):
+    @patch("taskdog.cli.commands.export.create_exporter")
+    def test_export_with_tags_filter(self, mock_create_exporter):
         """Test export with --tag filter."""
         # Setup
         mock_result = MagicMock()
@@ -157,7 +157,7 @@ class TestExportCommand:
 
         mock_exporter = MagicMock()
         mock_exporter.export.return_value = '{"tasks": []}'
-        mock_exporter_class.return_value = mock_exporter
+        mock_create_exporter.return_value = mock_exporter
 
         # Execute
         result = self.runner.invoke(
@@ -169,8 +169,8 @@ class TestExportCommand:
         call_kwargs = self.api_client.list_tasks.call_args[1]
         assert call_kwargs["tags"] == ["work", "urgent"]
 
-    @patch("taskdog.cli.commands.export.JsonTaskExporter")
-    def test_export_with_fields(self, mock_exporter_class):
+    @patch("taskdog.cli.commands.export.create_exporter")
+    def test_export_with_fields(self, mock_create_exporter):
         """Test export with --fields option."""
         # Setup
         mock_result = MagicMock()
@@ -179,7 +179,7 @@ class TestExportCommand:
 
         mock_exporter = MagicMock()
         mock_exporter.export.return_value = '{"tasks": []}'
-        mock_exporter_class.return_value = mock_exporter
+        mock_create_exporter.return_value = mock_exporter
 
         # Execute
         result = self.runner.invoke(
@@ -188,10 +188,12 @@ class TestExportCommand:
 
         # Verify
         assert result.exit_code == 0
-        mock_exporter_class.assert_called_once_with(field_list=["id", "name", "status"])
+        mock_create_exporter.assert_called_once_with(
+            "json", field_list=["id", "name", "status"]
+        )
 
-    @patch("taskdog.cli.commands.export.JsonTaskExporter")
-    def test_export_with_date_range(self, mock_exporter_class):
+    @patch("taskdog.cli.commands.export.create_exporter")
+    def test_export_with_date_range(self, mock_create_exporter):
         """Test export with date range options."""
         # Setup
         mock_result = MagicMock()
@@ -200,7 +202,7 @@ class TestExportCommand:
 
         mock_exporter = MagicMock()
         mock_exporter.export.return_value = '{"tasks": []}'
-        mock_exporter_class.return_value = mock_exporter
+        mock_create_exporter.return_value = mock_exporter
 
         # Execute
         result = self.runner.invoke(

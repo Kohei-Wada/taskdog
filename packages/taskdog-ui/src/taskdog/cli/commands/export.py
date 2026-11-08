@@ -13,12 +13,7 @@ if TYPE_CHECKING:
     from datetime import datetime
 
     from taskdog.cli.context import CliContext
-from taskdog.exporters import (
-    CsvTaskExporter,
-    JsonTaskExporter,
-    MarkdownTableExporter,
-    TaskExporter,
-)
+from taskdog.exporters import EXPORTER_CLASSES, create_exporter
 from taskdog.shared.click_types.field_list import FieldList
 
 # Valid fields for export. Mirrors the keys produced by
@@ -54,7 +49,7 @@ VALID_FIELDS = {
 @click.option(
     "--format",
     "export_format",
-    type=click.Choice(["json", "csv", "markdown"]),
+    type=click.Choice(list(EXPORTER_CLASSES)),
     default="json",
     help="Output format (default: json).",
 )
@@ -139,16 +134,7 @@ def export_command(
         tasks = result.tasks
 
         # fields is already parsed and validated by FieldList Click type
-        # Create appropriate exporter based on format
-        exporter: TaskExporter
-        if export_format == "json":
-            exporter = JsonTaskExporter(field_list=fields)
-        elif export_format == "csv":
-            exporter = CsvTaskExporter(field_list=fields)
-        elif export_format == "markdown":
-            exporter = MarkdownTableExporter(field_list=fields)
-        else:
-            raise ValueError(f"Unsupported format: {export_format}")
+        exporter = create_exporter(export_format, field_list=fields)
 
         # Export tasks
         tasks_data = exporter.export(tasks)

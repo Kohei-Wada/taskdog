@@ -3,14 +3,9 @@
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from taskdog.exporters import (
-    CsvTaskExporter,
-    JsonTaskExporter,
-    MarkdownTableExporter,
-)
+from taskdog.exporters import EXPORT_FILE_EXTENSIONS, create_exporter
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.commands.base import TUICommandBase
-from taskdog.tui.constants.export_config import EXPORT_FORMAT_CONFIG
 from taskdog.tui.context import TUIContext
 from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
 
@@ -21,7 +16,8 @@ if TYPE_CHECKING:
 class ExportCommand(TUICommandBase):
     """Command to export tasks to various formats.
 
-    Exports all tasks to a file in the specified format (JSON, CSV, or Markdown).
+    Exports the tasks shown in the table (honoring the active search filter)
+    to a file in the specified format (JSON, CSV, or Markdown).
     """
 
     def __init__(
@@ -40,32 +36,25 @@ class ExportCommand(TUICommandBase):
         super().__init__(app, context)
         self.format_key = format_key
 
-        # Exporter class lookup table
-        self.exporter_classes = {
-            "JsonTaskExporter": JsonTaskExporter,
-            "CsvTaskExporter": CsvTaskExporter,
-            "MarkdownTableExporter": MarkdownTableExporter,
-        }
-
     def execute(self) -> None:
         """Execute the export command."""
         try:
+            extension = EXPORT_FILE_EXTENSIONS.get(self.format_key)
+            if extension is None:
+                self.notify_warning(f"Unknown format: {self.format_key}")
+                return
+            exporter = create_exporter(self.format_key)
+
+            state = self.context.state
             result = self.context.api_client.list_tasks(
-                include_archived=self.context.state.show_archived,
+                include_archived=state.show_archived,
             )
             tasks = result.tasks
 
-            # Lookup format configuration
-            format_config = EXPORT_FORMAT_CONFIG.get(self.format_key)
-            if not format_config:
-                self.notify_warning(f"Unknown format: {self.format_key}")
-                return
-
-            # Instantiate exporter and get extension
-            exporter_class_name = format_config["exporter_class"]
-            exporter_class = self.exporter_classes[exporter_class_name]
-            exporter = exporter_class()  # type: ignore[abstract]
-            extension = format_config["extension"]
+            # Export what the table shows, not every task
+            if state.is_filtered:
+                visible_ids = state.filtered_task_ids
+                tasks = [task for task in tasks if task.id in visible_ids]
 
             # Generate filename with current date
             today = DateTimeFormatter.format_date_for_filename()
