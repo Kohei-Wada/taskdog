@@ -78,6 +78,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      - name: Wait for PyPI index propagation
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          for pkg in taskdog-core taskdog-client taskdog-server taskdog-ui; do
+            for attempt in $(seq 1 30); do
+              if curl -fsSL "https://pypi.org/pypi/${pkg}/${version}/json" >/dev/null 2>&1; then
+                echo "${pkg}==${version} is available on PyPI"
+                break
+              fi
+              if [ "$attempt" -eq 30 ]; then
+                echo "Timed out waiting for ${pkg}==${version} on PyPI" >&2
+                exit 1
+              fi
+              echo "Waiting for ${pkg}==${version} on PyPI (attempt ${attempt}/30)..."
+              sleep 10
+            done
+          done
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -103,6 +123,8 @@ jobs:
           context: .
           file: Dockerfile
           push: true
+          build-args: |
+            TASKDOG_VERSION=${{ steps.version.outputs.version }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -118,6 +140,26 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+
+      - name: Wait for PyPI index propagation
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          for pkg in taskdog-core taskdog-client taskdog-server taskdog-ui; do
+            for attempt in $(seq 1 30); do
+              if curl -fsSL "https://pypi.org/pypi/${pkg}/${version}/json" >/dev/null 2>&1; then
+                echo "${pkg}==${version} is available on PyPI"
+                break
+              fi
+              if [ "$attempt" -eq 30 ]; then
+                echo "Timed out waiting for ${pkg}==${version} on PyPI" >&2
+                exit 1
+              fi
+              echo "Waiting for ${pkg}==${version} on PyPI (attempt ${attempt}/30)..."
+              sleep 10
+            done
+          done
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -144,6 +186,8 @@ jobs:
           context: .
           file: Dockerfile.demo
           push: true
+          build-args: |
+            TASKDOG_VERSION=${{ steps.version.outputs.version }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
