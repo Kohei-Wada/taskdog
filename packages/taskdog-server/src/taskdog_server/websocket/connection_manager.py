@@ -4,6 +4,7 @@ This module manages active WebSocket connections and broadcasts
 task change events to all connected clients.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -63,15 +64,25 @@ class ConnectionManager:
         # Snapshot the connections: sends yield control, so a concurrent
         # disconnect must not mutate the dict we are iterating.
         disconnected = []
-        for client_id, connection in list(self.active_connections.items()):
+        async def _send(client_id, connection):
             try:
-                await connection.send_json(message)
+                await asyncio.wait_for(connection.send_json(message), timeout=5.0)
+                return None
             except Exception as e:
-                # Connection is broken, mark for removal
                 logger.warning(
                     f"Failed to send message to client {client_id}: {e}. Marking for disconnection."
                 )
-                disconnected.append(client_id)
+                return client_id
+
+        results = await asyncio.gather(
+            *(_send(cid, conn) for cid, conn in list(self.active_connections.items())),
+            return_exceptions=True,
+        )
+        for r in results:
+            if isinstance(r, Exception):
+                logger.warning(f"Unexpected error during broadcast: {r}")
+            elif r is not None:
+                disconnected.append(r)
 
         # Clean up disconnected clients
         for client_id in disconnected:
