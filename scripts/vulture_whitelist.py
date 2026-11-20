@@ -21,3 +21,4 @@ reschedule  # StatisticsPayload / StatisticsResponse field (used by API serializ
 first_deadline  # ChronicSlipperTask DTO field (API-only; not yet in the TUI)
 latest_deadline  # ChronicSlipperTask DTO field (API-only; not yet in the TUI)
 ranking_basis  # NextTasksOutput / NextTasksResponse field (used by API serialization)
+CursorResult  # type-only import used in a string cast (packages/taskdog-core/src/taskdog_core/infrastructure/persistence/database/sqlite_notes_repository.py:24)
