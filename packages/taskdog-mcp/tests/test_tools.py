@@ -161,6 +161,7 @@ def create_mock_client() -> MagicMock:
     # Notes methods
     client.get_task_notes = MagicMock()
     client.update_task_notes = MagicMock()
+    client.append_task_note = MagicMock()
     # Audit methods
     client.list_audit_logs = MagicMock()
     client.get_audit_log = MagicMock()
@@ -1348,6 +1349,24 @@ class TestTaskDecompositionTools:
         client.update_task_notes.assert_called_once_with(1, "# New Notes\nContent here")
         assert result["id"] == 1
         assert "Notes updated" in result["message"]
+
+    def test_append_task_note_returns_confirmation(self) -> None:
+        """Test append_task_note appends via the atomic client call."""
+        from mcp.server import MCPServer
+        from taskdog_mcp.tools import task_decomposition
+
+        client = create_mock_client()
+
+        mcp = MCPServer("test")
+        task_decomposition.register_tools(mcp, client)
+
+        append_fn = mcp._tool_manager._tools["append_task_note"].fn
+        result = append_fn(task_id=1, content="\n- did a thing\n")
+
+        client.append_task_note.assert_called_once_with(1, "\n- did a thing\n")
+        client.update_task_notes.assert_not_called()
+        assert result["id"] == 1
+        assert "appended" in result["message"]
 
     def test_get_task_notes_returns_content(self) -> None:
         """Test get_task_notes returns notes content."""

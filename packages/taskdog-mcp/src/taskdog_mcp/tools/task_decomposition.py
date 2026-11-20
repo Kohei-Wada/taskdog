@@ -268,6 +268,28 @@ def register_notes_tools(mcp: MCPServer, client: TaskdogApiClient) -> None:
         }
 
     @mcp.tool()
+    def append_task_note(task_id: int, content: str) -> dict[str, Any]:
+        """Append content to a task's notes without overwriting existing notes.
+
+        Prefer this over update_task_notes for adding entries (e.g. work log
+        lines): the append is atomic on the server, so concurrent appends from
+        multiple agents are all preserved.
+
+        Args:
+            task_id: ID of the task
+            content: Markdown to append, added verbatim (include any leading
+                newline or heading you need)
+
+        Returns:
+            Confirmation message
+        """
+        client.append_task_note(task_id, content)
+        return {
+            "id": task_id,
+            "message": f"Note appended for task {task_id}",
+        }
+
+    @mcp.tool()
     def get_task_notes(task_id: int) -> dict[str, Any]:
         """Get notes for a task.
 
