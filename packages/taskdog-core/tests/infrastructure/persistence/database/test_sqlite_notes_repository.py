@@ -169,6 +169,58 @@ class TestSqliteNotesRepository:
 
         assert repository.read_notes(1) == content
 
+    def test_append_notes_creates_note_when_missing(
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
+    ):
+        """append_notes creates the note when none exists."""
+        create_task(1)
+
+        result = repository.append_notes(1, "First entry")
+
+        assert result == "First entry"
+        assert repository.read_notes(1) == "First entry"
+        assert repository.has_notes(1) is True
+
+    def test_append_notes_appends_verbatim_to_existing_note(
+        self,
+        repository: SqliteNotesRepository,
+        time_provider: FakeTimeProvider,
+        create_task: Callable[[int], None],
+    ):
+        """append_notes concatenates without separators and returns full content."""
+        create_task(1)
+        repository.write_notes(1, "# Log\n")
+        time_provider.advance(timedelta(hours=1))
+
+        first = repository.append_notes(1, "- a\n")
+        second = repository.append_notes(1, "- b\n")
+
+        assert first == "# Log\n- a\n"
+        assert second == "# Log\n- a\n- b\n"
+        assert repository.read_notes(1) == second
+
+    def test_append_notes_after_delete_starts_fresh(
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
+    ):
+        """Appending to a cleared (empty) note does not resurrect old content."""
+        create_task(1)
+        repository.write_notes(1, "old")
+        repository.write_notes(1, "")
+
+        assert repository.append_notes(1, "new") == "new"
+
+    def test_append_notes_does_not_touch_other_tasks(
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
+    ):
+        """append_notes only affects the targeted task."""
+        create_task(1)
+        create_task(2)
+        repository.write_notes(2, "other")
+
+        repository.append_notes(1, "mine")
+
+        assert repository.read_notes(2) == "other"
+
     def test_get_task_ids_with_notes_returns_empty_set_for_empty_list(
         self, repository: SqliteNotesRepository
     ):

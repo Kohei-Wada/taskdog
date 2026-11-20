@@ -302,6 +302,13 @@ class TestTaskdogApiClientDelegation:
         client.update_task_notes(task_id=1, content="Test content")
         client._notes.update_task_notes.assert_called_once_with(1, "Test content")
 
+    def test_append_task_note(self, client):
+        """Test append_task_note delegates to NotesClient."""
+        client._notes.append_task_note.return_value = "full"
+
+        assert client.append_task_note(task_id=1, content="more") == "full"
+        client._notes.append_task_note.assert_called_once_with(1, "more")
+
     def test_delete_task_notes(self, client):
         """Test delete_task_notes delegates to NotesClient."""
         client.delete_task_notes(task_id=1)

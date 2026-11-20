@@ -188,3 +188,13 @@ class UpdateNotesRequest(BaseModel):
     content: str = Field(
         ..., max_length=MAX_NOTES_LENGTH, description="Notes content (markdown)"
     )
+
+
+class AppendNotesRequest(BaseModel):
+    """Request model for appending to task notes."""
+
+    content: str = Field(
+        ...,
+        max_length=MAX_NOTES_LENGTH,
+        description="Content to append to the notes (markdown), added verbatim",
+    )

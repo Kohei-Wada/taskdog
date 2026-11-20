@@ -7,9 +7,10 @@ stat() calls per task list request.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
+from sqlalchemy.exc import IntegrityError
 
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.infrastructure.persistence.database.base_repository import (
@@ -20,7 +21,7 @@ from taskdog_core.infrastructure.persistence.database.models.note_model import (
 )
 
 if TYPE_CHECKING:
-    from sqlalchemy.engine import Engine
+    from sqlalchemy.engine import CursorResult, Engine
 
     from taskdog_core.domain.services.time_provider import ITimeProvider
 
@@ -112,6 +113,50 @@ class SqliteNotesRepository(SqliteBaseRepository, NotesRepository):
                 )
                 session.add(note)
             session.commit()
+
+    def append_notes(self, task_id: int, content: str) -> str:
+        """Atomically append content to the notes of a task.
+
+        The concatenation happens inside the database (a single
+        ``UPDATE ... SET content = content || :content`` statement), so
+        concurrent appends cannot lose each other's data. If the note does
+        not exist yet it is created with ``content``.
+
+        Args:
+            task_id: Task ID
+            content: Content to append, added verbatim
+
+        Returns:
+            The full notes content after the append
+        """
+        now = self.time_provider.now()
+        with self.Session() as session:
+            statement = (
+                update(NoteModel)
+                .where(NoteModel.task_id == task_id)
+                .values(content=NoteModel.content + content, updated_at=now)
+            )
+            updated = cast("CursorResult[Any]", session.execute(statement))
+            if updated.rowcount == 0:
+                try:
+                    session.add(
+                        NoteModel(
+                            task_id=task_id,
+                            content=content,
+                            created_at=now,
+                            updated_at=now,
+                        )
+                    )
+                    session.flush()
+                except IntegrityError:
+                    # A concurrent writer created the note first: append to it.
+                    session.rollback()
+                    session.execute(statement)
+            result = session.execute(
+                select(NoteModel.content).where(NoteModel.task_id == task_id)
+            ).scalar_one()
+            session.commit()
+            return str(result)
 
     def get_task_ids_with_notes(self, task_ids: list[int]) -> set[int]:
         """Get task IDs that have notes from a list of task IDs.

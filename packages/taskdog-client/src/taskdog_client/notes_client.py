@@ -7,7 +7,7 @@ class NotesClient:
     """Client for task notes operations.
 
     Operations:
-    - Get, update, delete notes
+    - Get, update, append, delete notes
     """
 
     def __init__(self, base_client: BaseApiClient):
@@ -46,6 +46,29 @@ class NotesClient:
         self._base._request_json(
             "put", f"/api/v1/tasks/{task_id}/notes", json={"content": content}
         )
+
+    def append_task_note(self, task_id: int, content: str) -> str:
+        """Atomically append content to task notes.
+
+        The concatenation happens server-side, so concurrent appends never
+        overwrite each other.
+
+        Args:
+            task_id: Task ID
+            content: Content to append (markdown), added verbatim
+
+        Returns:
+            Full notes content after the append
+
+        Raises:
+            TaskNotFoundException: If task not found
+        """
+        data = self._base._request_json(
+            "post",
+            f"/api/v1/tasks/{task_id}/notes/append",
+            json={"content": content},
+        )
+        return str(data["content"])
 
     def delete_task_notes(self, task_id: int) -> None:
         """Delete task notes.

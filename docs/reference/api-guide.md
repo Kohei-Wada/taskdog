@@ -381,6 +381,32 @@ Update task notes
 
 **Response:** 204 No Content
 
+#### POST /api/v1/tasks/{task_id}/notes/append
+
+Append content to task notes. The concatenation happens server-side in a single
+transaction, so concurrent appends to the same task are all preserved
+(unlike a GET → modify → PUT cycle, where the last writer wins).
+
+**Request Body:**
+
+```json
+{
+  "content": "\n- 2025-01-15 10:30 finished the parser\n"
+}
+```
+
+The content is appended verbatim; include any leading newline you need.
+
+**Response:** Full notes after the append
+
+```json
+{
+  "task_id": 1,
+  "content": "# Notes\n\n- 2025-01-15 10:30 finished the parser\n",
+  "has_notes": true
+}
+```
+
 #### DELETE /api/v1/tasks/{task_id}/notes
 
 Delete task notes

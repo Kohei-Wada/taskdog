@@ -80,6 +80,30 @@ class TestNotesController:
 
         self.notes_repository.write_notes.assert_not_called()
 
+    def test_append_notes_appends_and_returns_full_content(self):
+        """Test append_notes delegates to the repository and returns NotesOutput."""
+        self.repository.get_by_id.return_value = self.task
+        self.notes_repository.append_notes.return_value = "old\nnew"
+        self.notes_repository.has_notes.return_value = True
+
+        result = self.controller.append_notes(1, "\nnew")
+
+        self.notes_repository.append_notes.assert_called_once_with(1, "\nnew")
+        self.notes_repository.write_notes.assert_not_called()
+        assert result.task_id == 1
+        assert result.task_name == "Test Task"
+        assert result.content == "old\nnew"
+        assert result.has_notes is True
+
+    def test_append_notes_raises_when_task_not_found(self):
+        """Test append_notes raises TaskNotFoundException for missing task."""
+        self.repository.get_by_id.return_value = None
+
+        with pytest.raises(TaskNotFoundException):
+            self.controller.append_notes(999, "content")
+
+        self.notes_repository.append_notes.assert_not_called()
+
     def test_delete_notes_writes_empty_and_returns_output(self):
         """Test delete_notes clears content and returns NotesOutput."""
         self.repository.get_by_id.return_value = self.task

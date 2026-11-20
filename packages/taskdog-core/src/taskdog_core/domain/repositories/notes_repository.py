@@ -50,6 +50,23 @@ class NotesRepository(ABC):
         """
 
     @abstractmethod
+    def append_notes(self, task_id: int, content: str) -> str:
+        """Atomically append content to the notes of a task.
+
+        Unlike a read-modify-write cycle (``read_notes`` followed by
+        ``write_notes``), concurrent appends to the same task never overwrite
+        each other: every appended chunk is preserved. Creates the note if it
+        does not exist yet.
+
+        Args:
+            task_id: Task ID
+            content: Content to append (markdown), added verbatim
+
+        Returns:
+            The full notes content after the append
+        """
+
+    @abstractmethod
     def get_task_ids_with_notes(self, task_ids: list[int]) -> set[int]:
         """Get task IDs that have notes from a list of task IDs.
 
