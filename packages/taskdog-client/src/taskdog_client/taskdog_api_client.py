@@ -381,6 +381,10 @@ class TaskdogApiClient:
         """Update task notes."""
         return self._notes.update_task_notes(task_id, content)
 
+    def append_task_note(self, task_id: int, content: str) -> str:
+        """Atomically append content to task notes."""
+        return self._notes.append_task_note(task_id, content)
+
     def delete_task_notes(self, task_id: int) -> None:
         """Delete task notes."""
         return self._notes.delete_task_notes(task_id)

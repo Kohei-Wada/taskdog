@@ -49,6 +49,12 @@ class TestNotesRouter:
                 "/api/v1/tasks/999/notes",
                 {"content": "Some notes"},
             ),
+            (
+                "append_notes",
+                "POST",
+                "/api/v1/tasks/999/notes/append",
+                {"content": "Some notes"},
+            ),
             ("delete_notes", "DELETE", "/api/v1/tasks/999/notes", None),
         ],
     )
@@ -60,6 +66,8 @@ class TestNotesRouter:
             response = client.get(endpoint)
         elif method == "PUT":
             response = client.put(endpoint, json=payload)
+        elif method == "POST":
+            response = client.post(endpoint, json=payload)
         elif method == "DELETE":
             response = client.delete(endpoint)
 
@@ -158,6 +166,54 @@ def hello():
         assert response.status_code == 200
         data = response.json()
         assert data["content"] == markdown_content
+
+    # ===== POST /{task_id}/notes/append Tests =====
+
+    def test_append_notes_creates_notes_when_none_exist(
+        self, client, task_factory, notes_repository
+    ):
+        """Appending to a task without notes creates them."""
+        task = task_factory.create(name="Test Task", priority=1)
+
+        response = client.post(
+            f"/api/v1/tasks/{task.id}/notes/append", json={"content": "- first\n"}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["task_id"] == task.id
+        assert data["content"] == "- first\n"
+        assert data["has_notes"] is True
+        assert notes_repository.read_notes(task.id) == "- first\n"
+
+    def test_append_notes_preserves_existing_content(
+        self, client, task_factory, notes_repository
+    ):
+        """Appending keeps existing notes and returns the combined content."""
+        task = task_factory.create(name="Test Task", priority=1)
+        notes_repository.write_notes(task.id, "# Log\n")
+
+        first = client.post(
+            f"/api/v1/tasks/{task.id}/notes/append", json={"content": "- a\n"}
+        )
+        second = client.post(
+            f"/api/v1/tasks/{task.id}/notes/append", json={"content": "- b\n"}
+        )
+
+        assert first.json()["content"] == "# Log\n- a\n"
+        assert second.json()["content"] == "# Log\n- a\n- b\n"
+        assert notes_repository.read_notes(task.id) == "# Log\n- a\n- b\n"
+
+    def test_append_notes_rejects_oversized_content(self, client, task_factory):
+        """Appended content is subject to the same size limit as updates."""
+        task = task_factory.create(name="Test Task", priority=1)
+
+        response = client.post(
+            f"/api/v1/tasks/{task.id}/notes/append",
+            json={"content": "x" * 1_000_001},
+        )
+
+        assert response.status_code == 422
 
     # ===== DELETE /{task_id}/notes Tests =====
 

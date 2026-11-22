@@ -49,6 +49,28 @@ class TestNotesClient:
             "put", "/api/v1/tasks/1/notes", json={"content": "New notes"}
         )
 
+    def test_append_task_note(self):
+        """Test append_task_note posts to the append endpoint and returns content."""
+        self.mock_base._request_json.return_value = {
+            "task_id": 1,
+            "content": "old\nnew",
+            "has_notes": True,
+        }
+
+        result = self.client.append_task_note(task_id=1, content="\nnew")
+
+        self.mock_base._request_json.assert_called_once_with(
+            "post", "/api/v1/tasks/1/notes/append", json={"content": "\nnew"}
+        )
+        assert result == "old\nnew"
+
+    def test_append_task_note_error(self):
+        """Test append_task_note handles errors."""
+        self.mock_base._request_json.side_effect = TaskNotFoundException("Not found")
+
+        with pytest.raises(TaskNotFoundException):
+            self.client.append_task_note(task_id=999, content="x")
+
     def test_delete_task_notes(self):
         """Test delete_task_notes makes correct API call."""
         mock_response = Mock()

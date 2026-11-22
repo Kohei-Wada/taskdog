@@ -104,6 +104,7 @@ Or with uv (for development):
 - `remove_dependency` - Remove a dependency
 - `set_task_tags` - Set task tags
 - `update_task_notes` - Update task notes
+- `append_task_note` - Atomically append to task notes (safe for concurrent agents)
 - `get_task_notes` - Get task notes
 
 ## Usage Examples
