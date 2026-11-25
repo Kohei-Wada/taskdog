@@ -10,6 +10,7 @@ from taskdog_server.api.dependencies import (
 )
 from taskdog_server.api.models.requests import AppendNotesRequest, UpdateNotesRequest
 from taskdog_server.api.models.responses import NotesResponse
+from taskdog_server.api.validators import MAX_NOTES_LENGTH
 
 router = APIRouter()
 
@@ -109,9 +110,12 @@ def append_task_note(
         Full notes content after the append and metadata
 
     Raises:
-        HTTPException: 404 if task not found
+        HTTPException: 404 if task not found, 422 if the notes would exceed
+            ``MAX_NOTES_LENGTH`` after the append
     """
-    result = controller.append_notes(task_id, request.content)
+    result = controller.append_notes(
+        task_id, request.content, max_length=MAX_NOTES_LENGTH
+    )
 
     # Broadcast WebSocket event in background (exclude the requester by client name)
     broadcaster.task_notes_updated(task_id, result.task_name, client_name)

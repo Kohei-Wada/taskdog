@@ -6,6 +6,7 @@ import pytest
 
 from taskdog_core.controllers.notes_controller import NotesController
 from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.exceptions.notes_exceptions import NotesTooLargeError
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
@@ -88,7 +89,9 @@ class TestNotesController:
 
         result = self.controller.append_notes(1, "\nnew")
 
-        self.notes_repository.append_notes.assert_called_once_with(1, "\nnew")
+        self.notes_repository.append_notes.assert_called_once_with(
+            1, "\nnew", max_length=None
+        )
         self.notes_repository.write_notes.assert_not_called()
         assert result.task_id == 1
         assert result.task_name == "Test Task"
@@ -103,6 +106,26 @@ class TestNotesController:
             self.controller.append_notes(999, "content")
 
         self.notes_repository.append_notes.assert_not_called()
+
+    def test_append_notes_passes_max_length_to_repository(self):
+        """Test append_notes forwards max_length to the repository."""
+        self.repository.get_by_id.return_value = self.task
+        self.notes_repository.append_notes.return_value = "old\nnew"
+        self.notes_repository.has_notes.return_value = True
+
+        self.controller.append_notes(1, "\nnew", max_length=100)
+
+        self.notes_repository.append_notes.assert_called_once_with(
+            1, "\nnew", max_length=100
+        )
+
+    def test_append_notes_propagates_too_large_error(self):
+        """Test append_notes lets NotesTooLargeError from the repository through."""
+        self.repository.get_by_id.return_value = self.task
+        self.notes_repository.append_notes.side_effect = NotesTooLargeError(1, 100)
+
+        with pytest.raises(NotesTooLargeError):
+            self.controller.append_notes(1, "content", max_length=100)
 
     def test_delete_notes_writes_empty_and_returns_output(self):
         """Test delete_notes clears content and returns NotesOutput."""

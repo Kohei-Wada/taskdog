@@ -98,21 +98,28 @@ class NotesController:
             has_notes=has_notes,
         )
 
-    def append_notes(self, task_id: int, content: str) -> NotesOutput:
+    def append_notes(
+        self, task_id: int, content: str, max_length: int | None = None
+    ) -> NotesOutput:
         """Append content to the notes of a task atomically.
 
         Args:
             task_id: Task ID
             content: Content to append (markdown), added verbatim
+            max_length: Maximum allowed length of the full notes after the
+                append, or None for no limit
 
         Returns:
             NotesOutput with the full notes content after the append
 
         Raises:
             TaskNotFoundException: If task does not exist
+            NotesTooLargeError: If the append would exceed ``max_length``
         """
         task_name = self._get_task_or_raise(task_id)
-        new_content = self._notes_repository.append_notes(task_id, content)
+        new_content = self._notes_repository.append_notes(
+            task_id, content, max_length=max_length
+        )
         has_notes = self._notes_repository.has_notes(task_id)
         return NotesOutput(
             task_id=task_id,

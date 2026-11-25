@@ -14,6 +14,12 @@ if str(_tests_path) not in sys.path:
 
 from helpers.time_provider import FakeTimeProvider  # noqa: E402
 
+from taskdog_core.domain.exceptions.notes_exceptions import (  # noqa: E402
+    NotesTooLargeError,
+)
+from taskdog_core.infrastructure.persistence.database.models.note_model import (  # noqa: E402
+    NoteModel,
+)
 from taskdog_core.infrastructure.persistence.database.sqlite_notes_repository import (  # noqa: E402
     SqliteNotesRepository,
 )
@@ -220,6 +226,68 @@ class TestSqliteNotesRepository:
         repository.append_notes(1, "mine")
 
         assert repository.read_notes(2) == "other"
+
+    def test_append_notes_allows_total_exactly_at_max_length(
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
+    ):
+        """An append that fills the note exactly up to max_length succeeds."""
+        create_task(1)
+        repository.write_notes(1, "abc")
+
+        result = repository.append_notes(1, "de", max_length=5)
+
+        assert result == "abcde"
+        assert repository.read_notes(1) == "abcde"
+
+    def test_append_notes_rejects_when_total_exceeds_max_length(
+        self,
+        repository: SqliteNotesRepository,
+        time_provider: FakeTimeProvider,
+        create_task: Callable[[int], None],
+    ):
+        """An append that would exceed max_length is rejected and changes nothing."""
+        create_task(1)
+        repository.write_notes(1, "abc")
+        time_provider.advance(timedelta(hours=1))
+
+        with pytest.raises(NotesTooLargeError):
+            repository.append_notes(1, "def", max_length=5)
+
+        assert repository.read_notes(1) == "abc"
+        with repository.Session() as session:
+            note = session.get(NoteModel, 1)
+            assert note is not None
+            assert note.updated_at == datetime(2025, 1, 15, 10, 30, 0)
+
+    def test_append_notes_counts_characters_not_bytes(
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
+    ):
+        """max_length is measured in characters, like the PUT request limit."""
+        create_task(1)
+        repository.write_notes(1, "日本")
+
+        assert repository.append_notes(1, "語", max_length=3) == "日本語"
+        with pytest.raises(NotesTooLargeError):
+            repository.append_notes(1, "!", max_length=3)
+
+    def test_append_notes_rejects_oversized_content_for_missing_note(
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
+    ):
+        """Oversized content is rejected without creating the note."""
+        create_task(1)
+
+        with pytest.raises(NotesTooLargeError):
+            repository.append_notes(1, "abcdef", max_length=5)
+
+        assert repository.read_notes(1) is None
+
+    def test_append_notes_creates_missing_note_within_max_length(
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
+    ):
+        """A missing note is not mistaken for an overflow."""
+        create_task(1)
+
+        assert repository.append_notes(1, "abcde", max_length=5) == "abcde"
 
     def test_get_task_ids_with_notes_returns_empty_set_for_empty_list(
         self, repository: SqliteNotesRepository
