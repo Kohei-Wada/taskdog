@@ -104,3 +104,15 @@ class TestTUIState:
 
         # Verify gantt cache is unchanged
         assert self.state.gantt_cache == initial_gantt
+
+    def test_generation_counters_advance_independently(self):
+        """Test gantt_generation and reload_generation advance monotonically and independently."""
+        assert self.state.gantt_generation == 0
+        assert self.state.reload_generation == 0
+
+        assert self.state.next_gantt_generation() == 1
+        assert self.state.next_gantt_generation() == 2
+        assert self.state.reload_generation == 0
+
+        assert self.state.next_reload_generation() == 1
+        assert self.state.gantt_generation == 2
