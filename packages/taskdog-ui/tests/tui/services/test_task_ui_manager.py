@@ -475,6 +475,93 @@ class TestRecalculateGantt:
         assert result is None
         self.task_data_loader.gantt_presenter.present.assert_not_called()
 
+    def test_gather_params_advance_generations_independently(self):
+        """gather_fetch_params advances reload+gantt; gather_gantt_params advances gantt only."""
+        self.main_screen.gantt_widget.calculate_date_range.return_value = (
+            date(2024, 1, 1),
+            date(2024, 1, 7),
+        )
+        fetch_params = self.manager.gather_fetch_params()
+        assert fetch_params.reload_generation == 1
+        assert fetch_params.gantt_generation == 1
+
+        gantt_params = self.manager.gather_gantt_params(
+            date(2024, 1, 8), date(2024, 1, 14)
+        )
+        assert gantt_params.gantt_generation == 2
+        assert self.state.reload_generation == 1
+
+    def test_apply_gantt_drops_stale_generation(self):
+        """apply_gantt ignores results whose generation was superseded."""
+        fresh_gantt = GanttViewModel(
+            start_date=date(2024, 2, 1),
+            end_date=date(2024, 2, 7),
+            tasks=[],
+            task_daily_hours={},
+            daily_workload={},
+            holidays=set(),
+        )
+        stale_gantt = create_gantt_viewmodel()
+        self.state.gantt_cache = fresh_gantt
+        self.state.gantt_generation = 2
+
+        self.manager.apply_gantt(stale_gantt, generation=1)
+
+        assert self.state.gantt_cache == fresh_gantt
+        self.main_screen.gantt_widget.update_view_model_and_render.assert_not_called()
+
+    def test_apply_task_data_preserves_newer_gantt_on_stale_gantt_generation(self):
+        """apply_task_data updates table cache/UI while preserving newer gantt_cache."""
+        fresh_gantt = GanttViewModel(
+            start_date=date(2024, 2, 1),
+            end_date=date(2024, 2, 7),
+            tasks=[],
+            task_daily_hours={},
+            daily_workload={},
+            holidays=set(),
+        )
+        stale_gantt = create_gantt_viewmodel()
+        self.state.gantt_cache = fresh_gantt
+        self.state.reload_generation = 1
+        self.state.gantt_generation = 2
+
+        task = create_task_dto(1, "Updated Task", TaskStatus.PENDING)
+        vm = create_task_viewmodel(1, "Updated Task", TaskStatus.PENDING)
+        task_data = create_task_data([task], [vm], stale_gantt)
+
+        self.manager.apply_task_data(
+            task_data,
+            keep_scroll_position=True,
+            reload_generation=1,
+            gantt_generation=1,
+        )
+
+        assert self.state.viewmodels_cache == [vm]
+        assert self.state.gantt_cache == fresh_gantt
+        self.main_screen.refresh_tasks.assert_called_once_with(
+            keep_scroll_position=True
+        )
+        self.main_screen.gantt_widget.update_gantt.assert_not_called()
+
+    def test_apply_task_data_drops_stale_reload_generation(self):
+        """apply_task_data is a no-op when a newer reload has started."""
+        self.state.reload_generation = 2
+        self.state.gantt_generation = 2
+        task = create_task_dto(1, "Stale Task", TaskStatus.PENDING)
+        vm = create_task_viewmodel(1, "Stale Task", TaskStatus.PENDING)
+        task_data = create_task_data([task], [vm], create_gantt_viewmodel())
+
+        self.manager.apply_task_data(
+            task_data,
+            reload_generation=1,
+            gantt_generation=1,
+        )
+
+        assert self.state.viewmodels_cache == []
+        assert self.state.gantt_cache is None
+        self.main_screen.refresh_tasks.assert_not_called()
+        self.main_screen.gantt_widget.update_gantt.assert_not_called()
+
 
 class TestErrorHandling:
     """Test cases for error handling in TaskUIManager."""

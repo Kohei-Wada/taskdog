@@ -36,6 +36,8 @@ class FetchParams:
     sort_by: str
     reverse: bool
     date_range: tuple[date, date]
+    reload_generation: int | None = None
+    gantt_generation: int | None = None
 
 
 @dataclass(frozen=True)
@@ -51,6 +53,7 @@ class GanttFetchParams:
     sort_by: str
     reverse: bool
     include_archived: bool
+    gantt_generation: int | None = None
 
 
 class TaskUIManager:
@@ -98,6 +101,14 @@ class TaskUIManager:
         if self._on_error:
             self._on_error(error)
 
+    def is_current_reload_generation(self, generation: int | None) -> bool:
+        """Check whether a reload generation token is still current."""
+        return generation is None or generation == self.state.reload_generation
+
+    def is_current_gantt_generation(self, generation: int | None) -> bool:
+        """Check whether a gantt generation token is still current."""
+        return generation is None or generation == self.state.gantt_generation
+
     def load_tasks(self, keep_scroll_position: bool = False) -> None:
         """Load tasks and update UI synchronously.
 
@@ -110,8 +121,14 @@ class TaskUIManager:
         Args:
             keep_scroll_position: Whether to preserve scroll position during refresh
         """
-        task_data = self._fetch_task_data()
-        self.apply_task_data(task_data, keep_scroll_position)
+        params = self.gather_fetch_params()
+        task_data = self._fetch_task_data(params)
+        self.apply_task_data(
+            task_data,
+            keep_scroll_position,
+            reload_generation=params.reload_generation,
+            gantt_generation=params.gantt_generation,
+        )
 
     def gather_fetch_params(self) -> FetchParams:
         """Collect fetch inputs from UI/state. Must run on the UI thread.
@@ -124,6 +141,8 @@ class TaskUIManager:
             sort_by=self.state.sort_by,
             reverse=self.state.sort_reverse,
             date_range=self._calculate_gantt_date_range(),
+            reload_generation=self.state.next_reload_generation(),
+            gantt_generation=self.state.next_gantt_generation(),
         )
 
     def fetch_with_params(self, params: FetchParams) -> TaskData:
@@ -147,16 +166,29 @@ class TaskUIManager:
         )
 
     def apply_task_data(
-        self, task_data: TaskData, keep_scroll_position: bool = False
+        self,
+        task_data: TaskData,
+        keep_scroll_position: bool = False,
+        reload_generation: int | None = None,
+        gantt_generation: int | None = None,
     ) -> None:
         """Update caches and refresh widgets. Must run on the UI thread.
+
+        Drops the whole update if a newer full reload has started, and preserves
+        the existing ``gantt_cache`` / widget if a newer gantt fetch has started.
 
         Args:
             task_data: Data to cache and render
             keep_scroll_position: Whether to preserve scroll position during refresh
+            reload_generation: Optional reload generation token to validate
+            gantt_generation: Optional gantt generation token to validate
         """
-        self._update_cache(task_data)
-        self._refresh_ui(task_data, keep_scroll_position)
+        if not self.is_current_reload_generation(reload_generation):
+            return
+
+        include_gantt = self.is_current_gantt_generation(gantt_generation)
+        self._update_cache(task_data, include_gantt=include_gantt)
+        self._refresh_ui(task_data, keep_scroll_position, include_gantt=include_gantt)
 
     def _calculate_gantt_date_range(self) -> tuple[date, date]:
         """Calculate the date range for Gantt chart display.
@@ -178,13 +210,14 @@ class TaskUIManager:
         end_date = start_date + timedelta(days=MIN_GANTT_DISPLAY_DAYS - 1)
         return (start_date, end_date)
 
-    def _fetch_task_data(self) -> TaskData:
+    def _fetch_task_data(self, params: FetchParams | None = None) -> TaskData:
         """Fetch task data, handling API errors gracefully (UI thread).
 
         Returns:
             TaskData object containing all task information (empty on error)
         """
-        params = self.gather_fetch_params()
+        if params is None:
+            params = self.gather_fetch_params()
         try:
             return self.fetch_with_params(params)
         except (ServerConnectionError, AuthenticationError, ServerError) as e:
@@ -214,18 +247,26 @@ class TaskUIManager:
             gantt_view_model=None,
         )
 
-    def _update_cache(self, task_data: TaskData) -> None:
+    def _update_cache(self, task_data: TaskData, *, include_gantt: bool = True) -> None:
         """Update internal cache with task data.
 
         Args:
             task_data: TaskData object to cache
+            include_gantt: Whether to overwrite gantt_cache with task_data.gantt_view_model
         """
+        gantt = task_data.gantt_view_model if include_gantt else None
         self.state.update_caches(
             viewmodels=task_data.table_view_models,
-            gantt=task_data.gantt_view_model,
+            gantt=gantt,
         )
 
-    def _refresh_ui(self, task_data: TaskData, keep_scroll_position: bool) -> None:
+    def _refresh_ui(
+        self,
+        task_data: TaskData,
+        keep_scroll_position: bool,
+        *,
+        include_gantt: bool = True,
+    ) -> None:
         """Refresh UI widgets with task data.
 
         State caches are already updated by _update_cache() before this is called.
@@ -234,13 +275,14 @@ class TaskUIManager:
         Args:
             task_data: TaskData object containing view models
             keep_scroll_position: Whether to preserve scroll position
+            include_gantt: Whether to re-render the gantt widget from task_data
         """
         main_screen = self._get_main_screen()
         if not main_screen:
             return
 
         # Update Gantt widget (reads gantt data from TUIState.gantt_cache)
-        if main_screen.gantt_widget and task_data.gantt_view_model:
+        if include_gantt and main_screen.gantt_widget and task_data.gantt_view_model:
             task_ids = [t.id for t in task_data.all_tasks]
             main_screen.gantt_widget.update_gantt(
                 task_ids=task_ids,
@@ -271,6 +313,7 @@ class TaskUIManager:
             sort_by=sort_by,
             reverse=self.state.sort_reverse,
             include_archived=self.state.show_archived,
+            gantt_generation=self.state.next_gantt_generation(),
         )
 
     def fetch_gantt(self, params: GanttFetchParams) -> GanttViewModel | None:
@@ -300,12 +343,22 @@ class TaskUIManager:
             task_list_output.tasks, task_list_output.gantt_data
         )
 
-    def apply_gantt(self, gantt_view_model: GanttViewModel | None) -> None:
+    def apply_gantt(
+        self,
+        gantt_view_model: GanttViewModel | None,
+        generation: int | None = None,
+    ) -> None:
         """Update gantt cache and re-render. Must run on the UI thread.
+
+        Drops stale updates when a newer gantt-affecting fetch has already started.
 
         Args:
             gantt_view_model: New gantt view model to display
+            generation: Optional gantt generation token to validate
         """
+        if not self.is_current_gantt_generation(generation):
+            return
+
         if not gantt_view_model:
             return
 

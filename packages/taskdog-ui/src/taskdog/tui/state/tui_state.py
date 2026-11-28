@@ -73,6 +73,12 @@ class TUIState:
     )
     """Cached result of filtered_viewmodels computation."""
 
+    gantt_generation: int = field(default=0, repr=False, compare=False)
+    """Monotonic token incremented on each gantt-affecting fetch."""
+
+    reload_generation: int = field(default=0, repr=False, compare=False)
+    """Monotonic token incremented on each full task-list reload."""
+
     def _get_search_filter(self) -> TaskSearchFilter:
         """Get or create the search filter instance (lazy initialization).
 
@@ -243,3 +249,13 @@ class TUIState:
         if gantt is not None:
             self.gantt_cache = gantt
         self._invalidate_filtered_cache()
+
+    def next_gantt_generation(self) -> int:
+        """Advance and return the gantt cache generation token."""
+        self.gantt_generation += 1
+        return self.gantt_generation
+
+    def next_reload_generation(self) -> int:
+        """Advance and return the full reload generation token."""
+        self.reload_generation += 1
+        return self.reload_generation

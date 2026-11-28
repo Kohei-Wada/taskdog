@@ -669,7 +669,14 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             task_data = mgr.fetch_with_params(params)
         except (ServerConnectionError, AuthenticationError, ServerError) as e:
             if not worker.is_cancelled:
-                self.call_from_thread(self._finish_reload, mgr, None, e)
+                self.call_from_thread(
+                    self._finish_reload,
+                    mgr,
+                    None,
+                    e,
+                    params.reload_generation,
+                    params.gantt_generation,
+                )
             return
         except Exception:
             # Unexpected (non-API) error — a real bug. Log it instead of
@@ -677,25 +684,41 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             logger.exception("Unexpected error during task reload")
             task_data = mgr.empty_task_data()
         if not worker.is_cancelled:
-            self.call_from_thread(self._finish_reload, mgr, task_data, None)
+            self.call_from_thread(
+                self._finish_reload,
+                mgr,
+                task_data,
+                None,
+                params.reload_generation,
+                params.gantt_generation,
+            )
 
     def _finish_reload(
         self,
         mgr: TaskUIManager,
         task_data: "TaskData | None",
         error: "ServerConnectionError | AuthenticationError | ServerError | None",
+        reload_generation: int | None = None,
+        gantt_generation: int | None = None,
     ) -> None:
         """Apply reload result (or surface error), then drop the loading state."""
+        reload_current = mgr.is_current_reload_generation(reload_generation)
+        gantt_current = mgr.is_current_gantt_generation(gantt_generation)
         if error is not None:
-            mgr.handle_api_error(error)
+            if reload_current:
+                mgr.handle_api_error(error)
         elif task_data is not None:
-            mgr.apply_task_data(task_data, keep_scroll_position=True)
+            mgr.apply_task_data(
+                task_data,
+                keep_scroll_position=True,
+                reload_generation=reload_generation,
+                gantt_generation=gantt_generation,
+            )
         # Clear the startup loading indicator (no-op on later reloads).
-        if self.main_screen:
-            if self.main_screen.gantt_widget:
-                self.main_screen.gantt_widget.loading = False
-            if self.main_screen.task_table:
-                self.main_screen.task_table.loading = False
+        if gantt_current:
+            self._clear_gantt_loading()
+        if reload_current and self.main_screen and self.main_screen.task_table:
+            self.main_screen.task_table.loading = False
 
     # Event handlers for task operations
     def _handle_task_change_event(self, event: Any) -> None:
@@ -747,16 +770,32 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             gantt_view_model = mgr.fetch_gantt(params)
         except (ServerConnectionError, AuthenticationError, ServerError) as e:
             if not worker.is_cancelled:
-                self.call_from_thread(self._finish_gantt_reload, mgr, None, e)
+                self.call_from_thread(
+                    self._finish_gantt_reload,
+                    mgr,
+                    None,
+                    e,
+                    params.gantt_generation,
+                )
             return
         except Exception:
             logger.exception("Unexpected error recalculating gantt")
             if not worker.is_cancelled:
-                self.call_from_thread(self._clear_gantt_loading)
+                self.call_from_thread(
+                    self._finish_gantt_reload,
+                    mgr,
+                    None,
+                    None,
+                    params.gantt_generation,
+                )
             return
         if not worker.is_cancelled:
             self.call_from_thread(
-                self._finish_gantt_reload, mgr, gantt_view_model, None
+                self._finish_gantt_reload,
+                mgr,
+                gantt_view_model,
+                None,
+                params.gantt_generation,
             )
 
     def _finish_gantt_reload(
@@ -764,12 +803,15 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         mgr: TaskUIManager,
         gantt_view_model: "GanttViewModel | None",
         error: "ServerConnectionError | AuthenticationError | ServerError | None",
+        gantt_generation: int | None = None,
     ) -> None:
         """Apply gantt result (or surface error), then drop the loading state."""
+        if not mgr.is_current_gantt_generation(gantt_generation):
+            return
         if error is not None:
             mgr.handle_api_error(error)
         else:
-            mgr.apply_gantt(gantt_view_model)
+            mgr.apply_gantt(gantt_view_model, generation=gantt_generation)
         self._clear_gantt_loading()
 
     def _schedule_gantt_loading(self) -> None:
