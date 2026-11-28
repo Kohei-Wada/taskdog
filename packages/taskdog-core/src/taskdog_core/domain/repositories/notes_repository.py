@@ -50,7 +50,9 @@ class NotesRepository(ABC):
         """
 
     @abstractmethod
-    def append_notes(self, task_id: int, content: str) -> str:
+    def append_notes(
+        self, task_id: int, content: str, max_length: int | None = None
+    ) -> str:
         """Atomically append content to the notes of a task.
 
         Unlike a read-modify-write cycle (``read_notes`` followed by
@@ -61,9 +63,16 @@ class NotesRepository(ABC):
         Args:
             task_id: Task ID
             content: Content to append (markdown), added verbatim
+            max_length: Maximum allowed length of the full notes after the
+                append, or None for no limit. The check is part of the append
+                itself, so concurrent appends cannot jointly exceed it.
 
         Returns:
             The full notes content after the append
+
+        Raises:
+            NotesTooLargeError: If the append would exceed ``max_length``
+                (the notes are left unchanged)
         """
 
     @abstractmethod

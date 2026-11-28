@@ -9,9 +9,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 
+from taskdog_core.domain.exceptions.notes_exceptions import NotesTooLargeError
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.infrastructure.persistence.database.base_repository import (
     SqliteBaseRepository,
@@ -114,30 +115,50 @@ class SqliteNotesRepository(SqliteBaseRepository, NotesRepository):
                 session.add(note)
             session.commit()
 
-    def append_notes(self, task_id: int, content: str) -> str:
+    def append_notes(
+        self, task_id: int, content: str, max_length: int | None = None
+    ) -> str:
         """Atomically append content to the notes of a task.
 
         The concatenation happens inside the database (a single
         ``UPDATE ... SET content = content || :content`` statement), so
-        concurrent appends cannot lose each other's data. If the note does
-        not exist yet it is created with ``content``.
+        concurrent appends cannot lose each other's data. If ``max_length`` is
+        given, the size check is part of the same statement's ``WHERE``
+        clause, so concurrent appends cannot jointly exceed it either. If the
+        note does not exist yet it is created with ``content``.
 
         Args:
             task_id: Task ID
             content: Content to append, added verbatim
+            max_length: Maximum allowed length of the full notes after the
+                append, or None for no limit
 
         Returns:
             The full notes content after the append
+
+        Raises:
+            NotesTooLargeError: If the append would exceed ``max_length``
+                (the notes are left unchanged)
         """
         now = self.time_provider.now()
         with self.Session() as session:
-            statement = (
-                update(NoteModel)
-                .where(NoteModel.task_id == task_id)
-                .values(content=NoteModel.content + content, updated_at=now)
+            statement = update(NoteModel).where(NoteModel.task_id == task_id)
+            if max_length is not None:
+                statement = statement.where(
+                    func.length(NoteModel.content) + len(content) <= max_length
+                )
+            statement = statement.values(
+                content=NoteModel.content + content, updated_at=now
             )
             updated = cast("CursorResult[Any]", session.execute(statement))
             if updated.rowcount == 0:
+                exists = session.execute(
+                    select(NoteModel.task_id).where(NoteModel.task_id == task_id)
+                ).scalar()
+                if exists is not None or (
+                    max_length is not None and len(content) > max_length
+                ):
+                    raise NotesTooLargeError(task_id, cast("int", max_length))
                 try:
                     session.add(
                         NoteModel(
@@ -151,7 +172,11 @@ class SqliteNotesRepository(SqliteBaseRepository, NotesRepository):
                 except IntegrityError:
                     # A concurrent writer created the note first: append to it.
                     session.rollback()
-                    session.execute(statement)
+                    updated = cast("CursorResult[Any]", session.execute(statement))
+                    if updated.rowcount == 0:
+                        raise NotesTooLargeError(
+                            task_id, cast("int", max_length)
+                        ) from None
             result = session.execute(
                 select(NoteModel.content).where(NoteModel.task_id == task_id)
             ).scalar_one()

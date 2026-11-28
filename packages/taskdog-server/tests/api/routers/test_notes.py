@@ -215,6 +215,35 @@ def hello():
 
         assert response.status_code == 422
 
+    def test_append_notes_rejects_when_total_exceeds_limit(
+        self, client, task_factory, notes_repository
+    ):
+        """Repeated appends cannot grow a note past the limit enforced by PUT."""
+        task = task_factory.create(name="Test Task", priority=1)
+        url = f"/api/v1/tasks/{task.id}/notes/append"
+
+        first = client.post(url, json={"content": "x" * 600_000})
+        second = client.post(url, json={"content": "y" * 600_000})
+
+        assert first.status_code == 200
+        assert second.status_code == 422
+        assert "detail" in second.json()
+        assert notes_repository.read_notes(task.id) == "x" * 600_000
+
+    def test_append_notes_allows_total_exactly_at_limit(
+        self, client, task_factory, notes_repository
+    ):
+        """An append that lands exactly on the limit is accepted."""
+        task = task_factory.create(name="Test Task", priority=1)
+        url = f"/api/v1/tasks/{task.id}/notes/append"
+
+        first = client.post(url, json={"content": "x" * 600_000})
+        second = client.post(url, json={"content": "y" * 400_000})
+
+        assert first.status_code == 200
+        assert second.status_code == 200
+        assert len(notes_repository.read_notes(task.id)) == 1_000_000
+
     # ===== DELETE /{task_id}/notes Tests =====
 
     def test_delete_notes_for_existing_task_with_notes(

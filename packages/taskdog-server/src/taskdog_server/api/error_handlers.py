@@ -12,6 +12,7 @@ from taskdog_core.domain.exceptions.backup_exceptions import (
     BackupNotSupportedError,
     BackupValidationError,
 )
+from taskdog_core.domain.exceptions.notes_exceptions import NotesTooLargeError
 from taskdog_core.domain.exceptions.tag_exceptions import TagNotFoundException
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
@@ -33,6 +34,15 @@ async def _bad_request_handler(_request: Request, exc: Exception) -> JSONRespons
     )
 
 
+async def _unprocessable_handler(_request: Request, exc: Exception) -> JSONResponse:
+    """Map oversized-content domain exceptions to 422 UNPROCESSABLE_ENTITY.
+
+    Matches the status FastAPI returns when a request body exceeds
+    ``MAX_NOTES_LENGTH`` on ``PUT``.
+    """
+    return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
 async def _not_implemented_handler(_request: Request, exc: Exception) -> JSONResponse:
     """Map unsupported-operation domain exceptions to 501 NOT_IMPLEMENTED."""
     return JSONResponse(
@@ -45,6 +55,8 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     - TaskNotFoundException, TagNotFoundException -> 404 NOT_FOUND
     - TaskValidationError (and subclasses), BackupValidationError -> 400 BAD_REQUEST
+    - NotesTooLargeError -> 422 UNPROCESSABLE_ENTITY (more specific than the
+      TaskValidationError mapping it would otherwise inherit)
     - BackupNotSupportedError -> 501 NOT_IMPLEMENTED
 
     Starlette resolves handlers by walking the exception's MRO, so registering
@@ -57,5 +69,6 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(TaskNotFoundException, _not_found_handler)
     app.add_exception_handler(TagNotFoundException, _not_found_handler)
     app.add_exception_handler(TaskValidationError, _bad_request_handler)
+    app.add_exception_handler(NotesTooLargeError, _unprocessable_handler)
     app.add_exception_handler(BackupValidationError, _bad_request_handler)
     app.add_exception_handler(BackupNotSupportedError, _not_implemented_handler)

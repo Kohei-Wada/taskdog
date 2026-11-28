@@ -8,6 +8,7 @@ from datetime import date, datetime
 from typing import Any
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.exceptions.notes_exceptions import NotesTooLargeError
 from taskdog_core.domain.exceptions.tag_exceptions import TagNotFoundException
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
@@ -229,8 +230,13 @@ class InMemoryNotesRepository:
         """Write notes for task."""
         self._notes[task_id] = content
 
-    def append_notes(self, task_id: int, content: str) -> str:
+    def append_notes(
+        self, task_id: int, content: str, max_length: int | None = None
+    ) -> str:
         """Append content to notes for task and return the full content."""
+        current = self._notes.get(task_id, "")
+        if max_length is not None and len(current) + len(content) > max_length:
+            raise NotesTooLargeError(task_id, max_length)
         self._notes[task_id] = self._notes.get(task_id, "") + content
         return self._notes[task_id]
 
